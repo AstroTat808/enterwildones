@@ -25,11 +25,8 @@ export async function createInvitation({ eventId, applicationId = null, userId =
   const invitationId = randomUUID();
   const createdAt = new Date().toISOString();
   for (let attempt = 0; attempt < 8; attempt++) {
-    const code = makeCode(event.invitationPrefix);
-    const codeHash = hashCode(code);
-    const indexKey = inviteCodeIndexKey(codeHash);
-    const existing = await indexes.get(indexKey, { type: 'json' }).catch(() => null);
-    if (existing) continue;
+    const code = makeCode(event.invitationPrefix); const codeHash = hashCode(code); const indexKey = inviteCodeIndexKey(codeHash);
+    const existing = await indexes.get(indexKey, { type: 'json' }).catch(() => null); if (existing) continue;
     await indexes.setJSON(indexKey, { eventId, invitationId, codeHash, createdAt });
     const invitation = { invitationId, eventId, applicationId, userId, email: email ? String(email).trim().toLowerCase() : null, label: String(label || 'Approved guest').slice(0, 120), createdAt, expiresAt: expiry.toISOString(), maxTickets: Math.min(Math.max(Number(maxTickets) || 1, 1), 8), codeHash, status: 'active', redeemedAt: null, revokedAt: null, purchaseCount: 0 };
     try { await invitations.setJSON(eventKey(eventId, invitationId), invitation); return { invitation, code }; }
@@ -38,8 +35,9 @@ export async function createInvitation({ eventId, applicationId = null, userId =
   throw new Error('Could not generate a unique invitation code.');
 }
 
-function createAccessToken(invitation, event) {
+export function createInvitationAccess(invitation, event = requireEvent(invitation?.eventId)) {
   if (!accessSecret()) throw new Error('Invite access secret is not configured.');
+  if (!invitation?.eventId || !invitation?.invitationId || !invitation?.applicationId || !invitation?.userId) throw new Error('Invitation identity is incomplete.');
   const exp = Math.floor(Math.min(new Date(event.startsAt).getTime(), Date.now() + 30 * 86400000) / 1000);
   const payload = b64url(JSON.stringify({ typ: 'wildones-invite-access', eventId: invitation.eventId, invitationId: invitation.invitationId, applicationId: invitation.applicationId, userId: invitation.userId, exp }));
   return { token: `${payload}.${sign(payload)}`, exp };
@@ -52,23 +50,15 @@ export function readInviteAccess(req, eventId) { const token = parseCookies(req)
 export async function redeemInvitation(rawCode) {
   const code = normalizeCode(rawCode);
   if (!/^[A-Z]{3}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code)) { const error = new Error('Invitation code is invalid.'); error.code = 'INVALID_CODE'; throw error; }
-  const codeHash = hashCode(code);
-  const indexes = blobStore(STORES.invitationIndexes);
-  const index = await indexes.get(inviteCodeIndexKey(codeHash), { type: 'json' }).catch(() => null);
+  const codeHash = hashCode(code); const indexes = blobStore(STORES.invitationIndexes); const index = await indexes.get(inviteCodeIndexKey(codeHash), { type: 'json' }).catch(() => null);
   if (!index?.eventId || !index?.invitationId) { const error = new Error('Invitation code is invalid.'); error.code = 'INVALID_CODE'; throw error; }
-  const event = requireEvent(index.eventId);
-  const invitations = blobStore(STORES.invitations);
-  const key = eventKey(index.eventId, index.invitationId);
-  const invitation = await invitations.get(key, { type: 'json' }).catch(() => null);
+  const event = requireEvent(index.eventId); const invitations = blobStore(STORES.invitations); const key = eventKey(index.eventId, index.invitationId); const invitation = await invitations.get(key, { type: 'json' }).catch(() => null);
   if (!invitation || invitation.codeHash !== codeHash) { const error = new Error('Invitation code is invalid.'); error.code = 'INVALID_CODE'; throw error; }
   if (invitation.status === 'revoked' || invitation.revokedAt) { const error = new Error('This invitation has been revoked.'); error.code = 'REVOKED'; throw error; }
   if (new Date(invitation.expiresAt).getTime() <= Date.now()) { const error = new Error('This invitation has expired.'); error.code = 'EXPIRED'; throw error; }
   if (invitation.status === 'redeemed' || invitation.redeemedAt) { const error = new Error('This invitation has already been redeemed.'); error.code = 'USED'; throw error; }
-  const redeemedAt = new Date().toISOString();
-  const redeemed = { ...invitation, status: 'redeemed', redeemedAt };
-  await invitations.setJSON(key, redeemed);
-  const latest = await invitations.get(key, { type: 'json' }).catch(() => null);
+  const redeemedAt = new Date().toISOString(); const redeemed = { ...invitation, status: 'redeemed', redeemedAt };
+  await invitations.setJSON(key, redeemed); const latest = await invitations.get(key, { type: 'json' }).catch(() => null);
   if (!latest || latest.codeHash !== codeHash || latest.redeemedAt !== redeemedAt) { const error = new Error('This invitation was redeemed by another request.'); error.code = 'USED'; throw error; }
-  const access = createAccessToken(latest, event);
-  return { invitation: latest, event, access };
+  const access = createInvitationAccess(latest, event); return { invitation: latest, event, access };
 }
