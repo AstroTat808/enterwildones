@@ -26,8 +26,18 @@
   status = 200
 
 [[redirects]]
+  from = "/public-tickets/:event"
+  to = "/public-tickets.html?event=:event"
+  status = 200
+
+[[redirects]]
   from = "/invite"
   to = "/invite.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/packages"
+  to = "/admin-packages.html"
   status = 200
 
 [[redirects]]
@@ -46,8 +56,18 @@
   status = 200
 
 [[redirects]]
+  from = "/ticket/addons"
+  to = "/ticket-addons.html"
+  status = 200
+
+[[redirects]]
   from = "/check-in"
   to = "/check-in.html"
+  status = 200
+
+[[redirects]]
+  from = "/bar"
+  to = "/bar.html"
   status = 200
 
 [[headers]]
@@ -73,6 +93,12 @@
     X-Robots-Tag = "noindex, nofollow"
 
 [[headers]]
+  for = "/public-tickets*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
   for = "/invite*"
   [headers.values]
     Cache-Control = "no-store"
@@ -87,6 +113,13 @@
 
 [[headers]]
   for = "/check-in*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/bar*"
   [headers.values]
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow"
