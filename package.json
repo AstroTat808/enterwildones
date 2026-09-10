@@ -1,0 +1,18 @@
+{
+  "name": "enter-wild-ones",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ENTER WILD ONES multi-event festival platform built from the proven NOCTURNE architecture.",
+  "scripts": {
+    "check": "node --check netlify/functions/_events.mjs && node --check netlify/functions/_stores.mjs && node --check netlify/functions/events.mjs && node --check site/assets/js/app.js && node --check scripts/validate-events.mjs",
+    "test": "node scripts/validate-events.mjs",
+    "build": "npm run check && npm test"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^10.7.10",
+    "html5-qrcode": "^2.3.8",
+    "passkit-generator": "^3.4.0",
+    "qrcode": "^1.5.4"
+  }
+}
