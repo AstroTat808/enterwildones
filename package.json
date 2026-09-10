@@ -1,18 +1,9 @@
 {
-  "name": "enter-wild-ones",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "description": "ENTER WILD ONES multi-event festival platform built from the proven NOCTURNE architecture.",
-  "scripts": {
-    "check": "node --check netlify/functions/_events.mjs && node --check netlify/functions/_stores.mjs && node --check netlify/functions/events.mjs && node --check site/assets/js/app.js && node --check scripts/validate-events.mjs",
-    "test": "node scripts/validate-events.mjs",
-    "build": "npm run check && npm test"
-  },
-  "dependencies": {
-    "@netlify/blobs": "^10.7.10",
-    "html5-qrcode": "^2.3.8",
-    "passkit-generator": "^3.4.0",
-    "qrcode": "^1.5.4"
-  }
+  "name":"enter-wild-ones",
+  "version":"0.2.0",
+  "private":true,
+  "type":"module",
+  "description":"ENTER WILD ONES multi-event festival platform built from the proven NOCTURNE architecture.",
+  "scripts":{"check":"node --check netlify/functions/_events.mjs && node --check netlify/functions/_stores.mjs && node --check netlify/functions/_env.mjs && node --check netlify/functions/_blob-store.mjs && node --check netlify/functions/_response.mjs && node --check netlify/functions/_admin-auth.mjs && node --check netlify/functions/_identity.mjs && node --check netlify/functions/_turnstile.mjs && node --check netlify/functions/_audit.mjs && node --check netlify/functions/_invitations.mjs && node --check netlify/functions/events.mjs && node --check netlify/functions/app-config.mjs && node --check netlify/functions/apply.mjs && node --check netlify/functions/admin-auth.mjs && node --check netlify/functions/admin-applications.mjs && node --check netlify/functions/create-invites.mjs && node --check netlify/functions/redeem-invite.mjs && node --check site/assets/js/app.js && node --check site/assets/js/event.js && node --check site/assets/js/apply.js && node --check site/assets/js/invite.js && node --check site/assets/js/admin.js && node --check scripts/validate-platform.mjs","test":"node scripts/validate-platform.mjs","build":"npm run check && npm test"},
+  "dependencies":{"@netlify/blobs":"^10.7.10","html5-qrcode":"^2.3.8","passkit-generator":"^3.4.0","qrcode":"^1.5.4"}
 }
