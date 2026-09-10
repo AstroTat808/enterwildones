@@ -1,0 +1,18 @@
+import { readFile } from 'node:fs/promises';
+import { listEvents } from '../netlify/functions/_events.mjs';
+const fail=m=>{throw new Error(m)};
+const events=listEvents({includeHidden:true});
+const publicEvents=events.filter(e=>e.accessMode==='public');
+if(publicEvents.length!==1||publicEvents[0].eventId!=='sunveil-2027')fail('Only SUNVEIL should currently use public-sale access mode.');
+for(const e of events.filter(e=>e.eventId!=='sunveil-2027'))if(e.accessMode==='public')fail(`${e.eventId} must remain gated.`);
+const files={public:'../netlify/functions/public-ticket-access.mjs',addons:'../netlify/functions/create-addon-checkout.mjs',bar:'../netlify/functions/bar.mjs',report:'../netlify/functions/admin-package-report.mjs',webhook:'../netlify/functions/stripe-webhook.mjs',event:'../site/assets/js/event.js',netlify:'../netlify.toml'};
+const text={};for(const[k,p]of Object.entries(files))text[k]=await readFile(new URL(p,import.meta.url),'utf8');
+for(const needle of ["accessMode!=='public'","ticketSalesOpen","findOrCreateUser","createInvitationAccess"])if(!text.public.includes(needle))fail(`Public-sale guard missing: ${needle}`);
+for(const needle of ['verifyTicketToken','sameOrigin','getAddon','entitlementFor','purchase_type'])if(!text.addons.includes(needle))fail(`Add-on checkout guard missing: ${needle}`);
+for(const needle of ["ticket.status!=='checked_in'","parsed.eventId!==session.eventId","creditsRemaining","wristbandActivatedAt"])if(!text.bar.includes(needle))fail(`Bar guard missing: ${needle}`);
+if(!text.report.includes('isAdmin'))fail('Package report must require admin auth.');
+if(!text.webhook.includes("purchase_type==='addon'")||!text.webhook.includes('finalizeAddonSession'))fail('Stripe webhook must route add-on sessions.');
+if(!text.event.includes("e.accessMode==='public'&&e.ticketSalesOpen"))fail('Event page must gate public ticket CTA.');
+for(const route of ['/public-tickets/:event','/ticket/addons','/admin/packages','/bar'])if(!text.netlify.includes(route))fail(`Missing route: ${route}`);
+if(!text.netlify.includes('camera=(self)'))fail('Operational camera permission override is missing.');
+console.log('Validated public-sale isolation, add-on ticket binding, bartender gate, reporting auth, webhook routing and Netlify routes.');
