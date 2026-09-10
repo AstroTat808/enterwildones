@@ -6,6 +6,9 @@
 [functions]
   node_bundler = "esbuild"
 
+[functions."ticket-wallet"]
+  included_files = ["netlify/functions/wallet-assets/**"]
+
 [[redirects]]
   from = "https://www.enterwildones.com/*"
   to = "https://enterwildones.com/:splat"
@@ -37,6 +40,16 @@
   to = "/passport.html"
   status = 200
 
+[[redirects]]
+  from = "/ticket-access"
+  to = "/ticket-access.html"
+  status = 200
+
+[[redirects]]
+  from = "/check-in"
+  to = "/check-in.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -64,3 +77,17 @@
   [headers.values]
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/ticket*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/check-in*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=()"
