@@ -7,11 +7,11 @@ if(publicEvents.length!==1||publicEvents[0].eventId!=='sunveil-2027')fail('Only 
 for(const e of events.filter(e=>e.eventId!=='sunveil-2027'))if(e.accessMode==='public')fail(`${e.eventId} must remain gated.`);
 const files={public:'../netlify/functions/public-ticket-access.mjs',checkout:'../netlify/functions/create-checkout.mjs',payments:'../netlify/functions/_payments.mjs',addons:'../netlify/functions/create-addon-checkout.mjs',addonPayments:'../netlify/functions/_addon-payments.mjs',addonReturn:'../netlify/functions/_addon-return.mjs',addonConfirmed:'../netlify/functions/addon-confirmed.mjs',bar:'../netlify/functions/bar.mjs',report:'../netlify/functions/admin-package-report.mjs',reportJs:'../site/assets/js/admin-packages.js',webhook:'../netlify/functions/stripe-webhook.mjs',event:'../site/assets/js/event.js',netlify:'../netlify.toml'};
 const text={};for(const[k,p]of Object.entries(files))text[k]=await readFile(new URL(p,import.meta.url),'utf8');
-for(const needle of ["accessMode!=='public'","ticketSalesOpen","findOrCreateUser","createInvitationAccess","action:'public_ticket'"])if(!text.public.includes(needle))fail(`Public-sale guard missing: ${needle}`);
+for(const needle of ["accessMode!=='public'","ticketSalesOpen","findOrCreateUser","createInvitationAccess","'public_ticket'"])if(!text.public.includes(needle))fail(`Public-sale guard missing: ${needle}`);
 for(const needle of ['existingTicketForUser','user_already_ticketed','expected_currency'])if(!text.checkout.includes(needle))fail(`Admission uniqueness/currency guard missing: ${needle}`);
-for(const needle of ['existingTicketForUser',"purchaseType:'admission'",'user/${userId}'])if(!text.payments.includes(needle))fail(`Admission user index missing: ${needle}`);
-for(const needle of ['verifyTicketToken','sameOrigin','getAddon','entitlementFor','makeAddonReturn','expected_currency'])if(!text.addons.includes(needle))fail(`Add-on checkout guard missing: ${needle}`);
-for(const needle of ["purchaseType:'addon'",'markAddonPaymentInactiveByIntent','creditsRemaining','priceCents'])if(!text.addonPayments.includes(needle))fail(`Add-on payment isolation missing: ${needle}`);
+for(const needle of ['existingTicketForUser',"purchaseType:'admission'",'user/${userId}','checkout-time price snapshot'])if(!text.payments.includes(needle))fail(`Admission integrity guard missing: ${needle}`);
+for(const needle of ['verifyTicketToken','sameOrigin','getAddon','entitlementFor','makeAddonReturn','expected_currency','credits:addon.credits','departureTime:addon.departureTime'])if(!text.addons.includes(needle))fail(`Add-on checkout guard missing: ${needle}`);
+for(const needle of ["purchaseType:'addon'",'markAddonPaymentInactiveByIntent','creditsRemaining','priceCents','checkout.credits','checkout.departureTime'])if(!text.addonPayments.includes(needle))fail(`Add-on payment isolation/snapshot missing: ${needle}`);
 if(!text.addonReturn.includes('wildones-addon-return')||!text.addonConfirmed.includes('verifyAddonReturn'))fail('Short-lived add-on return-token flow is missing.');
 for(const needle of ["ticket.status!=='checked_in'","parsed.eventId!==session.eventId","creditsRemaining","wristbandActivatedAt"])if(!text.bar.includes(needle))fail(`Bar guard missing: ${needle}`);
 if(!text.report.includes('isAdmin')||!text.report.includes('addonRevenueCents'))fail('Package report auth/revenue boundary is missing.');
@@ -20,4 +20,4 @@ for(const needle of ["purchase_type==='addon'",'finalizeAddonSession','paymentIn
 if(!text.event.includes("e.accessMode==='public'&&e.ticketSalesOpen"))fail('Event page must gate public ticket CTA.');
 for(const route of ['/public-tickets/:event','/ticket/addons','/admin/packages','/bar'])if(!text.netlify.includes(route))fail(`Missing route: ${route}`);
 if(!text.netlify.includes('camera=(self)'))fail('Operational camera permission override is missing.');
-console.log('Validated public-sale isolation, one-user admission boundary, add-on payment separation, secure return tokens, bartender gate, reporting auth, webhook routing and Netlify routes.');
+console.log('Validated public-sale isolation, one-user admission boundary, checkout snapshots, add-on payment separation, secure return tokens, bartender gate, reporting auth, webhook routing and Netlify routes.');
