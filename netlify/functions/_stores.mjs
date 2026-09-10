@@ -1,0 +1,20 @@
+import { createHash } from 'node:crypto';
+import { requireEvent } from './_events.mjs';
+
+export const STORES = Object.freeze({
+  events: 'wildones-events', eventSecrets: 'wildones-event-secrets', users: 'wildones-users', userIndexes: 'wildones-user-indexes',
+  applications: 'wildones-applications', applicationIndexes: 'wildones-application-indexes', invitations: 'wildones-invitations',
+  tickets: 'wildones-tickets', ticketIndexes: 'wildones-ticket-indexes', packages: 'wildones-package-definitions', entitlements: 'wildones-entitlements',
+  payments: 'wildones-payments', paymentIndexes: 'wildones-payment-indexes', waivers: 'wildones-waivers', checkins: 'wildones-checkins',
+  redemptions: 'wildones-redemptions', passport: 'wildones-passport', audit: 'wildones-audit', authSessions: 'wildones-auth-sessions', rateLimits: 'wildones-rate-limits'
+});
+
+export function eventKey(eventId, id) { requireEvent(eventId); const recordId = String(id || '').trim(); if (!recordId || recordId.includes('..')) throw new Error('Invalid record id.'); return `${eventId}/${recordId}`; }
+export function userKey(userId) { const id = String(userId || '').trim(); if (!id) throw new Error('Invalid user id.'); return id; }
+export function normalizedEmail(value = '') { return String(value).trim().toLowerCase(); }
+export function normalizedPhone(value = '') { let digits = String(value).replace(/\D/g, ''); if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1); return digits; }
+export function sha256(value = '') { return createHash('sha256').update(String(value)).digest('hex'); }
+export function emailIndexKey(email) { const normalized = normalizedEmail(email); if (!normalized) throw new Error('Email is required.'); return `email/${sha256(normalized)}`; }
+export function phoneIndexKey(phone) { const normalized = normalizedPhone(phone); if (!normalized) throw new Error('Phone is required.'); return `phone/${sha256(normalized)}`; }
+export function eventEmailIndexKey(eventId, email) { requireEvent(eventId); return `${eventId}/${emailIndexKey(email)}`; }
+export function eventPhoneIndexKey(eventId, phone) { requireEvent(eventId); return `${eventId}/${phoneIndexKey(phone)}`; }
