@@ -9,5 +9,5 @@
     "test":"node scripts/validate-platform.mjs && node scripts/validate-ticketing.mjs && node scripts/validate-addons-public.mjs && node scripts/validate-passport-admin.mjs",
     "build":"npm run check && npm test"
   },
-  "dependencies":{"@netlify/blobs":"^10.7.10","@netlify/database":"^2.0.1","html5-qrcode":"^2.3.8","passkit-generator":"^3.4.0","qrcode":"^1.5.4"}
+  "dependencies":{"@netlify/blobs":"^10.7.10","@neondatabase/serverless":"1.1.0","html5-qrcode":"^2.3.8","passkit-generator":"^3.4.0","qrcode":"^1.5.4"}
 }

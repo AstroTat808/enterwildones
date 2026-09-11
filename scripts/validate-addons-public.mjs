@@ -13,9 +13,10 @@ for(const needle of ['existingTicketForUser',"purchaseType:'admission'",'user/${
 for(const needle of ['verifyTicketToken','sameOrigin','getAddon','entitlementFor','makeAddonReturn','expected_currency','credits:addon.credits','departureTime:addon.departureTime','addon_sales_ended'])if(!text.addons.includes(needle))fail(`Add-on checkout guard missing: ${needle}`);
 for(const needle of ["purchaseType:'addon'",'markAddonPaymentInactiveByIntent','creditsRemaining','priceCents','checkout.credits','checkout.departureTime','ensureDrinkLedger'])if(!text.addonPayments.includes(needle))fail(`Add-on payment isolation/snapshot missing: ${needle}`);
 if(!text.addonReturn.includes('wildones-addon-return')||!text.addonConfirmed.includes('verifyAddonReturn'))fail('Short-lived add-on return-token flow is missing.');
-for(const needle of ["getDatabase",'FOR UPDATE','BEGIN','COMMIT','ROLLBACK','wildones_drink_redemptions'])if(!text.ledger.includes(needle))fail(`Transactional drink ledger missing: ${needle}`);
+for(const needle of ["@neondatabase/serverless",'DATABASE_URL','new Pool','pool.end()','FOR UPDATE','BEGIN','COMMIT','ROLLBACK','wildones_drink_redemptions'])if(!text.ledger.includes(needle))fail(`Transactional drink ledger missing: ${needle}`);
 for(const needle of ['PRIMARY KEY (event_id, ticket_id)','UNIQUE (event_id, ticket_id, redemption_number)','CHECK (credits_redeemed + credits_remaining = credits_purchased)'])if(!text.migration.includes(needle))fail(`Drink ledger migration invariant missing: ${needle}`);
-if(!text.pkg.includes('"@netlify/database":"^2.0.1"'))fail('Current Netlify Database dependency is missing.');
+const dependencies=JSON.parse(text.pkg).dependencies;
+if(dependencies['@neondatabase/serverless']!=='1.1.0'||dependencies['@netlify/database'])fail('Use Neon serverless 1.1.0 without Netlify Database provisioning.');
 for(const needle of ["ticket.status!=='checked_in'","parsed.eventId!==session.eventId","redeemDrinkCredit","activateDrinkWristband"])if(!text.bar.includes(needle))fail(`Bar guard missing: ${needle}`);
 if(!text.report.includes('isAdmin')||!text.report.includes('addonRevenueCents')||!text.report.includes('listDrinkLedgers'))fail('Package report auth/revenue/ledger boundary is missing.');
 if(!text.reportJs.includes('addonRevenueCents'))fail('Package report UI must use recorded revenue field.');

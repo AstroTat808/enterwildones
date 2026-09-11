@@ -46,10 +46,26 @@ The migration order is:
 
 ## Local validation
 
+Use Node.js 24 (`nvm use`).
+
 ```bash
 npm install
 npm run build
 ```
+
+## Database deployment
+
+The drink ledger and Passport magic links use external Neon Postgres through
+`@neondatabase/serverless`. Set `DATABASE_URL` to the Neon pooled connection
+string in the Netlify project's production environment, scoped to Functions.
+Keep the credential out of source control and the public `site/` directory.
+
+The schema remains versioned in `netlify/database/migrations/`. For a new database,
+apply `001_drink-credit-ledger/migration.sql`, then `002_passport-auth/migration.sql`
+using a direct Neon connection. Validate schema changes on a Neon branch first.
+These migrations are managed separately from Netlify builds; removing
+`@netlify/database` prevents automatic Netlify Database provisioning and allows
+this project to retain its existing Netlify plan.
 
 ## Security boundaries
 
