@@ -1,0 +1,47 @@
+{
+  "aureva": {
+    "source": "8482DD4D-F9B8-415F-8414-ADC1A127213B.jpeg",
+    "sourceSha256": "a29be35820b4af404f9f812d9e5a7419177cf42dd519fc8237c09ff9a29404ef",
+    "width": 768,
+    "height": 768,
+    "bytes": 9526,
+    "sha256": "c53b4efc4843b8942c66b5596a640a010f2a60e7b89df8ab5fd007cdc7bb5a91",
+    "gitBlobSha": "c525b288d1762659de4c049e07c585cbaf4bfc9e"
+  },
+  "halora": {
+    "source": "C59B6B0A-F416-44F7-9A6D-507B2CC5BD75.jpeg",
+    "sourceSha256": "9e3815f44a2dd75768b011f1a01f21c982601213a36d34867f5032520bda039e",
+    "width": 768,
+    "height": 768,
+    "bytes": 11022,
+    "sha256": "e125c668bd294e22c45e71519a68a3968cbc04494cf1c5fd14c095d5b1a85c7d",
+    "gitBlobSha": "b48485b7d351e9916cfe53d1778d6da52f069175"
+  },
+  "sunveil": {
+    "source": "28C507AE-0CF0-4963-9E67-A20A271B5AB8.jpeg",
+    "sourceSha256": "d684a78613b5a5e3beff9e90028e88d7058e7d4859e38cca9837908d8a79063c",
+    "width": 768,
+    "height": 768,
+    "bytes": 13830,
+    "sha256": "6ae557a8dedcc5b816d164d43d8846366eb0499973e1c445fe173a96036334b6",
+    "gitBlobSha": "76b0d6311238444211e654781cdd1c72ccb9c46a"
+  },
+  "nocturne": {
+    "source": "A44D36F0-5C83-4700-97A3-A60B4AA7878D.jpeg",
+    "sourceSha256": "78eccda0eb02ff9dd4207c6e7f1f2bd4ef67d0fd69c644a96b2f11e4b35b4ce5",
+    "width": 768,
+    "height": 768,
+    "bytes": 14048,
+    "sha256": "2d5d94b847787e9abbf78e7ed82d7fb2254e638fc1744ad4969ad9a99b4d5c2a",
+    "gitBlobSha": "6ca7afc2632e91aa9cb17190f967d7230a193072"
+  },
+  "enter-wild-ones": {
+    "source": "3B79888B-036F-40E8-9EFC-8BB8F5227F10.jpeg",
+    "sourceSha256": "8fe0c5a61dd68f0a4ce000038d5fe047748da5c515ca375d6e0dff799bbce727",
+    "width": 768,
+    "height": 768,
+    "bytes": 19457,
+    "sha256": "0c2369c0128b2a0d892011730f31ee6d1c94bb862c045f5183b605f1be236f0e",
+    "gitBlobSha": "3142fd45f9e3bc2817dfece87191399e3471334d"
+  }
+}
