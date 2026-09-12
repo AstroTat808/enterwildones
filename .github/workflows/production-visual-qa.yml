@@ -1,15 +1,15 @@
 name: Production visual QA
 on:
   push:
-    branches: [feature/nocturne-operations, main]
-    paths: ['.github/workflows/production-visual-qa.yml', 'site/**', 'netlify/functions/**']
+    branches: [feature/multi-realm-admin-ops, main]
+    paths: ['.github/workflows/production-visual-qa.yml', 'site/**', 'netlify/functions/**', 'netlify.toml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   visual:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,34 +22,37 @@ jobs:
       - name: Read-only production checks and screenshots
         shell: python
         run: |
-          import json,pathlib,time
+          import json,pathlib
           from playwright.sync_api import sync_playwright
-          root=pathlib.Path('visual-results');root.mkdir()
-          routes=['/','/events/aureva','/events/halora','/events/sunveil','/events/nocturne','/apply/aureva','/apply/halora','/apply/nocturne','/passport','/invite','/ticket-access','/public-tickets/sunveil','/ticket/addons','/bar','/check-in','/admin','/admin/overview','/admin/packages']
+          root=pathlib.Path('visual-results');root.mkdir(exist_ok=True)
+          routes=['/','/events/aureva','/events/halora','/events/sunveil','/events/nocturne','/apply/aureva','/apply/halora','/apply/nocturne','/passport','/invite','/ticket-access','/public-tickets/sunveil','/ticket/addons','/bar','/check-in','/admin','/admin/overview','/admin/packages','/admin/operations']
           results=[]
+          def benign(msg):
+            text=str(msg)
+            return 'challenges.cloudflare.com' in text and ('accessing a frame' in text or 'cross-origin' in text.lower())
           with sync_playwright() as p:
             for engine in ['chromium','webkit']:
               browser=getattr(p,engine).launch()
-              for width in [375,390,430,1440]:
-                context=browser.new_context(viewport={'width':width,'height':844 if width<900 else 1000},device_scale_factor=1)
+              for width in [375,390,393,430,1440]:
+                height=844 if width<900 else 1000
+                context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,is_mobile=width<900,has_touch=width<900)
                 for path in routes:
                   page=context.new_page();errors=[]
-                  page.on('pageerror',lambda error:errors.append(str(error)))
+                  page.on('pageerror',lambda error: errors.append(str(error)) if not benign(error) else None)
                   try:
                     response=page.goto('https://enterwildones.com'+path,wait_until='domcontentloaded',timeout=45000)
-                    page.wait_for_timeout(1400)
+                    page.wait_for_timeout(1500)
                     page.evaluate("document.documentElement.style.scrollBehavior='auto'")
-                    height=page.evaluate('document.documentElement.scrollHeight')
-                    for y in range(0,height,650):
-                      page.evaluate('(y)=>window.scrollTo(0,y)',y);page.wait_for_timeout(140)
-                    page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(900)
-                    report=page.evaluate('''() => ({overflow:document.documentElement.scrollWidth>innerWidth+1, brokenImages:[...document.images].filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.getAttribute('src')), heading:document.querySelector('h1')?.textContent||'', title:document.title})''')
+                    doc_height=page.evaluate('document.documentElement.scrollHeight')
+                    for y in range(0,doc_height,650):
+                      page.evaluate('(y)=>window.scrollTo(0,y)',y);page.wait_for_timeout(120)
+                    page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(500)
+                    report=page.evaluate('''() => ({overflow:document.documentElement.scrollWidth>innerWidth+1, brokenImages:[...document.images].filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.getAttribute('src')), tinyTargets:[...document.querySelectorAll('button,a,input,select,summary')].filter(x=>{const r=x.getBoundingClientRect();return r.width>0&&r.height>0&&(r.height<40||r.width<32)}).slice(0,20).map(x=>({tag:x.tagName,text:(x.innerText||x.getAttribute('aria-label')||x.name||'').trim().slice(0,60),w:Math.round(x.getBoundingClientRect().width),h:Math.round(x.getBoundingClientRect().height)})), heading:document.querySelector('h1')?.textContent||'', title:document.title})''')
                     report.update(engine=engine,width=width,path=path,status=response.status,errors=errors)
-                    if path in ['/','/apply/aureva','/events/nocturne','/passport','/admin']:
+                    if path in ['/','/apply/aureva','/events/nocturne','/passport','/admin','/admin/operations']:
                       page.screenshot(path=str(root/(engine+'-'+str(width)+'-'+(path.strip('/').replace('/','-') or 'home')+'.png')),full_page=True)
                     if path=='/' and width<900:
-                      menu=page.locator('.mobile-menu summary')
-                      menu.click();report['mobileMenuOpened']=page.locator('.mobile-menu').get_attribute('open') is not None
+                      menu=page.locator('.mobile-menu summary');menu.click();report['mobileMenuOpened']=page.locator('.mobile-menu').get_attribute('open') is not None
                     results.append(report)
                   except Exception as e:
                     results.append({'engine':engine,'width':width,'path':path,'exception':str(e)})
@@ -58,7 +61,7 @@ jobs:
               browser.close()
           (root/'report.json').write_text(json.dumps(results,indent=2))
           failures=[r for r in results if r.get('exception') or r.get('status',500)>=400 or r.get('overflow') or r.get('brokenImages') or r.get('errors') or r.get('mobileMenuOpened') is False]
-          print(json.dumps({'checks':len(results),'failures':failures},indent=2))
+          print(json.dumps({'checks':len(results),'failures':failures,'tinyTargetWarnings':sum(len(r.get('tinyTargets',[])) for r in results)},indent=2))
           assert not failures,'Production visual issues found; inspect artifact'
       - uses: actions/upload-artifact@v4
         if: always()
