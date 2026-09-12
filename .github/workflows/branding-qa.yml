@@ -22,10 +22,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: Archive reviewed source (no environment secrets)
-        run: git archive --format=tar.gz HEAD > reviewed-source.tar.gz
+      - name: Package source and installed dependencies for offline review
+        run: |
+          git archive --format=tar.gz HEAD > reviewed-source.tar.gz
+          tar -czf reviewed-dependencies.tar.gz node_modules
       - uses: actions/upload-artifact@v4
         with:
           name: reviewed-source
-          path: reviewed-source.tar.gz
+          path: |
+            reviewed-source.tar.gz
+            reviewed-dependencies.tar.gz
           retention-days: 3
