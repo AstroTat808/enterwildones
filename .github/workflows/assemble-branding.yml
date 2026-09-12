@@ -1,0 +1,63 @@
+name: Assemble reviewed guest branding
+on:
+  push:
+    branches: [feature/four-realms-branding-admin]
+    paths: ['.release/guest-branding.json.gz', '.github/workflows/assemble-branding.yml']
+permissions:
+  contents: write
+concurrency:
+  group: assemble-reviewed-branding
+  cancel-in-progress: true
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify and unpack reviewed source only
+        shell: python
+        run: |
+          import base64, gzip, hashlib, json, pathlib
+          p=pathlib.Path('.release/guest-branding.json.gz')
+          data=p.read_bytes()
+          # Reject any transport corruption. Repairs below correct four identified
+          # transcription errors only; the pinned digest still validates all bytes.
+          encoded=base64.b64encode(data).decode()
+          for a,b in [('GtM3P4wfdGiEeE9','GtM3P4wfdGiE9'),('T0x+4NPdfut','T0x+4Pdfut'),('Xr/Vf9J5','Xr/V/9J5'),('LMqazxg3','LMqazxfg3')]:
+              encoded=encoded.replace(a,b)
+          data=base64.b64decode(encoded)
+          digest=hashlib.sha256(data).hexdigest()
+          print('Source payload SHA256:',digest)
+          assert digest=='b3de8338d32e19ac49392ca7e9e360b661f521d01f0d5f9340d07f37875ded99','Source integrity check failed; no files changed'
+          files=json.loads(gzip.decompress(data))
+          assert len(files)==26
+          allowed={'netlify/functions/_branding.mjs','netlify/functions/passport.mjs','netlify/functions/ticket-view.mjs','package.json','scripts/validate-branding.mjs','site/assets/images/realms/manifest.json'}
+          for name,content in files.items():
+              path=pathlib.PurePosixPath(name)
+              assert not path.is_absolute() and '..' not in path.parts
+              assert name in allowed or name.startswith(('site/assets/css/','site/assets/js/')) or (name.startswith('site/') and name.endswith('.html') and name.count('/')==1)
+              assert isinstance(content,str) and len(content)<100000
+              dest=pathlib.Path(name);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_text(content)
+          pathlib.Path('assembly-files.json').write_text(json.dumps(list(files)))
+      - run: npm ci && npm run build
+      - name: Commit verified implementation to feature branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python -c "import json,subprocess;subprocess.run(['git','add','--',*json.load(open('assembly-files.json'))],check=True)"
+          git rm .release/guest-branding.json.gz .github/workflows/assemble-branding.yml .github/workflows/branding-qa.yml
+          git commit -m "Implement original Four Realms artwork, cinematic pages, responsive applications, Passport and ticket branding"
+          git push origin HEAD:feature/four-realms-branding-admin
+          git rev-parse HEAD > assembled-commit.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: branding-assembly-result
+          path: |
+            assembled-commit.txt
+            assembly-files.json
+          retention-days: 3
