@@ -1,0 +1,68 @@
+name: Production visual QA
+on:
+  push:
+    branches: [feature/nocturne-operations, main]
+    paths: ['.github/workflows/production-visual-qa.yml', 'site/**', 'netlify/functions/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.55.0
+      - run: python -m playwright install --with-deps chromium webkit
+      - name: Read-only production checks and screenshots
+        shell: python
+        run: |
+          import json,pathlib,time
+          from playwright.sync_api import sync_playwright
+          root=pathlib.Path('visual-results');root.mkdir()
+          routes=['/','/events/aureva','/events/halora','/events/sunveil','/events/nocturne','/apply/aureva','/apply/halora','/apply/nocturne','/passport','/invite','/ticket-access','/public-tickets/sunveil','/ticket/addons','/bar','/check-in','/admin','/admin/overview','/admin/packages']
+          results=[]
+          with sync_playwright() as p:
+            for engine in ['chromium','webkit']:
+              browser=getattr(p,engine).launch()
+              for width in [375,390,430,1440]:
+                context=browser.new_context(viewport={'width':width,'height':844 if width<900 else 1000},device_scale_factor=1)
+                for path in routes:
+                  page=context.new_page();errors=[]
+                  page.on('pageerror',lambda error:errors.append(str(error)))
+                  try:
+                    response=page.goto('https://enterwildones.com'+path,wait_until='domcontentloaded',timeout=45000)
+                    page.wait_for_timeout(1400)
+                    page.evaluate("document.documentElement.style.scrollBehavior='auto'")
+                    height=page.evaluate('document.documentElement.scrollHeight')
+                    for y in range(0,height,650):
+                      page.evaluate('(y)=>window.scrollTo(0,y)',y);page.wait_for_timeout(140)
+                    page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(900)
+                    report=page.evaluate('''() => ({overflow:document.documentElement.scrollWidth>innerWidth+1, brokenImages:[...document.images].filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.getAttribute('src')), heading:document.querySelector('h1')?.textContent||'', title:document.title})''')
+                    report.update(engine=engine,width=width,path=path,status=response.status,errors=errors)
+                    if path in ['/','/apply/aureva','/events/nocturne','/passport','/admin']:
+                      page.screenshot(path=str(root/(engine+'-'+str(width)+'-'+(path.strip('/').replace('/','-') or 'home')+'.png')),full_page=True)
+                    if path=='/' and width<900:
+                      menu=page.locator('.mobile-menu summary')
+                      menu.click();report['mobileMenuOpened']=page.locator('.mobile-menu').get_attribute('open') is not None
+                    results.append(report)
+                  except Exception as e:
+                    results.append({'engine':engine,'width':width,'path':path,'exception':str(e)})
+                  finally: page.close()
+                context.close()
+              browser.close()
+          (root/'report.json').write_text(json.dumps(results,indent=2))
+          failures=[r for r in results if r.get('exception') or r.get('status',500)>=400 or r.get('overflow') or r.get('brokenImages') or r.get('errors') or r.get('mobileMenuOpened') is False]
+          print(json.dumps({'checks':len(results),'failures':failures},indent=2))
+          assert not failures,'Production visual issues found; inspect artifact'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-visual-qa
+          path: visual-results
+          retention-days: 7
