@@ -1,0 +1,33 @@
+name: Operations Build
+on:
+  push:
+    branches: [feature/multi-realm-admin-ops]
+  pull_request:
+    paths:
+      - 'netlify/functions/admin-operations.mjs'
+      - 'site/admin-operations.html'
+      - 'site/assets/js/admin-operations.js'
+      - 'site/assets/css/admin-operations.css'
+      - 'netlify.toml'
+      - '.github/workflows/operations-build.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - name: Validate operations additions
+        run: |
+          node --check netlify/functions/admin-operations.mjs
+          node --check site/assets/js/admin-operations.js
+          test -s site/admin-operations.html
+          test -s site/assets/css/admin-operations.css
