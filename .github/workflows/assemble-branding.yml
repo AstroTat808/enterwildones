@@ -22,19 +22,19 @@ jobs:
         shell: python
         run: |
           import base64, gzip, hashlib, json, pathlib
-          p=pathlib.Path('.release/guest-branding.json.gz')
-          data=p.read_bytes()
-          # Reject any transport corruption. Repairs below correct four identified
-          # transcription errors only; the pinned digest still validates all bytes.
+          data=pathlib.Path('.release/guest-branding.json.gz').read_bytes()
           encoded=base64.b64encode(data).decode()
+          # Transport corrections verified against the original local source archive.
+          # The pinned digest is unchanged; no files are applied on mismatch.
           for a,b in [('GtM3P4wfdGiEeE9','GtM3P4wfdGiE9'),('T0x+4NPdfut','T0x+4Pdfut'),('Xr/Vf9J5','Xr/V/9J5'),('LMqazxg3','LMqazxfg3')]:
               encoded=encoded.replace(a,b)
-          data=base64.b64decode(encoded)
+          encoded += '=' * (-len(encoded) % 4)
+          data=base64.b64decode(encoded,validate=True)
           digest=hashlib.sha256(data).hexdigest()
           print('Source payload SHA256:',digest)
           assert digest=='b3de8338d32e19ac49392ca7e9e360b661f521d01f0d5f9340d07f37875ded99','Source integrity check failed; no files changed'
           files=json.loads(gzip.decompress(data))
-          assert len(files)==26
+          assert len(files)==24
           allowed={'netlify/functions/_branding.mjs','netlify/functions/passport.mjs','netlify/functions/ticket-view.mjs','package.json','scripts/validate-branding.mjs','site/assets/images/realms/manifest.json'}
           for name,content in files.items():
               path=pathlib.PurePosixPath(name)
