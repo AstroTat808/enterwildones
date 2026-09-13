@@ -1,0 +1,10 @@
+.addon-card-footer{display:flex;align-items:center;justify-content:flex-start;min-height:48px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.addon-status-badge{display:inline-flex;align-items:center;justify-content:center;gap:.42rem;min-height:34px;padding:.48rem .82rem;border:1px solid transparent;border-radius:999px;font-size:.88rem;font-weight:900;line-height:1;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.addon-status-icon{display:inline-grid;place-items:center;font-size:1.08em;font-weight:1000;line-height:1}
+.addon-status-badge--active{padding:.56rem 1rem;color:#78ff9a;background:rgba(120,255,154,.14);border-color:rgba(120,255,154,.5);box-shadow:0 0 16px rgba(120,255,154,.2);font-size:1.05rem}
+.addon-status-badge--active .addon-status-icon{color:#78ff9a;font-size:1.14em}
+.addon-status-badge--available{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border-color:color-mix(in srgb,var(--accent) 42%,transparent)}
+.addon-status-badge--sold-out{color:#ff858b;background:rgba(255,91,101,.12);border-color:rgba(255,91,101,.42)}
+.addon-status-badge--coming-soon{color:#ffd36f;background:rgba(255,211,111,.11);border-color:rgba(255,211,111,.4)}
+.addon-status-badge--included{color:#76f0dc;background:rgba(118,240,220,.11);border-color:rgba(118,240,220,.42)}
+@media(max-width:600px){.addon-status-badge{font-size:.94rem;padding:.52rem .86rem}.addon-status-badge--active{font-size:1.08rem;padding:.6rem 1rem}}
