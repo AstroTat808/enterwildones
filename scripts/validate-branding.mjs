@@ -5,10 +5,12 @@ import {realmArtwork,realmLogo} from '../netlify/functions/_branding.mjs';
 const read=p=>fs.readFileSync(p,'utf8');
 const names=['aureva','halora','sunveil','nocturne','enter-wild-ones'];
 const manifest=JSON.parse(read('site/assets/images/realms/manifest.json'));
+const gitBlobSha=bytes=>createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
 for(const name of names){
   const bytes=fs.readFileSync(`site/assets/images/realms/${name}.avif`);
   assert(bytes.includes(Buffer.from('avif')));assert(bytes.length>1000&&bytes.length<100000);
-  assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest[name].sha256);
+  assert.equal(bytes.length,manifest[name].bytes,`${name} byte length`);
+  assert.equal(gitBlobSha(bytes),manifest[name].gitBlobSha,`${name} git blob identity`);
   assert(read('site/index.html').includes(`/assets/images/realms/${name}.avif`));
 }
 for(const key of ['../secret','toString','<script>'])assert.equal(realmArtwork(key),'/assets/images/realms/enter-wild-ones.avif');
@@ -23,4 +25,4 @@ assert(read('netlify/functions/ticket-view.mjs').includes('signed&&active?privat
 assert(read('netlify/functions/ticket-view.mjs').includes('active&&signed?'));
 assert(read('site/assets/css/branding.css').includes('prefers-reduced-motion'));
 assert(read('site/assets/js/public-tickets.js').includes('location.pathname'));
-console.log('Verified all five original asset hashes, responsive guest routes, form contract and preserved private ticket gates.');
+console.log('Verified all five final asset identities, responsive guest routes, form contract and preserved private ticket gates.');
