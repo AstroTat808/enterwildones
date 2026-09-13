@@ -9,8 +9,13 @@ function firstHeaderValue(value = '') {
 }
 
 export function sameOrigin(req) {
-  const suppliedOrigin = toOrigin(req.headers.get('origin') || '');
-  if (!suppliedOrigin) return !String(req.headers.get('origin') || '').trim();
+  const fetchSite = String(req.headers.get('sec-fetch-site') || '').trim().toLowerCase();
+  if (fetchSite === 'same-origin') return true;
+  if (fetchSite === 'cross-site') return false;
+
+  const rawOrigin = String(req.headers.get('origin') || '').trim();
+  const suppliedOrigin = toOrigin(rawOrigin);
+  if (!suppliedOrigin) return !rawOrigin;
 
   const requestOrigin = toOrigin(req.url);
   const forwardedHost = firstHeaderValue(req.headers.get('x-forwarded-host') || req.headers.get('host') || '');
