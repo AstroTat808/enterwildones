@@ -11,7 +11,7 @@
   const valid = value => Object.hasOwn(realms,value) ? value : 'cycle';
   const asset = realm => {
     const key=valid(realm), slug=realms[key].slug;
-    return `/assets/images/realms/${slug}.${key==='fire'?'jpg':'avif'}`;
+    return key==='fire' ? '/assets/images/realms/sunveil-web.svg' : `/assets/images/realms/${slug}.avif`;
   };
 
   if(!document.querySelector('link[data-wild-ones-polish]')){
