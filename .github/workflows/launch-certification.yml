@@ -6,6 +6,8 @@ on:
       - 'netlify/functions/**'
       - 'site/**'
       - 'scripts/validate-launch-certification.mjs'
+      - 'package.json'
+      - 'package-lock.json'
       - 'netlify.toml'
       - '.github/workflows/launch-certification.yml'
   workflow_dispatch:
