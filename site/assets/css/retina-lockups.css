@@ -5,8 +5,12 @@
 .compact-lockup .web-emblem{width:min(100%,210px)!important;max-width:210px!important}
 .footer-lockup .web-emblem{width:108px!important;max-width:108px!important}
 .web-wordmark,.web-submark{-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;max-width:100%}
+.master-lockup .web-wordmark{font-size:clamp(38px,4vw,58px)!important;letter-spacing:.008em!important}
+.realm-lockup .web-wordmark{font-size:clamp(38px,4.25vw,64px)!important;letter-spacing:.018em!important}
+.page-lockup:not([data-web-realm="cycle"]) .web-wordmark{font-size:clamp(40px,4.5vw,68px)!important;letter-spacing:.018em!important}
 .page-lockup[data-web-realm="cycle"] .web-wordmark{font-size:clamp(28px,3vw,38px)!important;letter-spacing:.005em!important}
 .compact-lockup[data-web-realm="cycle"] .web-wordmark{font-size:27px!important;letter-spacing:0!important}
+.footer-lockup[data-web-realm="cycle"] .web-wordmark{font-size:20px!important;letter-spacing:.005em!important}
 .page-lockup[data-web-realm="cycle"] .web-submark,.compact-lockup[data-web-realm="cycle"] .web-submark{font-size:6px!important;letter-spacing:.22em!important;gap:8px!important}
 .page-lockup[data-web-realm="cycle"] .web-submark:before,.page-lockup[data-web-realm="cycle"] .web-submark:after,.compact-lockup[data-web-realm="cycle"] .web-submark:before,.compact-lockup[data-web-realm="cycle"] .web-submark:after{width:22px!important}
 @media(max-width:700px){
@@ -14,6 +18,8 @@
   .compact-lockup .web-emblem{width:min(42vw,150px)!important;max-width:150px!important}
   .master-lockup .web-wordmark{font-size:clamp(31px,9vw,42px)!important;letter-spacing:.005em!important}
   .realm-lockup .web-wordmark{font-size:clamp(42px,12vw,57px)!important}
+  .page-lockup:not([data-web-realm="cycle"]) .web-wordmark{font-size:clamp(38px,11vw,54px)!important}
   .page-lockup[data-web-realm="cycle"] .web-wordmark{font-size:28px!important}
   .compact-lockup[data-web-realm="cycle"] .web-wordmark{font-size:26px!important}
+  .footer-lockup[data-web-realm="cycle"] .web-wordmark{font-size:18px!important}
 }
