@@ -9,7 +9,10 @@
     night:{slug:'nocturne',name:'NOCTURNE',sub:'REALM IV · NIGHT',label:'NOCTURNE - Realm IV - Night',roman:'IV'}
   });
   const valid = value => Object.hasOwn(realms,value) ? value : 'cycle';
-  const asset = realm => `/assets/images/realms/${realms[valid(realm)].slug}.avif`;
+  const asset = realm => {
+    const key=valid(realm), slug=realms[key].slug;
+    return `/assets/images/realms/${slug}.${key==='fire'?'jpg':'avif'}`;
+  };
 
   if(!document.querySelector('link[data-wild-ones-polish]')){
     const link=document.createElement('link');
