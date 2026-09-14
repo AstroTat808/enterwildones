@@ -14,6 +14,7 @@ import { writeAudit } from './_audit.mjs';
 
 const ACTIVE_TICKET = new Set(['paid', 'checked_in']);
 const SAFE_INVITE = new Set(['active', 'redeemed', 'fulfilled', 'revoked']);
+const CONFIRM_ACTIONS = new Set(['revoke_invitation', 'reissue_invitation', 'comp_ticket', 'refund_admission', 'refund_addon']);
 
 async function records(storeName, eventId) {
   const store = blobStore(storeName);
@@ -36,7 +37,7 @@ function searchable(...parts) { return parts.filter(Boolean).join(' ').toLowerCa
 function csvCell(value) { const text = value == null ? '' : String(value); return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text; }
 function csvResponse(rows) {
   const text = rows.map((row) => row.map(csvCell).join(',')).join('\n');
-  return new Response(text, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="wild-ones-export.csv"', 'Cache-Control': 'no-store' } });
+  return new Response(text, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="wild-ones-export.csv"', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 }
 async function email({ to, subject, text, key }) {
   if (!env('RESEND_API_KEY') || !env('WILDONES_EMAIL_FROM') || !to) return { sent: false, reason: 'email_not_configured' };
@@ -101,11 +102,14 @@ export default async (req) => {
     const data = await snapshot(eventId);
     const q = url.searchParams.get('q') || '', status = url.searchParams.get('status') || 'all', kind = url.searchParams.get('kind') || 'snapshot';
     if (url.searchParams.get('format') === 'csv') {
-      if (kind === 'applications') return csvResponse([['Name','Email','Phone','Status','Created'], ...filterRows(data.applications.map((x) => ({ ...x, guestName: x.fullName })), q, status).map((x) => [x.fullName, x.email, x.phone, x.status, x.createdAt])]);
-      if (kind === 'invitations') return csvResponse([['Guest','Email','Status','Created','Expires','Redeemed','Fulfilled'], ...filterRows(data.invitations, q, status).map((x) => [x.guestName, x.email, x.status, x.createdAt, x.expiresAt, x.redeemedAt, x.fulfilledAt])]);
-      if (kind === 'tickets') return csvResponse([['Ticket','Guest','Email','Status','Source','Amount Cents','Issued','Checked In','Waiver'], ...filterRows(data.tickets, q, status).map((x) => [x.ticketId, x.guestName, x.email, x.status, x.ticketSource, x.amountTotal, x.issuedAt, x.checkedInAt, x.waiverSignedAt])]);
-      if (kind === 'entitlements') return csvResponse([['Ticket','Type','Status','Price Cents','Purchased','Credits Purchased','Credits Redeemed','Credits Remaining'], ...data.entitlements.map((x) => [x.ticketId, x.addonType, x.status, x.priceCents, x.purchasedAt, x.creditsPurchased, x.creditsRedeemed, x.creditsRemaining])]);
-      return json({ error: 'Unknown export kind.' }, 400);
+      let rows;
+      if (kind === 'applications') rows = [['Name','Email','Phone','Status','Created'], ...filterRows(data.applications.map((x) => ({ ...x, guestName: x.fullName })), q, status).map((x) => [x.fullName, x.email, x.phone, x.status, x.createdAt])];
+      else if (kind === 'invitations') rows = [['Guest','Email','Status','Created','Expires','Redeemed','Fulfilled'], ...filterRows(data.invitations, q, status).map((x) => [x.guestName, x.email, x.status, x.createdAt, x.expiresAt, x.redeemedAt, x.fulfilledAt])];
+      else if (kind === 'tickets') rows = [['Ticket','Guest','Email','Status','Source','Amount Cents','Issued','Checked In','Waiver'], ...filterRows(data.tickets, q, status).map((x) => [x.ticketId, x.guestName, x.email, x.status, x.ticketSource, x.amountTotal, x.issuedAt, x.checkedInAt, x.waiverSignedAt])];
+      else if (kind === 'entitlements') rows = [['Ticket','Type','Status','Price Cents','Purchased','Credits Purchased','Credits Redeemed','Credits Remaining'], ...data.entitlements.map((x) => [x.ticketId, x.addonType, x.status, x.priceCents, x.purchasedAt, x.creditsPurchased, x.creditsRedeemed, x.creditsRemaining])];
+      else return json({ error: 'Unknown export kind.' }, 400);
+      await writeAudit({ eventId, action: 'admin.csv_exported', actor: 'admin', targetType: 'export', targetId: kind, detail: { status, filtered: Boolean(q) } });
+      return csvResponse(rows);
     }
     return json({ event: toPublicEvent(event), events: listEvents({ includeHidden: true }).map(toPublicEvent), stats: data.stats, invitations: filterRows(data.invitations, q, status), tickets: filterRows(data.tickets, q, status), entitlements: data.entitlements, generatedAt: new Date().toISOString() });
   }
@@ -114,6 +118,7 @@ export default async (req) => {
   let body; try { body = await readBody(req); } catch { return json({ error: 'Invalid request.' }, 400); }
   if (body.eventId !== eventId) return json({ error: 'Event scope mismatch.' }, 400);
   const action = String(body.action || '');
+  if (CONFIRM_ACTIONS.has(action) && body.confirm !== true) return json({ error: 'Explicit confirmation is required for this admin action.' }, 400);
   const now = new Date().toISOString();
 
   if (action === 'revoke_invitation') {
