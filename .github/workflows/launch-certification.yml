@@ -1,0 +1,32 @@
+name: Launch Certification
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'netlify/functions/**'
+      - 'site/**'
+      - 'scripts/validate-launch-certification.mjs'
+      - 'netlify.toml'
+      - '.github/workflows/launch-certification.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Check new command surfaces
+        run: |
+          node --check netlify/functions/admin-readiness.mjs
+          node --check site/assets/js/admin-command.js
+          node --check scripts/validate-launch-certification.mjs
+      - name: Run automated launch rehearsal
+        run: node scripts/validate-launch-certification.mjs
