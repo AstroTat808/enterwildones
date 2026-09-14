@@ -1,5 +1,5 @@
 /* Web-specific optical sizing: keep raster celestial emblems at >=2x desktop and >=3x iPhone density while all lettering remains live CSS. */
-.web-emblem{width:min(100%,256px)!important;max-width:256px!important;aspect-ratio:1.62/1!important;image-rendering:auto;-webkit-font-smoothing:antialiased}
+.web-emblem{width:min(100%,256px)!important;max-width:256px!important;aspect-ratio:1.72/1!important;image-rendering:auto;-webkit-font-smoothing:antialiased}
 .master-lockup .web-emblem,.realm-lockup .web-emblem,.page-lockup .web-emblem{width:min(100%,256px)!important;max-width:256px!important}
 .compact-lockup .web-emblem{width:min(100%,210px)!important;max-width:210px!important}
 .footer-lockup .web-emblem{width:108px!important;max-width:108px!important}
