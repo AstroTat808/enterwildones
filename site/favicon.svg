@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Enter Wild Ones">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="66%"><stop stop-color="#151018"/><stop offset="1" stop-color="#020203"/></radialGradient>
+    <linearGradient id="g" x1="8" y1="8" x2="56" y2="56"><stop stop-color="#fff0b8"/><stop offset=".42" stop-color="#d9a33b"/><stop offset=".72" stop-color="#9f88ea"/><stop offset="1" stop-color="#62d6cd"/></linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <circle cx="32" cy="31" r="21" fill="none" stroke="url(#g)" stroke-width="1.5" opacity=".8"/>
+  <path d="M18 22l7 24 7-16 7 16 7-24" fill="none" stroke="url(#g)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="9.5" r="2" fill="#f3d184"/>
+  <circle cx="54.5" cy="31" r="2" fill="#70ddd1"/>
+  <circle cx="32" cy="52.5" r="2" fill="#ff8b4d"/>
+  <circle cx="9.5" cy="31" r="2" fill="#a998ef"/>
+</svg>
