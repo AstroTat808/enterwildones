@@ -13,13 +13,20 @@
       }
     }catch{/* Server-rendered event summaries remain readable if hydration fails. */}
   }
+  const revealNodes=[...document.querySelectorAll('.reveal')];
+  const show=node=>node?.classList.add('show');
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   if('IntersectionObserver' in window&&!reduced){
-    const reveal=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){e.target.classList.add('show');reveal.unobserve(e.target);}},{threshold:.06});
-    document.querySelectorAll('.reveal').forEach(node=>reveal.observe(node));
+    const reveal=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){show(e.target);reveal.unobserve(e.target);}},{threshold:.04,rootMargin:'0px 0px 8%'});
+    revealNodes.forEach(node=>reveal.observe(node));
     document.documentElement.classList.add('motion-ready');
-    const realms=new IntersectionObserver(entries=>{const best=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];if(best)document.body.dataset.realm=best.target.dataset.realmTrigger||'cycle';},{threshold:[.15,.35,.55],rootMargin:'-12% 0px -12%'});
+    const realms=new IntersectionObserver(entries=>{const best=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];if(best)document.body.dataset.realm=best.target.dataset.realmTrigger||'cycle';},{threshold:[.12,.3,.5],rootMargin:'-10% 0px -10%'});
     document.querySelectorAll('[data-realm-trigger]').forEach(node=>realms.observe(node));
+    // Mobile WebKit can occasionally miss IntersectionObserver callbacks during fast
+    // programmatic or momentum scrolling. Never leave meaningful content invisible.
+    setTimeout(()=>revealNodes.forEach(show),2400);
+  }else{
+    revealNodes.forEach(show);
   }
   hydrate();
 })();
