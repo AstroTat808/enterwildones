@@ -18,6 +18,13 @@
     link.dataset.wildOnesPolish='';
     document.head.append(link);
   }
+  if(!document.querySelector('link[data-wild-ones-retina]')){
+    const retina=document.createElement('link');
+    retina.rel='stylesheet';
+    retina.href='/assets/css/retina-lockups.css';
+    retina.dataset.wildOnesRetina='';
+    document.head.append(retina);
+  }
 
   function lockup(realm, variant='page'){
     const key=valid(realm), meta=realms[key];
