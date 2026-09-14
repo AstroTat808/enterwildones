@@ -99,6 +99,9 @@
   .cinematic-home .realm-links{grid-template-columns:1fr}
   .cinematic-home .realm-links a{min-height:64px}
   .cinematic-home .hero-cycle-line{font-size:7px;letter-spacing:.14em}
+  /* Narrow iPhone/WebKit layouts must never depend on IntersectionObserver firing
+     to expose meaningful realm copy or the final Passport call-to-action. */
+  .cinematic-home .reveal{opacity:1;transform:none}
 }
 
 @media(prefers-reduced-motion:reduce){
