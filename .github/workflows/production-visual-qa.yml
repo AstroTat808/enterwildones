@@ -9,7 +9,7 @@ permissions:
 jobs:
   visual:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,7 +25,17 @@ jobs:
           import json,pathlib
           from playwright.sync_api import sync_playwright
           root=pathlib.Path('visual-results');root.mkdir(exist_ok=True)
-          routes=['/','/events/aureva','/events/halora','/events/sunveil','/events/nocturne','/apply/aureva','/apply/halora','/apply/nocturne','/passport','/invite','/ticket-access','/public-tickets/sunveil','/ticket/addons','/bar','/check-in','/admin','/admin/overview','/admin/packages','/admin/operations']
+          routes=['/','/events/aureva','/events/halora','/events/sunveil','/events/nocturne','/apply/aureva','/apply/halora','/apply/nocturne','/passport','/invite','/ticket-access','/public-tickets/sunveil','/ticket/addons','/bar','/check-in','/admin','/admin/overview','/admin/packages','/admin/operations','/admin/event-day','/admin/live','/admin/launch','/admin/rehearsal']
+          command_routes={'/admin/event-day','/admin/live','/admin/launch','/admin/rehearsal'}
+          fixture={
+            'event':{'eventId':'aureva-2026','name':'AUREVA','realm':'light'},
+            'events':[{'eventId':'aureva-2026','name':'AUREVA','realm':'light'},{'eventId':'halora-2027','name':'HALORA','realm':'balance'},{'eventId':'sunveil-2027','name':'SUNVEIL','realm':'fire'},{'eventId':'nocturne-2027','name':'NOCTURNE','realm':'night'}],
+            'config':{'database':True,'admin':True,'stripe':True,'stripeMode':'test','turnstile':True,'email':True,'ticketSigning':True,'gate':True,'bar':True,'passport':True,'venue':True,'wallet':False},
+            'coreReady':True,'blockers':[],
+            'live':{'counts':{'applications':88,'approved':62,'invitations':54,'activeTickets':47,'checkedIn':31,'unsignedWaivers':4,'signedWaivers':43,'refundedTickets':2,'activeAddons':29,'activeDrinkPackages':21,'activeWristbands':18,'creditsRedeemed':47,'creditsRemaining':79,'checkinRecords':31},'revenue':{'admissionCents':164500,'addonCents':63800,'totalCents':228300},'recentCheckins':[{'guestName':'Rehearsal Guest','ticketId':'WLD-AUR-TKT-1234567890ABCDEF','checkedInAt':'2026-09-13T18:30:00-10:00'}],'recentWristbands':[{'ticketId':'WLD-AUR-TKT-1234567890ABCDEF','wristbandCode':'A042','creditsRedeemed':2,'creditsRemaining':4,'updatedAt':'2026-09-13T18:35:00-10:00'}]},
+            'rehearsal':{'tester':'QA','passed':6,'failed':0,'pending':4,'percent':60,'ready':False,'items':[{'id':'invitation-approval','label':'Invitation → approval → invite','detail':'Approve and redeem a controlled invitation.','status':'passed','note':'Verified'},{'id':'stripe-checkout','label':'Stripe checkout','detail':'Complete a sandbox checkout.','status':'passed','note':''},{'id':'wallet-install','label':'Apple Wallet','detail':'Install on a physical iPhone.','status':'pending','note':''},{'id':'gate-scan','label':'Gate scan','detail':'Scan on a physical device.','status':'pending','note':''}]},
+            'generatedAt':'2026-09-14T04:40:00Z'
+          }
           results=[]
           def benign(msg):
             text=str(msg)
@@ -39,6 +49,8 @@ jobs:
                 for path in routes:
                   page=context.new_page();errors=[]
                   page.on('pageerror',lambda error: errors.append(str(error)) if not benign(error) else None)
+                  if path in command_routes:
+                    page.route('**/api/admin/readiness*',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps(fixture)))
                   try:
                     response=page.goto('https://enterwildones.com'+path,wait_until='domcontentloaded',timeout=45000)
                     page.wait_for_timeout(1500)
@@ -49,7 +61,8 @@ jobs:
                     page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(500)
                     report=page.evaluate('''() => ({overflow:document.documentElement.scrollWidth>innerWidth+1, brokenImages:[...document.images].filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.getAttribute('src')), tinyTargets:[...document.querySelectorAll('button,a,input,select,summary')].filter(x=>{const r=x.getBoundingClientRect();return r.width>0&&r.height>0&&(r.height<40||r.width<32)}).slice(0,20).map(x=>({tag:x.tagName,text:(x.innerText||x.getAttribute('aria-label')||x.name||'').trim().slice(0,60),w:Math.round(x.getBoundingClientRect().width),h:Math.round(x.getBoundingClientRect().height)})), heading:document.querySelector('h1')?.textContent||'', title:document.title})''')
                     report.update(engine=engine,width=width,path=path,status=response.status,errors=errors)
-                    if path in ['/','/apply/aureva','/events/nocturne','/passport','/admin','/admin/operations']:
+                    screenshot_paths={'/','/apply/aureva','/events/nocturne','/passport','/admin','/admin/operations','/admin/event-day','/admin/live','/admin/launch','/admin/rehearsal'}
+                    if path in screenshot_paths:
                       page.screenshot(path=str(root/(engine+'-'+str(width)+'-'+(path.strip('/').replace('/','-') or 'home')+'.png')),full_page=True)
                     if path=='/' and width<900:
                       menu=page.locator('.mobile-menu summary');menu.click();report['mobileMenuOpened']=page.locator('.mobile-menu').get_attribute('open') is not None
