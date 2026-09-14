@@ -1,0 +1,107 @@
+/* ENTER WILD ONES — premium homepage/navigation/realm showcase pass.
+   Intentionally scoped to .cinematic-home so ticketing, Passport, staff and admin UI remain untouched. */
+.cinematic-home{--home-max:1480px;--home-glass:rgba(5,5,7,.72);--home-line:rgba(232,201,130,.16)}
+.cinematic-home #aureva,.cinematic-home #halora,.cinematic-home #sunveil,.cinematic-home #nocturne{scroll-margin-top:88px}
+
+/* Navigation — quieter, tighter and more architectural. */
+.cinematic-home .topbar{min-height:78px;padding:12px max(24px,calc((100vw - var(--home-max))/2));align-items:center;transition:min-height .28s ease,background .28s ease,box-shadow .28s ease,border-color .28s ease}
+.cinematic-home.scrolled .topbar{min-height:68px;background:linear-gradient(180deg,rgba(3,3,5,.98),rgba(3,3,5,.9));border-bottom-color:color-mix(in srgb,var(--accent) 28%,transparent);box-shadow:0 18px 64px rgba(0,0,0,.42)}
+.cinematic-home .brand{align-items:center;transition:transform .28s ease,filter .28s ease}
+.cinematic-home .brand:hover{transform:translateY(-1px);filter:brightness(1.07)}
+.cinematic-home .brand-label{line-height:1.08}
+.cinematic-home .desktop-nav{align-items:center;gap:4px;padding:5px;border:1px solid rgba(255,255,255,.085);border-radius:999px;background:rgba(255,255,255,.018);box-shadow:inset 0 1px rgba(255,255,255,.025)}
+.cinematic-home .desktop-nav a{padding:9px 13px;border-radius:999px;color:#bdb4a7;transition:color .22s ease,background .22s ease,transform .22s ease}
+.cinematic-home .desktop-nav a:after{display:none}
+.cinematic-home .desktop-nav a:hover,.cinematic-home .desktop-nav a:focus-visible{color:#fff5df;background:color-mix(in srgb,var(--accent) 10%,rgba(255,255,255,.018));transform:translateY(-1px)}
+.cinematic-home .desktop-nav a:last-child{color:#f5dfaa;border:1px solid color-mix(in srgb,var(--accent) 24%,transparent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.cinematic-home .mobile-menu summary{border-radius:999px;letter-spacing:.18em}
+.cinematic-home a:focus-visible,.cinematic-home summary:focus-visible{outline:1px solid color-mix(in srgb,var(--accent) 76%,white);outline-offset:4px}
+
+/* Hero — establish the four-realm mythology before the first scroll. */
+.cinematic-home .hero-cinematic{overflow:hidden}
+.cinematic-home .hero-cinematic .hero-copy{padding-block:24px}
+.cinematic-home .hero-cinematic .hero-copy:after{content:"";display:block;width:84px;height:1px;margin-top:34px;background:linear-gradient(90deg,var(--accent),transparent);opacity:.72}
+.cinematic-home .hero-logo-wrap{filter:drop-shadow(0 28px 70px rgba(0,0,0,.35))}
+.cinematic-home .hero-cycle-line{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:23px;color:#8f8577;font-size:8px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+.cinematic-home .hero-cycle-line span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.cinematic-home .hero-cycle-line span:before{content:"";width:4px;height:4px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px color-mix(in srgb,var(--accent) 60%,transparent)}
+.cinematic-home .hero-actions .button{min-width:174px}
+
+/* Realm index — four premium portal tiles instead of generic jump pills. */
+.cinematic-home .realm-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;width:100%;max-width:980px}
+.cinematic-home .realm-links a{position:relative;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"index name" "index realm";column-gap:13px;align-items:center;min-height:78px;padding:15px 16px;overflow:hidden;border-radius:14px;text-align:left}
+.cinematic-home .realm-links a:before{content:"";position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 20% 50%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 55%);transition:opacity .25s ease}
+.cinematic-home .realm-links a:hover:before,.cinematic-home .realm-links a[aria-current="true"]:before{opacity:1}
+.cinematic-home .realm-link-index{grid-area:index;position:relative;z-index:1;font:32px/1 "Iowan Old Style",Baskerville,Georgia,serif;color:color-mix(in srgb,var(--accent) 82%,#fff);opacity:.9}
+.cinematic-home .realm-link-name{grid-area:name;position:relative;z-index:1;font-size:10px;font-weight:800;letter-spacing:.18em;color:#eee4d4}
+.cinematic-home .realm-link-realm{grid-area:realm;position:relative;z-index:1;margin-top:4px;font-size:7px;letter-spacing:.2em;color:#81786c}
+.cinematic-home .realm-links a[aria-current="true"]{border-color:color-mix(in srgb,var(--accent) 42%,transparent);box-shadow:0 14px 44px color-mix(in srgb,var(--accent) 8%,transparent)}
+
+/* Realm showcase — each section reads like an intentional portal, not a content row. */
+.cinematic-home .realm-cinematic{min-height:max(760px,100svh);overflow:hidden}
+.cinematic-home .realm-cinematic:before{transition:background .8s ease,opacity .8s ease}
+.cinematic-home .realm-cinematic .realm-logo-frame{filter:drop-shadow(0 30px 80px rgba(0,0,0,.34));transition:transform .45s cubic-bezier(.2,.7,.2,1),filter .45s ease}
+.cinematic-home .realm-cinematic:hover .realm-logo-frame{transform:translateY(-6px);filter:drop-shadow(0 36px 96px rgba(0,0,0,.42))}
+.cinematic-home .realm-cinematic .realm-copy{position:relative;padding:34px 0 34px clamp(24px,3vw,48px);border-left:1px solid color-mix(in srgb,var(--accent) 25%,rgba(255,255,255,.06))}
+.cinematic-home .realm-cinematic .realm-copy:before{content:"";position:absolute;left:-1px;top:34px;width:1px;height:74px;background:linear-gradient(var(--accent),transparent);box-shadow:0 0 18px color-mix(in srgb,var(--accent) 28%,transparent)}
+.cinematic-home .realm-cinematic .realm-copy>.eyebrow{display:inline-flex;align-items:center;gap:10px;margin-bottom:4px}
+.cinematic-home .realm-cinematic .realm-copy>.eyebrow:before{content:"";width:20px;height:1px;background:var(--accent)}
+.cinematic-home .realm-cinematic .realm-copy h2{max-width:520px;text-wrap:balance}
+.cinematic-home .realm-cinematic .realm-copy p{max-width:500px}
+.cinematic-home .realm-cinematic .realm-copy footer{display:flex;flex-wrap:wrap;gap:9px 10px}
+.cinematic-home .realm-cinematic .realm-copy footer span{display:inline-flex;align-items:center;min-height:31px;padding:0 11px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(255,255,255,.018);color:#b7aa96}
+.cinematic-home .realm-cinematic .realm-copy>a{display:inline-flex;align-items:center;gap:10px;margin-top:4px;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--accent) 44%,transparent);color:#f4ead9}
+.cinematic-home .realm-cinematic .realm-copy>a:after{content:"";width:26px;height:1px;background:linear-gradient(90deg,var(--accent),transparent);transition:width .22s ease}
+.cinematic-home .realm-cinematic .realm-copy>a:hover:after{width:42px}
+.cinematic-home .realm-number{display:inline-flex;align-items:center;gap:10px;letter-spacing:.27em}
+.cinematic-home .realm-number:after{content:"";width:42px;height:1px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 60%,transparent),transparent)}
+.cinematic-home .realm-stage:after{content:"";position:absolute;inset:7% 6%;border:1px solid rgba(255,255,255,.022);border-radius:36px;pointer-events:none}
+
+/* The currently viewed realm receives a very restrained lift. */
+.cinematic-home[data-realm="light"] #aureva .realm-copy,
+.cinematic-home[data-realm="balance"] #halora .realm-copy,
+.cinematic-home[data-realm="fire"] #sunveil .realm-copy,
+.cinematic-home[data-realm="night"] #nocturne .realm-copy{border-left-color:color-mix(in srgb,var(--accent) 48%,transparent)}
+
+@media(max-width:1000px){
+  .cinematic-home .topbar{padding-inline:5vw}
+  .cinematic-home .hero-cinematic .hero-copy{padding-block:0}
+  .cinematic-home .hero-cinematic .hero-copy:after{margin-inline:auto}
+  .cinematic-home .hero-cycle-line{justify-content:center}
+  .cinematic-home .realm-links{grid-template-columns:repeat(2,minmax(0,1fr));max-width:680px}
+  .cinematic-home .realm-cinematic{min-height:0}
+  .cinematic-home .realm-cinematic .realm-copy{padding:28px 0 0;border-left:0;border-top:1px solid color-mix(in srgb,var(--accent) 22%,rgba(255,255,255,.05));max-width:620px}
+  .cinematic-home .realm-cinematic .realm-copy:before{left:50%;top:-1px;width:96px;height:1px;transform:translateX(-50%);background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+  .cinematic-home .realm-cinematic .realm-copy>.eyebrow{justify-content:center}
+  .cinematic-home .realm-cinematic .realm-copy>.eyebrow:before{display:none}
+  .cinematic-home .realm-cinematic .realm-copy p{margin-inline:auto}
+  .cinematic-home .realm-cinematic .realm-copy footer{justify-content:center}
+}
+
+@media(max-width:700px){
+  .cinematic-home .topbar{min-height:70px;padding-inline:16px}
+  .cinematic-home.scrolled .topbar{min-height:64px}
+  .cinematic-home .brand{gap:9px}
+  .cinematic-home .brand-label{max-width:175px}
+  .cinematic-home .hero-cycle-line{gap:8px 12px;margin-top:20px;line-height:1.7}
+  .cinematic-home .realm-links{grid-template-columns:1fr 1fr;gap:8px}
+  .cinematic-home .realm-links a{min-height:70px;padding:13px 12px;column-gap:10px}
+  .cinematic-home .realm-link-index{font-size:27px}
+  .cinematic-home .realm-link-name{font-size:9px;letter-spacing:.14em}
+  .cinematic-home .realm-link-realm{font-size:6.5px;letter-spacing:.16em}
+  .cinematic-home .realm-cinematic{padding-left:20px;padding-right:20px}
+  .cinematic-home .realm-cinematic .realm-copy{padding-top:25px}
+  .cinematic-home .realm-cinematic .realm-copy footer span{min-height:29px;padding-inline:10px;font-size:8px}
+  .cinematic-home .realm-stage:after{inset:3% 2%;border-radius:24px}
+}
+
+@media(max-width:390px){
+  .cinematic-home .realm-links{grid-template-columns:1fr}
+  .cinematic-home .realm-links a{min-height:64px}
+  .cinematic-home .hero-cycle-line{font-size:7px;letter-spacing:.14em}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .cinematic-home .topbar,.cinematic-home .brand,.cinematic-home .desktop-nav a,.cinematic-home .realm-cinematic .realm-logo-frame,.cinematic-home .realm-copy>a:after{transition:none!important}
+  .cinematic-home .realm-cinematic:hover .realm-logo-frame{transform:none}
+}
