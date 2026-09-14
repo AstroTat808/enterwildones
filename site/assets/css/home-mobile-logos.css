@@ -1,0 +1,65 @@
+/* Mobile-only refinement for supplied Four Realms raster artwork. */
+@media (max-width: 700px) {
+  .cinematic-home .hero-logo-wrap {
+    width: min(88vw, 360px);
+    margin-inline: auto;
+    filter: none;
+  }
+
+  .cinematic-home .realm-logo-frame {
+    width: min(88vw, 350px);
+    max-width: 350px;
+    margin-inline: auto;
+    filter: none;
+  }
+
+  .cinematic-home .hero-master-logo,
+  .cinematic-home .realm-logo {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: transparent;
+    mix-blend-mode: lighten;
+    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 14%, transparent));
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  .cinematic-home .realm-cinematic:hover .realm-logo-frame {
+    transform: none;
+    filter: none;
+  }
+
+  .cinematic-home .hero-logo-wrap::before,
+  .cinematic-home .realm-logo-frame::before {
+    content: "";
+    position: absolute;
+    inset: 10% 4%;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center,
+      color-mix(in srgb, var(--accent) 8%, rgba(0,0,0,.55)) 0%,
+      rgba(0,0,0,.28) 44%,
+      transparent 74%);
+    filter: blur(18px);
+  }
+
+  .cinematic-home .hero-cinematic {
+    row-gap: 0;
+  }
+
+  .cinematic-home .realm-cinematic {
+    row-gap: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .cinematic-home .hero-logo-wrap {
+    width: min(86vw, 320px);
+  }
+
+  .cinematic-home .realm-logo-frame {
+    width: min(86vw, 315px);
+    max-width: 315px;
+  }
+}
