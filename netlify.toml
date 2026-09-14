@@ -16,6 +16,26 @@
   force = true
 
 [[redirects]]
+  from = "/events/aureva"
+  to = "/events/aureva.html"
+  status = 200
+
+[[redirects]]
+  from = "/events/halora"
+  to = "/events/halora.html"
+  status = 200
+
+[[redirects]]
+  from = "/events/sunveil"
+  to = "/events/sunveil.html"
+  status = 200
+
+[[redirects]]
+  from = "/events/nocturne"
+  to = "/events/nocturne.html"
+  status = 200
+
+[[redirects]]
   from = "/events/:event"
   to = "/event.html?event=:event"
   status = 200
@@ -33,6 +53,26 @@
 [[redirects]]
   from = "/invite"
   to = "/invite.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/event-day"
+  to = "/admin-event-day.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/live"
+  to = "/admin-live.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/launch"
+  to = "/admin-launch.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/rehearsal"
+  to = "/admin-rehearsal.html"
   status = 200
 
 [[redirects]]
