@@ -1,0 +1,81 @@
+name: Assemble browser-safe logos
+
+on:
+  push:
+    branches: [logo-payload-repair]
+    paths:
+      - ".logo-payload-final/READY"
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: logo-payload-repair
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Assemble browser-safe SVG lockups
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .logo-payload-final/aureva.part00 .logo-payload-final/aureva.part01 > site/assets/images/realms/aureva.svg
+          cat .logo-payload/enter-wild-ones.part00 .logo-payload/enter-wild-ones.part01 .logo-payload/enter-wild-ones.part02 .logo-payload/enter-wild-ones.part03 .logo-payload/enter-wild-ones.part04 .logo-payload/enter-wild-ones.part05 .logo-payload/enter-wild-ones.part06 .logo-payload/enter-wild-ones.part07 .logo-payload/enter-wild-ones.part08 .logo-payload/enter-wild-ones.part09 > site/assets/images/realms/enter-wild-ones.svg
+          cat .logo-payload/halora.part00 .logo-payload/halora.part01 .logo-payload/halora.part02 > site/assets/images/realms/halora.svg
+          cat .logo-payload-final/sunveil.part00 .logo-payload-final/sunveil.part01 .logo-payload-final/sunveil.part02 > site/assets/images/realms/sunveil.svg
+          cat .logo-payload-final/nocturne.part00 .logo-payload-final/nocturne.part01 .logo-payload-final/nocturne.part02 > site/assets/images/realms/nocturne.svg
+
+      - name: Update and verify branding validator
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'scripts/validate-branding.mjs';
+          let source = fs.readFileSync(path, 'utf8');
+          source = source.replace("data:image/avif;base64,", "data:image/png;base64,");
+          source = source.replace("embeds optimized transparent artwork", "embeds browser-safe transparent artwork");
+          fs.writeFileSync(path, source);
+
+          for (const name of ['aureva','halora','sunveil','nocturne','enter-wild-ones']) {
+            const file = `site/assets/images/realms/${name}.svg`;
+            const svg = fs.readFileSync(file, 'utf8');
+            if (!svg.startsWith('<svg')) throw new Error(`${name}: not SVG`);
+            if (!svg.includes('data:image/png;base64,')) throw new Error(`${name}: PNG payload missing`);
+            if (svg.includes('data:image/avif')) throw new Error(`${name}: legacy AVIF payload remains`);
+            if (svg.length < 5000 || svg.length > 100000) throw new Error(`${name}: unexpected size ${svg.length}`);
+            console.log(`${name}: ${svg.length} bytes, browser-safe PNG payload confirmed`);
+          }
+          NODE
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run full build validation
+        run: npm run build
+
+      - name: Check patch integrity
+        run: git diff --check
+
+      - name: Commit repaired SVGs and remove temporary repair tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -rf .logo-payload .logo-payload-final
+          rm -f .github/workflows/repair-svg-logos.yml scripts/repair-svg-logos.py
+          rm -f .github/workflows/assemble-browser-safe-logos.yml
+          git add -A
+          git commit -m "Make supplied realm SVGs browser-safe"
+          git push origin HEAD:logo-payload-repair
