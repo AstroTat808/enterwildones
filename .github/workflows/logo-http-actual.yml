@@ -1,0 +1,44 @@
+name: Verify actual Netlify logo delivery
+
+on:
+  push:
+    branches: ["qa/logo-http-actual-a109"]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare GitHub source and Netlify delivery
+        shell: bash
+        run: |
+          set -u
+          bases=(
+            "https://raw.githubusercontent.com/AstroTat808/enterwildones/a109f70aea4fb5036a0797ef0fa584c63bc80224/site"
+            "https://6aa9507307a0eb0008fdc711--enterwildones.netlify.app"
+            "https://main--enterwildones.netlify.app"
+            "https://enterwildones.com"
+          )
+          paths=(
+            "/assets/images/realms/enter-wild-ones.svg"
+            "/assets/images/realms/aureva.svg"
+            "/assets/images/realms/halora.svg"
+            "/assets/images/realms/sunveil.svg"
+            "/assets/images/realms/nocturne.svg"
+            "/assets/css/retina-lockups.css"
+            "/assets/js/branding.js"
+          )
+          for base in "${bases[@]}"; do
+            echo "=== BASE $base ==="
+            for path in "${paths[@]}"; do
+              safe=$(echo "$path" | tr '/.' '__')
+              url="$base$path"
+              code=$(curl -L -sS -o "/tmp/$safe" -w '%{http_code}' "$url" || true)
+              type=$(curl -L -sSI "$url" 2>/dev/null | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print $2; exit}')
+              bytes=$(wc -c < "/tmp/$safe" 2>/dev/null | tr -d ' ' || echo 0)
+              prefix=$(head -c 48 "/tmp/$safe" 2>/dev/null | tr '\n' ' ')
+              printf '%-48s code=%s type=%s bytes=%s prefix=%s\n' "$path" "$code" "${type:-none}" "$bytes" "$prefix"
+            done
+          done
