@@ -3,10 +3,11 @@ from __future__ import annotations
 import base64
 import io
 import re
+import subprocess
+import tempfile
 from pathlib import Path
 
 from PIL import Image
-import pillow_avif  # noqa: F401 - registers AVIF support with Pillow
 
 ROOT = Path(__file__).resolve().parents[1]
 REALMS = ROOT / "site" / "assets" / "images" / "realms"
@@ -21,6 +22,29 @@ LOGOS = (
 AVIF_DATA = re.compile(r"data:image/avif;base64,([A-Za-z0-9+/=]+)")
 
 
+def decode_avif(avif_bytes: bytes) -> Image.Image:
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "source.avif"
+        dst = Path(tmp) / "decoded.png"
+        src.write_bytes(avif_bytes)
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-i",
+                str(src),
+                "-frames:v",
+                "1",
+                str(dst),
+            ],
+            check=True,
+        )
+        return Image.open(dst).convert("RGBA")
+
+
 def repair(path: Path) -> tuple[int, int]:
     text = path.read_text(encoding="utf-8")
     match = AVIF_DATA.search(text)
@@ -30,7 +54,8 @@ def repair(path: Path) -> tuple[int, int]:
         raise RuntimeError(f"No embedded AVIF payload found in {path}")
 
     avif_bytes = base64.b64decode(match.group(1))
-    image = Image.open(io.BytesIO(avif_bytes)).convert("RGBA")
+    print(f"Decoding {path.name}: {len(avif_bytes):,} bytes, magic={avif_bytes[:12]!r}")
+    image = decode_avif(avif_bytes)
 
     # Indexed PNG is universally supported inside SVG <image>, preserves alpha,
     # and keeps these supplied raster-in-SVG lockups compact enough for mobile.
