@@ -153,7 +153,7 @@
   for = "/passport*"
   [headers.values]
     Cache-Control = "no-store"
-    X-Robots-Tag = "noindex, nofollow,noarchive"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
     Referrer-Policy = "no-referrer"
 
 [[headers]]
