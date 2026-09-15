@@ -1,4 +1,6 @@
 import { copyFile, mkdir, stat } from 'node:fs/promises';
+// Fail the build before publication if any approved campaign asset is absent or altered.
+import './validate-campaign.mjs';
 
 const vendorDir = new URL('../site/assets/vendor/', import.meta.url);
 const source = new URL('../node_modules/html5-qrcode/html5-qrcode.min.js', import.meta.url);

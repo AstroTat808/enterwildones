@@ -1,0 +1,33 @@
+{
+  "description": "Approved Four Portals campaign. Bottom tagline removed in both compositions. Landscape desktop and square mobile; full original proportions.",
+  "assets": [
+    {
+      "name": "portals-square",
+      "usage": "mobile up to 700 CSS px",
+      "originalWidth": 1254,
+      "originalHeight": 1254,
+      "sourceFormat": "PNG",
+      "sourceSha256": "114bcc6c86e5b908827c03d646b66a1d894001998fd93da16b282a3682318796",
+      "files": [
+        {"path": "four-realms-portals.jpg", "width": 1254, "height": 1254, "bytes": 675561, "sha256": "7495c50c3b6e128b77e57f2242daa12abe119daa202410340aeef6cbf5648350"},
+        {"path": "four-realms-portals-480.webp", "width": 480, "height": 480, "bytes": 66742, "sha256": "53ebdab3cc26d3431ee24910052b8dfd1623e61da3ebf72f9ec5b2ee18d3a279"},
+        {"path": "four-realms-portals-768.webp", "width": 768, "height": 768, "bytes": 143194, "sha256": "770ed1700fcbcceaf35d660511910e49c812b0f5609c2da8c85f253561d4a6d7"},
+        {"path": "four-realms-portals-1254.webp", "width": 1254, "height": 1254, "bytes": 282868, "sha256": "5ad10789e1d50a45acb5421fa8c5079a71cde1dc049013d96b8707594fcea261"}
+      ]
+    },
+    {
+      "name": "portals-landscape",
+      "usage": "desktop above 700 CSS px",
+      "originalWidth": 1672,
+      "originalHeight": 941,
+      "sourceFormat": "PNG",
+      "sourceSha256": "122f41bb3637d688b78122f3822018cf0580a1bf3cedb1f0f1d43f1de10944c9",
+      "files": [
+        {"path": "four-realms-portals-wide.jpg", "width": 1672, "height": 941, "bytes": 645658, "sha256": "bc02dfc033e30c349dcbd543ffbe1af36963ac86eaebc404b3aa2798e754d963"},
+        {"path": "four-realms-portals-wide-960.webp", "width": 960, "height": 540, "bytes": 134760, "sha256": "81bd81306d7525c9d0707a9c6a36f437e9923bbb6c58c8b07f0556ddf77c08e3"},
+        {"path": "four-realms-portals-wide-1280.webp", "width": 1280, "height": 720, "bytes": 194040, "sha256": "169ff4e7473e563971c43446f25db2a381fe9c95fdcd776d2f753465e3987c3b"},
+        {"path": "four-realms-portals-wide-1672.webp", "width": 1672, "height": 941, "bytes": 272272, "sha256": "71bf4ce2deca3b76a2aaa057ad5f3ff7ef2564fe917611ff8932e9cf25c6cee7"}
+      ]
+    }
+  ]
+}
