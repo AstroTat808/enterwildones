@@ -7,6 +7,8 @@ const read=p=>fs.readFileSync(p,'utf8');
 const names=['aureva','halora','sunveil','nocturne','enter-wild-ones'];
 const pngSignature=Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
 
+// Parse the embedded PNG container itself so a browser-tolerated truncated
+// payload cannot pass CI merely because the outer SVG remains valid XML.
 function validateEmbeddedPng(name,svg){
   const match=svg.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/);
   assert(match,`${name} embeds browser-safe transparent PNG artwork`);
