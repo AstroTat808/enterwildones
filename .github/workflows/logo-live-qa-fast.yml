@@ -1,0 +1,109 @@
+name: Focused live logo QA
+
+on:
+  push:
+    branches: ["qa/logo-live-a109"]
+
+permissions:
+  contents: read
+
+jobs:
+  logo-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Playwright
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.55.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Verify live logos and capture screenshots
+        shell: bash
+        run: |
+          mkdir -p logo-live-qa
+          cat > /tmp/logo_qa.py <<'PY'
+          import json
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+
+          BASE = "https://enterwildones.com"
+          pages = {
+              "home": "/",
+              "aureva": "/events/aureva",
+              "halora": "/events/halora",
+              "sunveil": "/events/sunveil",
+              "nocturne": "/events/nocturne",
+          }
+          viewports = {
+              "desktop": {"width": 1440, "height": 1000},
+              "mobile": {"width": 390, "height": 844},
+          }
+          out = Path("logo-live-qa")
+          results = []
+          failures = []
+
+          def inspect(page):
+              return page.locator("img").evaluate_all("""imgs => imgs
+                .filter(img => (img.currentSrc || img.src || '').includes('/assets/images/realms/'))
+                .map(img => { const r = img.getBoundingClientRect(); const cs = getComputedStyle(img); return {
+                  src: img.currentSrc || img.src,
+                  alt: img.alt,
+                  complete: img.complete,
+                  naturalWidth: img.naturalWidth,
+                  naturalHeight: img.naturalHeight,
+                  x: Math.round(r.x * 10) / 10,
+                  y: Math.round(r.y * 10) / 10,
+                  width: Math.round(r.width * 10) / 10,
+                  height: Math.round(r.height * 10) / 10,
+                  display: cs.display,
+                  opacity: cs.opacity,
+                  visibility: cs.visibility
+                }; })""")
+
+          with sync_playwright() as p:
+              for browser_name, browser_type in (("chromium", p.chromium), ("webkit", p.webkit)):
+                  browser = browser_type.launch()
+                  for viewport_name, viewport in viewports.items():
+                      context = browser.new_context(viewport=viewport, device_scale_factor=1)
+                      page = context.new_page()
+                      console_errors = []
+                      page.on("console", lambda msg, bag=console_errors: bag.append(msg.text) if msg.type == "error" else None)
+                      for name, path in pages.items():
+                          url = BASE + path
+                          response = page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                          page.wait_for_timeout(2500)
+                          status = response.status if response else None
+                          logos = inspect(page)
+                          row = {"browser": browser_name, "viewport": viewport_name, "page": name, "url": url, "status": status, "logos": logos, "consoleErrors": list(console_errors)}
+                          results.append(row)
+                          if status != 200:
+                              failures.append(f"{browser_name}/{viewport_name}/{name}: HTTP {status}")
+                          if not logos:
+                              failures.append(f"{browser_name}/{viewport_name}/{name}: no realm SVG images found")
+                          for logo in logos:
+                              if not logo["complete"] or logo["naturalWidth"] <= 0 or logo["naturalHeight"] <= 0:
+                                  failures.append(f"{browser_name}/{viewport_name}/{name}: broken image {logo['src']}")
+                              if logo["width"] <= 0 or logo["height"] <= 0:
+                                  failures.append(f"{browser_name}/{viewport_name}/{name}: zero layout size {logo['src']}")
+                              if logo["x"] < -1 or logo["x"] + logo["width"] > viewport["width"] + 1:
+                                  failures.append(f"{browser_name}/{viewport_name}/{name}: horizontal overflow {logo['src']} x={logo['x']} w={logo['width']}")
+                          page.screenshot(path=str(out / f"{browser_name}-{viewport_name}-{name}.png"), full_page=True)
+                          console_errors.clear()
+                      context.close()
+                  browser.close()
+
+          (out / "metrics.json").write_text(json.dumps({"results": results, "failures": failures}, indent=2), encoding="utf-8")
+          print(json.dumps({"checks": len(results), "failures": failures}, indent=2))
+          if failures:
+              raise SystemExit(1)
+          PY
+          python /tmp/logo_qa.py
+      - name: Upload focused logo QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: focused-live-logo-qa
+          path: logo-live-qa
+          if-no-files-found: error
