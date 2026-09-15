@@ -1,0 +1,93 @@
+/* Approved Four Portals compositions: square mobile, landscape desktop, no cropping.
+   Homepage-only rules preserve event pages, workflow screens and the footer. */
+.cinematic-home .campaign-hero {
+  position: relative;
+  isolation: isolate;
+  padding-top: var(--bar-height, 84px);
+  background: #020203;
+  border-bottom: 1px solid rgba(232, 201, 130, .14);
+}
+.cinematic-home .campaign-visual {
+  width: min(100%, 1672px);
+  margin: 0 auto;
+  padding: 0;
+  position: relative;
+}
+.cinematic-home .campaign-picture {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1672 / 941;
+  background: #020203;
+}
+.cinematic-home .campaign-image {
+  display: block;
+  position: static;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1672 / 941;
+  object-fit: contain;
+  object-position: center;
+  margin: 0;
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: 1;
+  transform: none;
+}
+.cinematic-home .campaign-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px 40px;
+  width: min(100%, 80rem);
+  margin: 0 auto;
+  padding: 24px max(24px, 4vw) 32px;
+}
+.cinematic-home .campaign-copy { min-width: 0; }
+.cinematic-home .campaign-copy h1 {
+  margin: 0;
+  font-family: "Iowan Old Style", Baskerville, Georgia, serif;
+  font-size: clamp(28px, 2.6vw, 40px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -.025em;
+  color: #fbf4e6;
+}
+.cinematic-home .campaign-copy p {
+  margin: 10px 0 0;
+  font-size: 10px;
+  line-height: 1.7;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: #b4aca2;
+}
+.cinematic-home .campaign-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.cinematic-home .campaign-actions .button {
+  min-height: 48px;
+  padding: 14px 22px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.5;
+}
+@media (max-width: 900px) {
+  .cinematic-home .campaign-intro { flex-direction: column; gap: 20px; text-align: center; }
+}
+@media (max-width: 700px) {
+  .cinematic-home .campaign-picture,
+  .cinematic-home .campaign-image { aspect-ratio: 1; }
+  .cinematic-home .campaign-intro {
+    padding: 22px max(20px, env(safe-area-inset-right)) 28px max(20px, env(safe-area-inset-left));
+  }
+  .cinematic-home .campaign-copy h1 { font-size: clamp(27px, 7vw, 36px); }
+  .cinematic-home .campaign-actions { width: min(100%, 26rem); }
+  .cinematic-home .campaign-actions .button { flex: 1 1 10rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-home .campaign-actions .button { transition: none; transform: none; }
+}
