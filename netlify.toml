@@ -15,6 +15,15 @@
   status = 301
   force = true
 
+# Backward-compatible rewrite for legacy HTML/cached realm artwork URLs.
+# The obsolete AVIF files are intentionally removed; all branding now resolves
+# to the authoritative SVG lockups without a client-side broken-image window.
+[[redirects]]
+  from = "/assets/images/realms/:logo.avif"
+  to = "/assets/images/realms/:logo.svg"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/events/aureva"
   to = "/events/aureva.html"
