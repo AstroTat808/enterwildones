@@ -25,7 +25,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install image support
-        run: python -m pip install --disable-pip-version-check pillow pillow-avif-plugin
+        run: python -m pip install --disable-pip-version-check pillow
 
       - name: Repair embedded image codec
         run: python scripts/repair-svg-logos.py
