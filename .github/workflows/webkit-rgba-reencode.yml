@@ -19,46 +19,43 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pillow==11.3.0
-      - name: Fetch pristine supplied logo revisions
+      - run: pip install pillow==11.3.0 pillow-avif-plugin==1.5.2
+      - name: Fetch browser-verified source revisions
         run: |
-          git fetch --depth=1 origin 72bc35bac2b7df0dd22793012a0d3193bb7a10bb
-          git fetch --depth=1 origin bde9a107527c2421b6240a4c077da1d991260e6f
-      - name: Rebuild AUREVA and HALORA wrappers from pristine history
+          git fetch --depth=1 origin 1dd55aefa542db5110331309f31b15325cf0111c
+          git fetch --depth=1 origin 4b648d7cbb4183bb337b0b75d8f9bb5d33a8c7a6
+      - name: Rebuild AUREVA and HALORA as standards-compliant RGBA PNG wrappers
         shell: python
         run: |
           import base64, io, pathlib, re, subprocess
+          import pillow_avif  # registers AVIF decoder with Pillow
           from PIL import Image
 
           specs = [
-              ('aureva', 'AUREVA - Realm I - Light', '72bc35bac2b7df0dd22793012a0d3193bb7a10bb'),
-              ('halora', 'HALORA - Realm II - Balance', 'bde9a107527c2421b6240a4c077da1d991260e6f'),
+              ('aureva', 'AUREVA - Realm I - Light', '1dd55aefa542db5110331309f31b15325cf0111c'),
+              ('halora', 'HALORA - Realm II - Balance', '4b648d7cbb4183bb337b0b75d8f9bb5d33a8c7a6'),
           ]
-          data_re = re.compile(r'data:image/png;base64,([^\"\']+)')
+          data_re = re.compile(r'data:image/(?:avif|png);base64,([^\"\']+)')
 
           for slug, label, commit in specs:
               repo_path = f'site/assets/images/realms/{slug}.svg'
-              pristine_svg = subprocess.check_output(
-                  ['git', 'show', f'{commit}:{repo_path}'], text=True
-              )
+              source_svg = subprocess.check_output(['git', 'show', f'{commit}:{repo_path}'], text=True)
               candidates = []
-              for payload in data_re.findall(pristine_svg):
-                  try:
-                      raw = base64.b64decode(payload, validate=True)
-                      image = Image.open(io.BytesIO(raw))
-                      image.load()
-                      candidates.append((image.width * image.height, image.copy().convert('RGBA')))
-                  except Exception as exc:
-                      print(f'{slug}: skipping invalid historical payload: {exc}')
+              for payload in data_re.findall(source_svg):
+                  raw = base64.b64decode(payload, validate=True)
+                  image = Image.open(io.BytesIO(raw))
+                  image.load()
+                  candidates.append((image.width * image.height, image.copy().convert('RGBA')))
               if not candidates:
-                  raise SystemExit(f'{slug}: no strictly decodable pristine PNG payload found in {commit}')
+                  raise SystemExit(f'{slug}: no decodable historical image payload found in {commit}')
 
               image = max(candidates, key=lambda item: item[0])[1]
-              print(f'{slug}: pristine source {image.size}, alpha bbox={image.getchannel("A").getbbox()}')
-              image = image.resize((384, 384), Image.Resampling.LANCZOS)
+              print(f'{slug}: verified source {image.size}, alpha bbox={image.getchannel("A").getbbox()}')
+              if image.size != (384, 384):
+                  image = image.resize((384, 384), Image.Resampling.LANCZOS)
               alpha_bbox = image.getchannel('A').getbbox()
               if not alpha_bbox or alpha_bbox[3] < 360:
-                  raise SystemExit(f'{slug}: resized source incomplete; alpha bbox={alpha_bbox}')
+                  raise SystemExit(f'{slug}: recovered artwork incomplete; alpha bbox={alpha_bbox}')
 
               out = io.BytesIO()
               image.save(out, format='PNG', optimize=True, compress_level=9)
