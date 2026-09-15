@@ -1,0 +1,62 @@
+name: One-time WebKit RGBA logo repair
+
+on:
+  push:
+    branches: [fix/webkit-rgba-artwork]
+    paths: ['.github/workflows/webkit-rgba-reencode.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/webkit-rgba-artwork
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow==11.3.0
+      - name: Re-encode embedded AUREVA and HALORA PNGs as true-color RGBA
+        shell: python
+        run: |
+          import base64, io, pathlib, re
+          from PIL import Image
+
+          files = [
+              pathlib.Path('site/assets/images/realms/aureva.svg'),
+              pathlib.Path('site/assets/images/realms/halora.svg'),
+          ]
+          pattern = re.compile(r'data:image/png;base64,([A-Za-z0-9+/=]+)')
+          for path in files:
+              text = path.read_text(encoding='utf-8')
+              match = pattern.search(text)
+              if not match:
+                  raise SystemExit(f'No embedded PNG found in {path}')
+              source = base64.b64decode(match.group(1))
+              image = Image.open(io.BytesIO(source)).convert('RGBA')
+              out = io.BytesIO()
+              image.save(out, format='PNG', optimize=True, compress_level=9)
+              rgba = out.getvalue()
+              if rgba[25] != 6:
+                  raise SystemExit(f'{path}: expected PNG color type 6 RGBA, got {rgba[25]}')
+              encoded = base64.b64encode(rgba).decode('ascii')
+              repaired = text[:match.start(1)] + encoded + text[match.end(1):]
+              path.write_text(repaired, encoding='utf-8')
+              print(f'{path}: {len(source)} -> {len(rgba)} PNG bytes; SVG {len(repaired)} bytes')
+          
+      - name: Validate repaired artwork
+        run: |
+          node scripts/validate-branding.mjs
+          grep -q 'data:image/png;base64,' site/assets/images/realms/aureva.svg
+          grep -q 'data:image/png;base64,' site/assets/images/realms/halora.svg
+      - name: Commit repaired assets and remove one-time workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/webkit-rgba-reencode.yml
+          git add site/assets/images/realms/aureva.svg site/assets/images/realms/halora.svg
+          git commit -m "Use WebKit-safe RGBA realm artwork"
+          git push origin HEAD:fix/webkit-rgba-artwork
