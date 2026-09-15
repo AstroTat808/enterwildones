@@ -1,0 +1,40 @@
+name: Repair SVG logos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/repair-svg-logos.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install image support
+        run: python -m pip install --disable-pip-version-check pillow pillow-avif-plugin
+
+      - name: Repair embedded image codec
+        run: python scripts/repair-svg-logos.py
+
+      - name: Commit repaired SVGs and remove one-time repair tooling
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/assets/images/realms/*.svg scripts/validate-branding.mjs
+          git rm .github/workflows/repair-svg-logos.yml scripts/repair-svg-logos.py
+          git commit -m "Make supplied realm SVGs browser-safe"
+          git push origin HEAD:main
