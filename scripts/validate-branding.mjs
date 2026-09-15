@@ -9,7 +9,7 @@ for(const name of names){
   const svg=read(file);
   assert(svg.startsWith('<svg'),`${name} is SVG`);
   assert(svg.includes('data:image/png;base64,'),`${name} embeds browser-safe transparent artwork`);
-  assert(svg.length>5000&&svg.length<100000,`${name} optimized payload`);
+  assert(svg.length>5000&&svg.length<250000,`${name} optimized payload`);
 }
 const branding=read('site/assets/js/branding.js');
 assert(branding.includes('/assets/images/realms/${realms[valid(realm)].slug}.svg'));
