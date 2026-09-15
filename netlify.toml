@@ -15,12 +15,36 @@
   status = 301
   force = true
 
-# Backward-compatible rewrite for legacy HTML/cached realm artwork URLs.
-# The obsolete AVIF files are intentionally removed; all branding now resolves
-# to the authoritative SVG lockups without a client-side broken-image window.
+# Backward-compatible rewrites for legacy HTML/cached realm artwork URLs.
+# These are exact paths so the live SVG assets are never intercepted by a
+# placeholder matching the whole final path segment (including extensions).
 [[redirects]]
-  from = "/assets/images/realms/:logo.avif"
-  to = "/assets/images/realms/:logo.svg"
+  from = "/assets/images/realms/enter-wild-ones.avif"
+  to = "/assets/images/realms/enter-wild-ones.svg"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/assets/images/realms/aureva.avif"
+  to = "/assets/images/realms/aureva.svg"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/assets/images/realms/halora.avif"
+  to = "/assets/images/realms/halora.svg"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/assets/images/realms/sunveil.avif"
+  to = "/assets/images/realms/sunveil.svg"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/assets/images/realms/nocturne.avif"
+  to = "/assets/images/realms/nocturne.svg"
   status = 200
   force = true
 
