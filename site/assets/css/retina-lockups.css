@@ -30,6 +30,133 @@
   height:100%;
   object-fit:contain;
 }
+
+/* Shared footer treatment. This intentionally overrides the legacy cropped-logo
+   positioning in branding.css now that the official lockup is inserted by branding.js. */
+.site-footer{
+  position:relative;
+  isolation:isolate;
+  display:grid;
+  grid-template-columns:minmax(116px,150px) minmax(220px,1fr) minmax(260px,auto);
+  align-items:center;
+  gap:clamp(24px,4vw,64px);
+  padding:28px max(5vw,env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(5vw,env(safe-area-inset-left));
+  background:linear-gradient(180deg,rgba(3,3,4,.76),#020203 72%);
+  border-top:1px solid rgba(232,201,130,.14);
+  color:#a89d89;
+  line-height:1.55;
+  letter-spacing:.13em;
+  text-align:left;
+}
+.site-footer::before{
+  content:"";
+  position:absolute;
+  left:8%;
+  right:8%;
+  top:-1px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 40%,transparent),transparent);
+  pointer-events:none;
+}
+.site-footer .footer-brand{
+  display:grid;
+  place-items:center;
+  justify-self:start;
+  width:132px;
+  height:auto;
+  margin:0;
+  overflow:visible;
+  position:static;
+}
+.site-footer .footer-brand .footer-lockup{
+  --lockup-width:132px;
+  width:var(--lockup-width);
+  max-width:100%;
+  margin:0;
+}
+.site-footer .footer-brand .web-lockup-art{
+  position:static;
+  inset:auto;
+  left:auto;
+  top:auto;
+  width:100%;
+  max-width:100%;
+  height:auto;
+  aspect-ratio:1;
+  object-fit:contain;
+  filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 14%,transparent));
+}
+.site-footer nav{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:0;
+  min-width:0;
+  font-size:10px;
+  letter-spacing:.14em;
+}
+.site-footer nav a{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  padding:8px 16px;
+  color:#c6bba8;
+  transition:color .2s ease;
+}
+.site-footer nav a:hover{color:var(--accent)}
+.site-footer nav a+a::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:50%;
+  width:1px;
+  height:12px;
+  transform:translateY(-50%);
+  background:rgba(255,255,255,.14);
+}
+.site-footer>span{
+  justify-self:end;
+  max-width:360px;
+  color:#847b6d;
+  font-size:8px;
+  line-height:1.7;
+  letter-spacing:.20em;
+  text-align:right;
+  text-transform:uppercase;
+}
+
+@media(max-width:880px){
+  .site-footer{
+    grid-template-columns:1fr;
+    justify-items:center;
+    gap:12px;
+    padding:30px max(20px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));
+    text-align:center;
+  }
+  .site-footer .footer-brand{
+    justify-self:center;
+    width:120px;
+  }
+  .site-footer .footer-brand .footer-lockup{--lockup-width:120px}
+  .site-footer nav{
+    width:100%;
+    max-width:340px;
+    justify-content:center;
+  }
+  .site-footer>span{
+    justify-self:center;
+    width:100%;
+    max-width:360px;
+    margin-top:2px;
+    padding-top:14px;
+    border-top:1px solid rgba(255,255,255,.08);
+    text-align:center;
+  }
+}
+
 @media(max-width:700px){
   .master-lockup{--lockup-width:min(82vw,21rem)}
   .realm-lockup{--lockup-width:min(82vw,19rem)}
@@ -38,6 +165,30 @@
   .footer-lockup{--lockup-width:7.5rem}
   .brand .web-lockup,.topbar .web-lockup{--lockup-width:6.5rem}
 }
+
+@media(max-width:420px){
+  .site-footer{
+    gap:9px;
+    padding-top:24px;
+  }
+  .site-footer .footer-brand{width:112px}
+  .site-footer .footer-brand .footer-lockup{--lockup-width:112px}
+  .site-footer nav{
+    max-width:310px;
+    font-size:9.5px;
+    letter-spacing:.11em;
+  }
+  .site-footer nav a{
+    min-height:42px;
+    padding:7px 11px;
+  }
+  .site-footer>span{
+    max-width:315px;
+    font-size:7.5px;
+    letter-spacing:.15em;
+  }
+}
+
 @media(max-width:390px){
   .master-lockup{--lockup-width:min(86vw,20rem)}
   .realm-lockup{--lockup-width:min(86vw,18rem)}
