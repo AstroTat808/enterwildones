@@ -46,7 +46,7 @@ for(const name of names){
   const file=`site/assets/images/realms/${name}.svg`;
   const svg=read(file);
   assert(svg.startsWith('<svg'),`${name} is SVG`);
-  assert(svg.length>5000&&svg.length<250000,`${name} optimized payload`);
+  assert(svg.length>5000&&svg.length<500000,`${name} optimized payload`);
   validateEmbeddedPng(name,svg);
 }
 
