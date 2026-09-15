@@ -1,0 +1,36 @@
+name: Focused logo asset HTTP QA
+
+on:
+  push:
+    branches: ["qa/logo-live-a109"]
+
+permissions:
+  contents: read
+
+jobs:
+  asset-http:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check production and immutable deploy asset URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          bases=(
+            "https://enterwildones.com"
+            "https://a5l10os3-0923-4s4n-8n9d-1s52acmjxxlq--enter-wild-ones.netlify.app"
+          )
+          assets=(enter-wild-ones aureva halora sunveil nocturne)
+          failed=0
+          for base in "${bases[@]}"; do
+            echo "BASE $base"
+            for a in "${assets[@]}"; do
+              url="$base/assets/images/realms/$a.svg"
+              code=$(curl -L -sS -o "/tmp/$a.svg" -w '%{http_code}' "$url")
+              type=$(curl -L -sSI "$url" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print $2; exit}')
+              bytes=$(wc -c < "/tmp/$a.svg" | tr -d ' ')
+              prefix=$(head -c 40 "/tmp/$a.svg" | tr '\n' ' ')
+              echo "$a code=$code type=${type:-none} bytes=$bytes prefix=$prefix"
+              if [[ "$code" != "200" ]] || [[ "$prefix" != '<svg'* ]]; then failed=1; fi
+            done
+          done
+          exit "$failed"
