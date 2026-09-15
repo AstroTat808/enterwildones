@@ -32,7 +32,9 @@
     wrap.className=`web-lockup web-lockup--official ${variant}-lockup`;
     wrap.dataset.webRealm=key;
     wrap.dataset.webVariant=variant;
-    wrap.innerHTML=`<img class="web-lockup-art" src="${asset(key)}" alt="" decoding="async">`;
+    // These small, critical brand assets are decoded synchronously to avoid
+    // intermittent WebKit/Safari paint omissions after DOM replacement.
+    wrap.innerHTML=`<img class="web-lockup-art" src="${asset(key)}" alt="" decoding="sync">`;
     wrap.setAttribute('role','img');
     wrap.setAttribute('aria-label',meta.label);
     return wrap;
@@ -67,7 +69,7 @@
       if(!img){img=document.createElement('img');icon.append(img);}
       img.src=asset('cycle');
       img.alt='';
-      img.decoding='async';
+      img.decoding='sync';
     });
   }
 

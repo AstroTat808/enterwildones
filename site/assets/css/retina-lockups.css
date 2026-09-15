@@ -15,9 +15,8 @@
   aspect-ratio:1;
   object-fit:contain;
   image-rendering:auto;
-  -webkit-transform:translateZ(0);
-  transform:translateZ(0);
-  filter:drop-shadow(0 0 20px rgba(255,255,255,.10));
+  opacity:1;
+  visibility:visible;
 }
 .master-lockup{--lockup-width:min(46vw,34rem)}
 .realm-lockup{--lockup-width:min(100%,20rem)}
