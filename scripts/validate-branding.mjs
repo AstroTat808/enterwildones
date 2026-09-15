@@ -7,7 +7,7 @@ for(const name of names){
   const path=`site/assets/images/realms/${name}.svg`;
   const svg=read(path);
   assert(svg.startsWith('<svg'),`${name} is SVG`);
-  assert(svg.includes('data:image/avif;base64,'),`${name} embeds optimized transparent artwork`);
+  assert(svg.includes('data:image/png;base64,'),`${name} embeds browser-safe transparent artwork`);
   assert(svg.length>5000&&svg.length<100000,`${name} optimized payload`);
 }
 const branding=read('site/assets/js/branding.js');
