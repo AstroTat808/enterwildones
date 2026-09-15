@@ -9,10 +9,7 @@
     night:{slug:'nocturne',name:'NOCTURNE',sub:'REALM IV · NIGHT',label:'NOCTURNE - Realm IV - Night',roman:'IV'}
   });
   const valid = value => Object.hasOwn(realms,value) ? value : 'cycle';
-  const asset = realm => {
-    const key=valid(realm), slug=realms[key].slug;
-    return key==='fire' ? '/assets/images/realms/sunveil-web.svg' : `/assets/images/realms/${slug}.avif`;
-  };
+  const asset = realm => `/assets/images/realms/${realms[valid(realm)].slug}.svg`;
 
   if(!document.querySelector('link[data-wild-ones-polish]')){
     const link=document.createElement('link');
@@ -32,10 +29,10 @@
   function lockup(realm, variant='page'){
     const key=valid(realm), meta=realms[key];
     const wrap=document.createElement('div');
-    wrap.className=`web-lockup ${variant}-lockup`;
+    wrap.className=`web-lockup web-lockup--official ${variant}-lockup`;
     wrap.dataset.webRealm=key;
     wrap.dataset.webVariant=variant;
-    wrap.innerHTML=`<div class="web-emblem" aria-hidden="true"><img src="${asset(key)}" alt="" decoding="async"></div><div class="web-wordmark">${meta.name}</div><div class="web-submark">${meta.sub}</div>`;
+    wrap.innerHTML=`<img class="web-lockup-art" src="${asset(key)}" alt="" decoding="async">`;
     wrap.setAttribute('role','img');
     wrap.setAttribute('aria-label',meta.label);
     return wrap;
@@ -52,7 +49,7 @@
   }
 
   function inferRealmFromImage(img){
-    const src=(img?.getAttribute('src')||'').toLowerCase();
+    const src=(img?.getAttribute('src')||img?.dataset?.src||'').toLowerCase();
     for(const [key,meta] of Object.entries(realms)) if(src.includes(`/${meta.slug}.`)) return key;
     return 'cycle';
   }
@@ -64,15 +61,13 @@
         icon=document.createElement('span');
         icon.className='brand-icon';
         icon.setAttribute('aria-hidden','true');
-        const img=document.createElement('img');
-        img.src=asset('cycle'); img.alt=''; img.decoding='async';
-        icon.append(img);
         brand.prepend(icon);
-      } else {
-        let img=icon.querySelector('img');
-        if(!img){img=document.createElement('img');icon.append(img);}
-        img.src=asset('cycle'); img.alt=''; img.decoding='async';
       }
+      let img=icon.querySelector('img');
+      if(!img){img=document.createElement('img');icon.append(img);}
+      img.src=asset('cycle');
+      img.alt='';
+      img.decoding='async';
     });
   }
 
