@@ -19,12 +19,16 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pillow==11.3.0
-      - name: Re-encode embedded AUREVA and HALORA PNGs as true-color RGBA
+      - name: Recover and re-encode AUREVA and HALORA as standards-compliant RGBA PNG
         shell: python
         run: |
           import base64, io, pathlib, re
-          from PIL import Image
+          from PIL import Image, ImageFile
 
+          # The current wrappers contain PNG streams that Chromium tolerates but
+          # strict decoders/WebKit do not reliably paint. Recover the complete
+          # decoded pixels, then write a clean PNG color-type 6 stream.
+          ImageFile.LOAD_TRUNCATED_IMAGES = True
           files = [
               pathlib.Path('site/assets/images/realms/aureva.svg'),
               pathlib.Path('site/assets/images/realms/halora.svg'),
@@ -37,16 +41,28 @@ jobs:
                   raise SystemExit(f'No embedded PNG found in {path}')
               source = base64.b64decode(match.group(1))
               image = Image.open(io.BytesIO(source)).convert('RGBA')
+              if image.size != (384, 384):
+                  raise SystemExit(f'{path}: unexpected recovered size {image.size}')
+              alpha_bbox = image.getchannel('A').getbbox()
+              if not alpha_bbox or alpha_bbox[3] < 360:
+                  raise SystemExit(f'{path}: recovered artwork is incomplete; alpha bbox={alpha_bbox}')
               out = io.BytesIO()
               image.save(out, format='PNG', optimize=True, compress_level=9)
               rgba = out.getvalue()
               if rgba[25] != 6:
                   raise SystemExit(f'{path}: expected PNG color type 6 RGBA, got {rgba[25]}')
+              # Strictly reopen the rewritten stream with truncated-image support off.
+              ImageFile.LOAD_TRUNCATED_IMAGES = False
+              strict = Image.open(io.BytesIO(rgba))
+              strict.load()
+              if strict.size != (384, 384):
+                  raise SystemExit(f'{path}: strict decode changed size')
+              ImageFile.LOAD_TRUNCATED_IMAGES = True
               encoded = base64.b64encode(rgba).decode('ascii')
               repaired = text[:match.start(1)] + encoded + text[match.end(1):]
               path.write_text(repaired, encoding='utf-8')
-              print(f'{path}: {len(source)} -> {len(rgba)} PNG bytes; SVG {len(repaired)} bytes')
-          
+              print(f'{path}: recovered bbox={alpha_bbox}; {len(source)} -> {len(rgba)} PNG bytes; SVG {len(repaired)} bytes')
+
       - name: Validate repaired artwork
         run: |
           node scripts/validate-branding.mjs
@@ -58,5 +74,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm .github/workflows/webkit-rgba-reencode.yml
           git add site/assets/images/realms/aureva.svg site/assets/images/realms/halora.svg
-          git commit -m "Use WebKit-safe RGBA realm artwork"
+          git commit -m "Repair AUREVA and HALORA SVG payloads for WebKit"
           git push origin HEAD:fix/webkit-rgba-artwork
