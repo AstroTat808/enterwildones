@@ -1,0 +1,277 @@
+/* ENTER WILD ONES V4 event realm pages. Presentation only. */
+.cinematic-event{
+  --event-max:1480px;
+  --event-ink:#020307;
+  --event-gold:#e8c982;
+  min-height:100%;
+  background:var(--event-ink);
+  color:#f6efe5;
+}
+.cinematic-event .ambient{
+  background:
+    radial-gradient(ellipse at 18% 24%,color-mix(in srgb,var(--accent) 11%,transparent),transparent 38%),
+    radial-gradient(ellipse at 84% 62%,color-mix(in srgb,var(--accent2) 9%,transparent),transparent 42%),
+    linear-gradient(180deg,#020307 0%,color-mix(in srgb,var(--bg) 78%,#020307) 52%,#020307 100%);
+}
+.cinematic-event .ambient:after{
+  background-image:
+    radial-gradient(circle at center,rgba(255,255,255,.72) 0 .55px,transparent .7px),
+    radial-gradient(circle at center,color-mix(in srgb,var(--accent) 60%,white) 0 .45px,transparent .6px);
+  background-size:86px 86px,137px 137px;
+  background-position:0 0,29px 43px;
+  opacity:.12;
+}
+.cinematic-event .topbar{
+  min-height:76px;
+  padding:8px max(24px,calc((100vw - var(--event-max))/2));
+  background:linear-gradient(180deg,rgba(2,3,7,.96),rgba(2,3,7,.80));
+  border-bottom:1px solid color-mix(in srgb,var(--accent) 13%,rgba(255,255,255,.05));
+  backdrop-filter:blur(24px) saturate(125%);
+  box-shadow:0 14px 44px rgba(0,0,0,.22);
+}
+.cinematic-event .brand{gap:0}.cinematic-event .brand-icon{display:flex;width:clamp(180px,17vw,248px);height:58px;overflow:visible;align-items:center;flex-basis:auto}.cinematic-event .brand-icon img{position:static;width:100%;height:100%;max-width:100%;object-fit:contain;object-position:left center;mix-blend-mode:normal;filter:drop-shadow(0 8px 24px color-mix(in srgb,var(--accent) 10%,transparent))}.cinematic-event .brand-label{display:none}.cinematic-event .desktop-nav{gap:3px;padding:5px;border:1px solid rgba(255,255,255,.075);border-radius:999px;background:rgba(255,255,255,.022)}.cinematic-event .desktop-nav a{padding:9px 13px;border-radius:999px;color:#c8bdad}.cinematic-event .desktop-nav a:hover{background:color-mix(in srgb,var(--accent) 8%,transparent);color:#fff3db}
+
+.cinematic-event .shell{
+  position:relative;
+  isolation:isolate;
+  min-height:100svh;
+  padding:clamp(116px,9vw,154px) max(28px,calc((100vw - var(--event-max))/2)) 112px;
+  overflow:hidden;
+}
+.cinematic-event .shell:before{
+  content:"";
+  position:absolute;
+  z-index:-2;
+  inset:0;
+  background:
+    radial-gradient(ellipse at 20% 28%,color-mix(in srgb,var(--accent) 15%,transparent),transparent 38%),
+    radial-gradient(ellipse at 82% 74%,color-mix(in srgb,var(--accent2) 8%,transparent),transparent 42%),
+    linear-gradient(180deg,rgba(2,3,7,.08),#020307 92%);
+}
+.cinematic-event .shell:after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:min(84vw,1200px);
+  aspect-ratio:1;
+  left:50%;
+  top:40%;
+  transform:translate(-50%,-50%);
+  border:1px solid color-mix(in srgb,var(--accent) 8%,transparent);
+  border-radius:50%;
+  box-shadow:
+    0 0 0 14vw color-mix(in srgb,var(--accent) 1.7%,transparent),
+    0 0 0 28vw color-mix(in srgb,var(--accent) 1%,transparent);
+  opacity:.7;
+  pointer-events:none;
+}
+.cinematic-event .shell-inner{width:100%;max-width:none;margin:0 auto}
+
+.cinematic-event .event-heading{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);
+  align-items:center;
+  gap:clamp(52px,7vw,118px);
+  min-height:min(750px,74svh);
+  padding:clamp(30px,4vw,58px) 0 clamp(62px,7vw,96px);
+}
+.cinematic-event .event-heading:after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 48%,transparent),transparent);
+  opacity:.7;
+}
+.cinematic-event .event-stage{
+  position:relative;
+  display:grid;
+  place-items:center;
+  min-width:0;
+}
+.cinematic-event .event-stage:before,
+.cinematic-event .event-stage:after{
+  content:"";
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+}
+.cinematic-event .event-stage:before{
+  width:min(100%,660px);
+  aspect-ratio:1;
+  border:1px solid color-mix(in srgb,var(--accent) 16%,transparent);
+  box-shadow:0 0 120px color-mix(in srgb,var(--accent) 8%,transparent),inset 0 0 90px color-mix(in srgb,var(--accent) 5%,transparent);
+}
+.cinematic-event .event-stage:after{
+  width:min(82%,540px);
+  aspect-ratio:1;
+  border:1px dashed color-mix(in srgb,var(--accent2) 13%,transparent);
+  transform:rotate(12deg);
+}
+.cinematic-event .event-stage .page-brand{
+  position:relative;
+  z-index:2;
+  width:min(100%,650px);
+  max-width:none;
+  margin:0;
+  padding:clamp(10px,1.4vw,20px);
+}
+.cinematic-event .event-stage .page-brand:before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:13%;
+  border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent) 11%,transparent),transparent 69%);
+  filter:blur(18px);
+}
+.cinematic-event .event-stage .web-lockup,
+.cinematic-event .event-stage .page-lockup{--lockup-width:min(100%,620px);width:min(100%,620px);max-width:none}
+.cinematic-event .event-stage .page-brand img,
+.cinematic-event .event-stage .web-lockup-art{
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:1;
+  object-fit:contain;
+  mix-blend-mode:normal;
+  filter:drop-shadow(0 38px 96px rgba(0,0,0,.55)) drop-shadow(0 0 34px color-mix(in srgb,var(--accent) 7%,transparent));
+}
+
+.cinematic-event .event-heading-copy{
+  position:relative;
+  max-width:610px;
+  padding:clamp(10px,2vw,28px) 0;
+}
+.cinematic-event .event-heading-copy:before{
+  display:block;
+  margin-bottom:21px;
+  color:var(--accent);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.30em;
+  text-transform:uppercase;
+}
+body[data-realm=light].cinematic-event .event-heading-copy:before{content:"REALM I / LIGHT"}
+body[data-realm=balance].cinematic-event .event-heading-copy:before{content:"REALM II / BALANCE"}
+body[data-realm=fire].cinematic-event .event-heading-copy:before{content:"REALM III / FIRE"}
+body[data-realm=night].cinematic-event .event-heading-copy:before{content:"REALM IV / NIGHT"}
+.cinematic-event .event-heading-copy .eyebrow{margin:0 0 18px;color:#9f968b;font-size:9px;letter-spacing:.25em}
+.cinematic-event .event-heading-copy h1{
+  margin:0;
+  font:400 clamp(64px,7.4vw,122px)/.82 "Iowan Old Style",Baskerville,Georgia,serif;
+  letter-spacing:-.065em;
+  text-wrap:balance;
+  text-shadow:0 24px 60px rgba(0,0,0,.34);
+}
+.cinematic-event .event-heading-copy .intro{
+  max-width:580px;
+  margin:30px 0 0;
+  color:#b7aea3;
+  font-size:clamp(15px,1.15vw,18px);
+  line-height:1.85;
+}
+.cinematic-event .event-mini{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:30px;
+}
+.cinematic-event .event-mini span{
+  display:inline-flex;
+  align-items:center;
+  min-height:36px;
+  padding:0 13px;
+  border:1px solid rgba(255,255,255,.085);
+  border-radius:999px;
+  background:rgba(255,255,255,.018);
+  color:#c5bbad;
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+}
+.cinematic-event .event-mini span:last-child{border-color:color-mix(in srgb,var(--accent) 26%,rgba(255,255,255,.08));color:var(--accent)}
+
+.cinematic-event .event-access{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:end;
+  gap:clamp(30px,5vw,84px);
+  margin:0;
+  padding:clamp(42px,5vw,72px);
+  border:1px solid color-mix(in srgb,var(--accent) 18%,rgba(255,255,255,.04));
+  border-radius:30px;
+  background:
+    radial-gradient(circle at 86% 20%,color-mix(in srgb,var(--accent) 8%,transparent),transparent 35%),
+    linear-gradient(145deg,rgba(8,10,15,.88),rgba(3,4,8,.72));
+  box-shadow:0 36px 100px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.03);
+  backdrop-filter:blur(24px) saturate(115%);
+  overflow:hidden;
+}
+.cinematic-event .event-access:before{
+  content:"ACCESS";
+  position:absolute;
+  right:-.02em;
+  top:-.22em;
+  font:700 clamp(78px,12vw,186px)/1 Inter,system-ui,sans-serif;
+  letter-spacing:-.075em;
+  color:transparent;
+  -webkit-text-stroke:1px color-mix(in srgb,var(--accent) 8%,transparent);
+  pointer-events:none;
+}
+.cinematic-event .event-access-copy{position:relative;z-index:1;max-width:680px}
+.cinematic-event .event-access .eyebrow{margin:0 0 12px;color:var(--accent)}
+.cinematic-event .event-access h2{margin:0;font:400 clamp(38px,4.8vw,68px)/1 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.045em}
+.cinematic-event .event-access .intro{margin:18px 0 0;color:#aaa198;font-size:15px;line-height:1.8;max-width:600px}
+.cinematic-event .event-access .form-actions{position:relative;z-index:1;justify-content:flex-end;align-items:center;margin:0;gap:12px}
+.cinematic-event .event-access .button{border-radius:999px;min-width:174px;box-shadow:0 14px 42px rgba(0,0,0,.26)}
+.cinematic-event .event-access .button.ghost{background:rgba(255,255,255,.015)}
+.cinematic-event .event-access .text-link{padding:0 8px;color:#d4cabd}
+
+.cinematic-event .site-footer{
+  background:#010204;
+  border-top:1px solid color-mix(in srgb,var(--accent) 12%,rgba(255,255,255,.04));
+}
+.cinematic-event .footer-brand img,.cinematic-event .footer-brand .web-lockup-art{mix-blend-mode:normal;filter:drop-shadow(0 12px 34px color-mix(in srgb,var(--accent) 8%,transparent))}
+
+@media(max-width:1050px){
+  .cinematic-event .event-heading{grid-template-columns:1fr;gap:14px;min-height:0;text-align:center;padding-top:18px}
+  .cinematic-event .event-stage .page-brand{width:min(100%,560px)}
+  .cinematic-event .event-heading-copy{justify-self:center;max-width:760px}
+  .cinematic-event .event-heading-copy:before{margin-top:4px}
+  .cinematic-event .event-heading-copy .intro{margin-left:auto;margin-right:auto}
+  .cinematic-event .event-mini{justify-content:center}
+  .cinematic-event .event-access{grid-template-columns:1fr;text-align:center}
+  .cinematic-event .event-access-copy{justify-self:center}
+  .cinematic-event .event-access .form-actions{justify-content:center}
+}
+@media(max-width:760px){
+  .cinematic-event .topbar{min-height:66px;padding-inline:16px}
+  .cinematic-event .brand-icon{width:clamp(150px,47vw,205px);height:50px}
+  .cinematic-event .shell{padding:92px 20px 78px}
+  .cinematic-event .shell:after{width:145vw;top:27%}
+  .cinematic-event .event-heading{padding-bottom:58px}
+  .cinematic-event .event-stage:before{width:min(100%,500px)}
+  .cinematic-event .event-stage:after{width:min(82%,410px)}
+  .cinematic-event .event-stage .page-brand{width:min(100%,470px);padding:4px}
+  .cinematic-event .event-heading-copy h1{font-size:clamp(52px,17vw,84px);line-height:.86}
+  .cinematic-event .event-heading-copy .intro{font-size:14px;line-height:1.78;margin-top:22px}
+  .cinematic-event .event-mini{margin-top:24px}
+  .cinematic-event .event-access{padding:34px 22px;border-radius:24px}
+  .cinematic-event .event-access:before{font-size:22vw;top:.02em}
+  .cinematic-event .event-access .form-actions{width:min(100%,420px);margin-inline:auto;flex-direction:column;align-items:stretch}
+  .cinematic-event .event-access .button,.cinematic-event .event-access .text-link{width:100%;justify-content:center}
+}
+@media(max-width:390px){
+  .cinematic-event .shell{padding-inline:14px}
+  .cinematic-event .event-stage .page-brand{width:100%}
+  .cinematic-event .event-access{padding-inline:18px}
+}
+@media(prefers-reduced-motion:reduce){
+  .cinematic-event .event-stage:after{transform:none}
+}
