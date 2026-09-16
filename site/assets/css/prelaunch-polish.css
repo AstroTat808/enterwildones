@@ -1,0 +1,79 @@
+/* ENTER WILD ONES pre-launch UX hardening.
+   Shared interaction targets, focus treatment, and deterministic homepage rendering. */
+
+/* Keep primary navigation comfortably tappable without changing its visual density. */
+.topbar > .brand,
+.desktop-nav a,
+.mobile-menu summary,
+.mobile-menu nav a {
+  min-height:44px;
+}
+.topbar > .brand,
+.desktop-nav a,
+.mobile-menu summary,
+.mobile-menu nav a {
+  display:inline-flex;
+  align-items:center;
+}
+.mobile-menu summary {
+  justify-content:center;
+  min-width:72px;
+  cursor:pointer;
+}
+
+/* Visible keyboard focus across public, guest, and operations surfaces. */
+:where(a,button,input,select,summary,textarea):focus-visible {
+  outline:2px solid color-mix(in srgb,var(--accent,#e8c982) 78%,white);
+  outline-offset:3px;
+}
+
+/* Homepage realm anchors sit below the fixed masthead + progression strip. */
+.cinematic-home .v2-cycle,
+.cinematic-home .v2-realm,
+.cinematic-home .v2-passport {
+  scroll-margin-top:126px;
+}
+.cinematic-home .v2-progress a {
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Rendering the four realms is more important here than the small offscreen-paint
+   saving from content-visibility. It also makes anchor jumps/full-page captures
+   deterministic in Chromium and WebKit. */
+.cinematic-home .v2-realm,
+.cinematic-home .v2-passport {
+  content-visibility:visible;
+  contain:none;
+  contain-intrinsic-size:auto;
+}
+
+/* Forms and operational consoles: retain compact styling while providing a
+   dependable finger-sized activation area. */
+.form-actions :where(button,.button,.text-link),
+.admin-toolbar :where(button,a),
+.command-actions :where(button,a),
+.command-page .rehearsal-list button,
+.admin-command-links a {
+  min-height:44px;
+}
+
+/* Native acknowledgements remain native controls, but no longer present as a
+   narrow 22px hit target on ticket checkout. */
+input[type="checkbox"] {
+  width:40px;
+  height:40px;
+  min-width:40px;
+  min-height:40px;
+  margin:2px 8px 2px 0;
+  vertical-align:middle;
+}
+
+@media (max-width:760px) {
+  .desktop-nav a { min-height:44px; }
+  .mobile-menu summary { min-height:46px; }
+  .cinematic-home .v2-realm,
+  .cinematic-home .v2-passport { scroll-margin-top:112px; }
+}
