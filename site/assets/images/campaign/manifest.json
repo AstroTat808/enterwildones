@@ -21,12 +21,12 @@
       "originalWidth": 1672,
       "originalHeight": 941,
       "sourceFormat": "PNG",
-      "sourceSha256": "122f41bb3637d688b78122f3822018cf0580a1bf3cedb1f0f1d43f1de10944c9",
+      "sourceSha256": "5b032fb4641babec6df92f30464ba90e8fddc69196c2436956425c4a9fb2636f",
       "files": [
-        {"path": "four-realms-portals-wide.jpg", "width": 1672, "height": 941, "bytes": 645658, "sha256": "bc02dfc033e30c349dcbd543ffbe1af36963ac86eaebc404b3aa2798e754d963"},
-        {"path": "four-realms-portals-wide-960.webp", "width": 960, "height": 540, "bytes": 134760, "sha256": "81bd81306d7525c9d0707a9c6a36f437e9923bbb6c58c8b07f0556ddf77c08e3"},
-        {"path": "four-realms-portals-wide-1280.webp", "width": 1280, "height": 720, "bytes": 194040, "sha256": "169ff4e7473e563971c43446f25db2a381fe9c95fdcd776d2f753465e3987c3b"},
-        {"path": "four-realms-portals-wide-1672.webp", "width": 1672, "height": 941, "bytes": 272272, "sha256": "71bf4ce2deca3b76a2aaa057ad5f3ff7ef2564fe917611ff8932e9cf25c6cee7"}
+        {"path": "four-realms-portals-wide.jpg", "width": 1672, "height": 941, "bytes": 639958, "sha256": "47fb8e1e3e65276b51d987dad9fd6a1a0797734ed6b19762c8a54538b7dd181c"},
+        {"path": "four-realms-portals-wide-960.webp", "width": 960, "height": 540, "bytes": 170600, "sha256": "ae98d39086b7e58c7902003c62038103f11530cf4cceec993ad1d68785bb871a"},
+        {"path": "four-realms-portals-wide-1280.webp", "width": 1280, "height": 720, "bytes": 273614, "sha256": "74194ea9fd965f5f57f65f1afbbfcb9b76e2e3c5924a9a790e553b66c0fb4d13"},
+        {"path": "four-realms-portals-wide-1672.webp", "width": 1672, "height": 941, "bytes": 451962, "sha256": "5f01bc7b8666b9d3c577cf7c1778013e45468d107374127b258783a61cd40cea"}
       ]
     }
   ]

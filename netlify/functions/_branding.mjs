@@ -1,6 +1,6 @@
 // Only server-validated event realms select public artwork; never use ticket data as a path.
 const artwork=Object.freeze({light:'aureva',balance:'halora',fire:'sunveil',night:'nocturne',cycle:'enter-wild-ones'});
-export function realmArtwork(realm){return `/assets/images/realms/${(Object.hasOwn(artwork,realm)?artwork[realm]:artwork.cycle)}.svg`;}
+export function realmArtwork(realm){return `/assets/images/realms/${(Object.hasOwn(artwork,realm)?artwork[realm]:artwork.cycle)}-1200.webp`;}
 export function realmLogo(event,cls='ticket-logo'){
   const name=(Object.hasOwn(artwork,event?.realm)?artwork[event.realm]:artwork.cycle);
   return `<img class="${cls}" src="${realmArtwork(event?.realm)}" alt="${name.replaceAll('-',' ').toUpperCase()}" width="384" height="384" decoding="async">`;
