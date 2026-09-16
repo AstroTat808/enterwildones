@@ -1,0 +1,43 @@
+/* Optical compensation for the approved 1200px transparent realm lockups.
+   The source canvases are identical, but the visible artwork bounds differ.
+   These small per-realm adjustments equalize perceived size without cropping. */
+
+/* Homepage realm chapters */
+.cinematic-home .v2-realm[data-brand-realm="light"]{--wo-logo-rest:1.010;--wo-logo-hover:1.025}
+.cinematic-home .v2-realm[data-brand-realm="balance"]{--wo-logo-rest:1.000;--wo-logo-hover:1.015}
+.cinematic-home .v2-realm[data-brand-realm="fire"]{--wo-logo-rest:1.035;--wo-logo-hover:1.050}
+.cinematic-home .v2-realm[data-brand-realm="night"]{--wo-logo-rest:1.030;--wo-logo-hover:1.045}
+.cinematic-home .v2-realm-art .web-lockup-art,
+.cinematic-home .v2-realm-art .realm-logo{
+  transform:scale(var(--wo-logo-rest,1));
+  transform-origin:center;
+}
+.cinematic-home .v2-realm:hover .web-lockup-art,
+.cinematic-home .v2-realm:hover .realm-logo{
+  transform:translate3d(calc(var(--wo-pointer-x,0px) * .04),calc(-9px + var(--wo-pointer-y,0px) * .04),0) scale(var(--wo-logo-hover,1.015));
+}
+
+/* Shared event page: realm is selected dynamically by event.js/branding.js. */
+body[data-realm="light"].cinematic-event{--wo-event-logo-scale:1.010}
+body[data-realm="balance"].cinematic-event{--wo-event-logo-scale:1.000}
+body[data-realm="fire"].cinematic-event{--wo-event-logo-scale:1.035}
+body[data-realm="night"].cinematic-event{--wo-event-logo-scale:1.030}
+.cinematic-event .event-stage .page-brand img,
+.cinematic-event .event-stage .web-lockup-art{
+  transform:scale(var(--wo-event-logo-scale,1));
+  transform-origin:center;
+}
+
+@media(max-width:760px){
+  .cinematic-home .v2-realm[data-brand-realm="fire"]{--wo-logo-rest:1.025;--wo-logo-hover:1.025}
+  .cinematic-home .v2-realm[data-brand-realm="night"]{--wo-logo-rest:1.022;--wo-logo-hover:1.022}
+  body[data-realm="fire"].cinematic-event{--wo-event-logo-scale:1.025}
+  body[data-realm="night"].cinematic-event{--wo-event-logo-scale:1.022}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .cinematic-home .v2-realm:hover .web-lockup-art,
+  .cinematic-home .v2-realm:hover .realm-logo{
+    transform:scale(var(--wo-logo-rest,1));
+  }
+}
