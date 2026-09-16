@@ -25,6 +25,13 @@
     retina.dataset.wildOnesRetina='';
     document.head.append(retina);
   }
+  if(!document.querySelector('link[data-wild-ones-logo-optics]')){
+    const optics=document.createElement('link');
+    optics.rel='stylesheet';
+    optics.href='/assets/css/logo-optics.css';
+    optics.dataset.wildOnesLogoOptics='';
+    document.head.append(optics);
+  }
 
   function lockup(realm, variant='page'){
     const key=valid(realm), meta=realms[key];
