@@ -1,76 +1,65 @@
-/* High-fidelity presentation pass for the supplied Four Realms artwork.
-   Homepage-only overrides: preserves ticketing, Passport, staff/admin and payment flows. */
+/* ENTER WILD ONES — high-fidelity homepage presentation pass.
+   Scoped to the cinematic homepage so ticketing, Passport, staff/admin and payment flows remain untouched. */
 .cinematic-home{
-  --brand-max: 1520px;
-  --brand-gold: #f2d58f;
+  --brand-max:1520px;
+  --brand-gold:#f2d58f;
 }
 
-/* Let the master lockup be the brand. Avoid cropping the supplied artwork or
-   duplicating its wordmark with a second text treatment. */
+/* Header: use the complete master lockup as the brand and remove redundant type. */
 .cinematic-home .topbar{
-  min-height: 78px;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  min-height:78px;
+  padding-top:8px;
+  padding-bottom:8px;
 }
-.cinematic-home .brand{
-  gap: 0;
-  min-width: 0;
-}
+.cinematic-home .brand{gap:0;min-width:0}
 .cinematic-home .brand-icon{
-  display: flex;
-  align-items: center;
-  width: clamp(190px, 18vw, 270px);
-  height: 60px;
-  flex: 0 1 auto;
-  overflow: visible;
+  display:flex;
+  align-items:center;
+  width:clamp(190px,18vw,270px);
+  height:60px;
+  flex:0 1 auto;
+  overflow:visible;
 }
 .cinematic-home .brand-icon img{
-  position: static;
-  display: block;
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  object-fit: contain;
-  object-position: left center;
-  mix-blend-mode: normal;
-  filter: drop-shadow(0 8px 22px rgba(0,0,0,.38));
+  position:static;
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  object-fit:contain;
+  object-position:left center;
+  mix-blend-mode:normal;
+  image-rendering:auto;
+  filter:drop-shadow(0 8px 22px rgba(0,0,0,.38));
 }
 .cinematic-home .brand-label{display:none}
 
-/* Present campaign artwork as a cinematic plate rather than a card. */
+/* Hero: let the campaign art read as a cinematic plate instead of a framed card. */
 .cinematic-home .campaign-hero{
-  background:
-    radial-gradient(ellipse at 50% 0%,rgba(32,49,91,.18),transparent 48%),
-    #020203;
+  background:radial-gradient(ellipse at 50% 0%,rgba(32,49,91,.18),transparent 48%),#020203;
 }
-.cinematic-home .campaign-visual{
-  width: min(100%, 1920px);
-  max-width: none;
-}
+.cinematic-home .campaign-visual{width:min(100%,1920px);max-width:none}
 .cinematic-home .campaign-picture,
+.cinematic-home .campaign-image{width:100%;max-width:none}
 .cinematic-home .campaign-image{
-  width: 100%;
-  max-width: none;
-}
-.cinematic-home .campaign-image{
-  mix-blend-mode: normal;
-  filter: none;
-  image-rendering: auto;
+  mix-blend-mode:normal;
+  filter:none;
+  image-rendering:auto;
 }
 .cinematic-home .campaign-intro{
-  width: min(100%, var(--brand-max));
-  padding-top: 28px;
-  padding-bottom: 40px;
+  width:min(100%,var(--brand-max));
+  padding-top:28px;
+  padding-bottom:40px;
 }
 
-/* Preserve the exact colors/edges in the supplied transparent realm artwork.
-   The previous screen blend softened light values and made fine vector detail
-   appear washed out on high-density displays. */
+/* Realm artwork: branding.js replaces the static IMG with the official lockup wrapper.
+   These selectors intentionally outrank retina-lockups.css, which is loaded dynamically. */
 .cinematic-home .realm-logo-frame{
-  width: min(100%, 760px);
-  max-width: 760px;
-  padding: clamp(6px,1vw,16px);
-  isolation: isolate;
+  width:min(100%,760px);
+  max-width:760px;
+  padding:clamp(6px,1vw,16px);
+  isolation:isolate;
+  filter:none;
 }
 .cinematic-home .realm-logo-frame:before{
   content:"";
@@ -82,6 +71,12 @@
   filter:blur(24px);
   pointer-events:none;
 }
+.cinematic-home .realm-logo-frame .realm-lockup{
+  --lockup-width:min(100%,760px);
+  width:100%;
+  max-width:760px;
+}
+.cinematic-home .realm-logo-frame .web-lockup-art,
 .cinematic-home .realm-logo{
   display:block;
   width:100%;
@@ -90,27 +85,34 @@
   object-fit:contain;
   mix-blend-mode:normal;
   image-rendering:auto;
-  filter:drop-shadow(0 26px 72px rgba(0,0,0,.5));
+  filter:drop-shadow(0 26px 72px rgba(0,0,0,.50));
 }
-.cinematic-home .realm-cinematic:hover .realm-logo-frame{
-  filter:none;
-}
-.cinematic-home .realm-cinematic:hover .realm-logo{
-  filter:drop-shadow(0 32px 84px rgba(0,0,0,.56));
-}
+.cinematic-home .realm-cinematic:hover .realm-logo-frame{transform:translateY(-5px);filter:none}
+.cinematic-home .realm-cinematic:hover .realm-logo-frame .web-lockup-art,
+.cinematic-home .realm-cinematic:hover .realm-logo{filter:drop-shadow(0 32px 84px rgba(0,0,0,.56))}
 
-/* Use the complete master lockup in the footer instead of a clipped slice. */
-.cinematic-home .site-footer{
-  padding-top:54px;
-  border-top:1px solid rgba(232,201,130,.10);
-}
-.cinematic-home .footer-brand{
-  width:min(300px,72vw);
+/* Keep the artwork visually dominant while giving copy a quieter luxury treatment. */
+.cinematic-home .realm-cinematic{column-gap:clamp(42px,6vw,110px)}
+.cinematic-home .realm-copy h2{text-wrap:balance}
+.cinematic-home .realm-copy p{max-width:46ch}
+.cinematic-home .realm-copy footer span{backdrop-filter:blur(8px)}
+
+/* Footer: show the complete master lockup rather than the legacy clipped slice. */
+.cinematic-home .site-footer{padding-top:48px;border-top:1px solid rgba(232,201,130,.10)}
+.cinematic-home .site-footer .footer-brand{
+  width:min(250px,72vw);
   height:auto;
   overflow:visible;
   position:static;
+  justify-self:start;
 }
-.cinematic-home .footer-brand img{
+.cinematic-home .site-footer .footer-brand .footer-lockup{
+  --lockup-width:min(250px,72vw);
+  width:100%;
+  max-width:250px;
+}
+.cinematic-home .site-footer .footer-brand .web-lockup-art,
+.cinematic-home .site-footer .footer-brand img{
   position:static;
   display:block;
   width:100%;
@@ -118,22 +120,29 @@
   max-width:100%;
   object-fit:contain;
   mix-blend-mode:normal;
+  image-rendering:auto;
   filter:drop-shadow(0 14px 32px rgba(0,0,0,.45));
 }
 
-@media(max-width:900px){
+@media(max-width:1000px){
   .cinematic-home .realm-logo-frame{width:min(100%,620px)}
+  .cinematic-home .realm-logo-frame .realm-lockup{--lockup-width:min(100%,620px);max-width:620px}
 }
-
+@media(max-width:880px){
+  .cinematic-home .site-footer .footer-brand{justify-self:center;width:min(230px,72vw)}
+  .cinematic-home .site-footer .footer-brand .footer-lockup{--lockup-width:min(230px,72vw);max-width:230px}
+}
 @media(max-width:700px){
   .cinematic-home .topbar{min-height:66px}
   .cinematic-home .brand-icon{width:clamp(154px,48vw,205px);height:50px}
   .cinematic-home .campaign-intro{padding-top:22px;padding-bottom:32px}
   .cinematic-home .realm-logo-frame{width:min(100%,520px);padding:0}
-  .cinematic-home .footer-brand{width:min(260px,78vw)}
+  .cinematic-home .realm-logo-frame .realm-lockup{--lockup-width:min(100%,520px);max-width:520px}
+  .cinematic-home .site-footer .footer-brand{width:min(210px,78vw)}
+  .cinematic-home .site-footer .footer-brand .footer-lockup{--lockup-width:min(210px,78vw);max-width:210px}
 }
-
 @media(prefers-reduced-motion:reduce){
   .cinematic-home .realm-logo,
-  .cinematic-home .realm-logo-frame{transition:none!important}
+  .cinematic-home .realm-logo-frame,
+  .cinematic-home .realm-logo-frame .web-lockup-art{transition:none!important}
 }
