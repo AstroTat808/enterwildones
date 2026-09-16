@@ -9,7 +9,7 @@
     night:{slug:'nocturne',name:'NOCTURNE',sub:'REALM IV · NIGHT',label:'NOCTURNE - Realm IV - Night',roman:'IV'}
   });
   const valid = value => Object.hasOwn(realms,value) ? value : 'cycle';
-  const asset = realm => `/assets/images/realms/${realms[valid(realm)].slug}.svg`;
+  const asset = realm => `/assets/images/realms/${realms[valid(realm)].slug}-1200.webp`;
 
   if(!document.querySelector('link[data-wild-ones-polish]')){
     const link=document.createElement('link');
@@ -32,8 +32,8 @@
     wrap.className=`web-lockup web-lockup--official ${variant}-lockup`;
     wrap.dataset.webRealm=key;
     wrap.dataset.webVariant=variant;
-    // These small, critical brand assets are decoded synchronously to avoid
-    // intermittent WebKit/Safari paint omissions after DOM replacement.
+    // Browser-optimized lockups are decoded synchronously to avoid intermittent
+    // WebKit/Safari paint omissions after DOM replacement.
     wrap.innerHTML=`<img class="web-lockup-art" src="${asset(key)}" alt="" decoding="sync">`;
     wrap.setAttribute('role','img');
     wrap.setAttribute('aria-label',meta.label);
@@ -52,7 +52,9 @@
 
   function inferRealmFromImage(img){
     const src=(img?.getAttribute('src')||img?.dataset?.src||'').toLowerCase();
-    for(const [key,meta] of Object.entries(realms)) if(src.includes(`/${meta.slug}.`)) return key;
+    for(const [key,meta] of Object.entries(realms)){
+      if(src.includes(`/${meta.slug}.`)||src.includes(`/${meta.slug}-`))return key;
+    }
     return 'cycle';
   }
 
