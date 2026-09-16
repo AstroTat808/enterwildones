@@ -32,6 +32,13 @@
     optics.dataset.wildOnesLogoOptics='';
     document.head.append(optics);
   }
+  if(!document.querySelector('link[data-wild-ones-prelaunch]')){
+    const prelaunch=document.createElement('link');
+    prelaunch.rel='stylesheet';
+    prelaunch.href='/assets/css/prelaunch-polish.css';
+    prelaunch.dataset.wildOnesPrelaunch='';
+    document.head.append(prelaunch);
+  }
 
   function lockup(realm, variant='page'){
     const key=valid(realm), meta=realms[key];
