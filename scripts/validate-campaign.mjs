@@ -8,14 +8,15 @@ const css = read('site/assets/css/home-v2.css').toString('utf8');
 const js = read('site/assets/js/home-v2.js').toString('utf8');
 const manifest = JSON.parse(read('site/assets/images/campaign/manifest.json'));
 
-// Keep the approved campaign source bytes immutable while the V2 page changes
-// how the landscape composition is presented.
 assert.equal(manifest.assets.length, 2);
 assert.deepEqual(manifest.assets.map(asset => asset.name), ['portals-square', 'portals-landscape']);
 const actualFiles = readdirSync(new URL('site/assets/images/campaign/', root)).sort();
 const expectedFiles = ['manifest.json', ...manifest.assets.flatMap(asset => asset.files.map(file => file.path))].sort();
 assert.deepEqual(actualFiles, expectedFiles, 'Campaign directory must contain the approved image set and manifest only.');
-const approvedSources = {"portals-square": "114bcc6c86e5b908827c03d646b66a1d894001998fd93da16b282a3682318796", "portals-landscape": "122f41bb3637d688b78122f3822018cf0580a1bf3cedb1f0f1d43f1de10944c9"};
+const approvedSources = {
+  'portals-square': '114bcc6c86e5b908827c03d646b66a1d894001998fd93da16b282a3682318796',
+  'portals-landscape': '5b032fb4641babec6df92f30464ba90e8fddc69196c2436956425c4a9fb2636f'
+};
 for (const asset of manifest.assets) {
   assert.equal(asset.sourceSha256, approvedSources[asset.name], 'Approved source artwork changed');
   for (const file of asset.files) {
@@ -37,6 +38,7 @@ assert(html.includes('four-realms-portals-wide-1672.webp'));
 assert(html.includes('four-realms-portals-wide.jpg'));
 assert(html.includes('fetchpriority="high"'));
 assert(html.includes('/assets/css/home-v2.css'));
+assert(html.includes('/assets/css/home-v4.css'));
 assert(html.includes('/assets/js/home-v2.js'));
 assert(!html.includes('/assets/css/campaign-hero.css'));
 assert(!html.includes('/assets/css/home-premium.css'));
@@ -49,7 +51,8 @@ assert(html.includes('class="v2-passport'));
 assert(html.includes('class="site-footer"'));
 for (const realm of ['aureva','halora','sunveil','nocturne']) {
   assert(html.includes(`id="${realm}"`) && html.includes(`href="/events/${realm}"`));
-  assert(html.includes(`/assets/images/realms/${realm}.svg`));
+  assert(html.includes(`/assets/images/realms/${realm}-1200.webp`));
 }
+assert(html.includes('/assets/images/realms/enter-wild-ones-1200.webp'));
 assert(!/a new realm awakens|stay close|something extraordinary is coming/i.test(html));
-console.log('V2 campaign verified: immutable approved artwork, cinematic hero, four realm chapters, progress navigation, Passport CTA and responsive motion safeguards.');
+console.log('V4 campaign verified: refreshed Four Realms artwork, cinematic hero, realm chapters, progress navigation, Passport CTA and responsive motion safeguards.');
