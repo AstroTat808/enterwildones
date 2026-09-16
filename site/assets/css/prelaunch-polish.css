@@ -1,5 +1,6 @@
 /* ENTER WILD ONES pre-launch UX hardening.
-   Shared interaction targets, focus treatment, and deterministic homepage rendering. */
+   Shared interaction targets, focus treatment, deterministic homepage rendering,
+   and final responsive hero spacing. */
 
 /* Keep primary navigation comfortably tappable without changing its visual density. */
 .topbar > .brand,
@@ -48,6 +49,83 @@
   content-visibility:visible;
   contain:none;
   contain-intrinsic-size:auto;
+}
+
+/* Homepage hero composition: preserve the cinematic layered effect without letting
+   the glass copy panel sit on top of the core Four Realms artwork. Desktop keeps a
+   restrained overlap; medium screens reduce it further; mobile becomes a clean stack. */
+.cinematic-home .v2-hero {
+  padding-bottom:clamp(26px,3vw,48px);
+}
+.cinematic-home .v2-hero-copy {
+  margin-bottom:clamp(30px,4.4vh,58px);
+}
+
+@media (max-width:1180px) {
+  .cinematic-home .v2-hero {
+    min-height:clamp(700px,92svh,920px);
+    padding-bottom:40px;
+  }
+  .cinematic-home .v2-hero-copy {
+    width:min(calc(100% - 64px),980px);
+    margin-bottom:26px;
+    padding:23px 28px 25px;
+  }
+}
+
+@media (max-width:860px) {
+  .cinematic-home .v2-hero {
+    grid-template-rows:auto auto;
+    min-height:0;
+    padding-top:78px;
+    padding-bottom:0;
+    overflow:visible;
+  }
+  .cinematic-home .v2-hero-media {
+    grid-area:1/1;
+    height:auto;
+    min-height:0;
+    aspect-ratio:16/10;
+    background:#020307;
+  }
+  .cinematic-home .v2-hero-media picture,
+  .cinematic-home .v2-hero-media img {
+    height:100%;
+  }
+  .cinematic-home .v2-hero-media img {
+    object-fit:contain;
+    object-position:center center;
+    transform:none;
+  }
+  .cinematic-home .v2-hero-copy {
+    grid-area:2/1;
+    width:min(calc(100% - 36px),760px);
+    margin:-18px auto 40px;
+    padding:23px 24px 25px;
+    background:linear-gradient(180deg,rgba(5,7,12,.94),rgba(2,3,7,.985));
+    backdrop-filter:blur(18px) saturate(118%);
+  }
+  .cinematic-home .v2-hero-copy::before,
+  .cinematic-home .v2-hero-copy::after {
+    display:none;
+  }
+  .cinematic-home .v2-hero::after {
+    display:none;
+  }
+}
+
+@media (max-width:560px) {
+  .cinematic-home .v2-hero {
+    padding-top:72px;
+  }
+  .cinematic-home .v2-hero-media {
+    aspect-ratio:4/3;
+  }
+  .cinematic-home .v2-hero-copy {
+    width:calc(100% - 24px);
+    margin:-8px auto 28px;
+    padding:21px 20px 22px;
+  }
 }
 
 /* Forms and operational consoles: retain compact styling while providing a

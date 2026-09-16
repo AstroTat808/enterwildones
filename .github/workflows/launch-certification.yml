@@ -1,5 +1,14 @@
 name: Launch Certification
 on:
+  pull_request:
+    paths:
+      - 'netlify/functions/**'
+      - 'site/**'
+      - 'scripts/validate-launch-certification.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'netlify.toml'
+      - '.github/workflows/launch-certification.yml'
   push:
     branches: [main]
     paths:

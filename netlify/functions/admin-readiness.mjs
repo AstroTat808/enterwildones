@@ -11,13 +11,17 @@ import { writeAudit } from './_audit.mjs';
 const REHEARSAL_STORE = 'wildones-rehearsal';
 const ACTIVE = new Set(['paid', 'checked_in']);
 const MANUAL_ITEMS = Object.freeze([
+  ['pricing-approved', 'Final pricing approved', 'Confirm admission, drink-package credits/price, and late-stay price/departure time are final.'],
   ['invitation-approval', 'Invitation → approval → invite', 'Approve a controlled applicant and redeem the issued invitation.'],
-  ['stripe-checkout', 'Stripe checkout', 'Complete a controlled Stripe sandbox checkout and confirm fulfillment.'],
+  ['invite-email-delivery', 'Invitation email delivery', 'Confirm the invitation code reaches the intended inbox and the redemption link opens correctly.'],
+  ['stripe-checkout', 'Stripe sandbox checkout', 'Complete a controlled Stripe sandbox checkout and confirm fulfillment.'],
+  ['live-stripe-payment', 'Live Stripe payment', 'After live Stripe is installed, complete one controlled real payment and verify webhook fulfillment, receipt, and ticket issuance.'],
   ['waiver-qr', 'Waiver → QR unlock', 'Sign the waiver and verify the QR becomes available only afterward.'],
   ['wallet-install', 'Apple Wallet', 'Install the resulting pass on a physical iPhone and open it successfully.'],
   ['gate-scan', 'Gate scan', 'Scan the ticket on a physical gate device and verify duplicate-scan handling.'],
   ['drink-package', 'Drink package purchase', 'Purchase a controlled drink package and verify the entitlement.'],
-  ['bartender-redemption', 'Bartender redemption', 'Activate a wristband and redeem credits from the bartender console.'],
+  ['late-stay-addon', 'Late-stay add-on', 'Purchase late checkout / car camping and verify the attendee entitlement and departure time.'],
+  ['bartender-redemption', 'Bartender redemption', 'Activate a wristband and redeem credits from the bartender console, including the final credit.'],
   ['refund', 'Admission + add-on refund', 'Refund controlled admission/add-ons and verify ticket and entitlement state.'],
   ['failed-payment', 'Failure drill', 'Exercise cancelled/failed payment behavior without issuing admission.'],
   ['offline-fallback', 'Event-day fallback', 'Verify manual token entry and the documented recovery path if camera/network access fails.']
@@ -35,16 +39,20 @@ async function records(storeName, eventId) {
 }
 
 function configured(...keys) { return keys.every((key) => Boolean(env(key))); }
+function configuredCertificate(name) { return Boolean(env(`${name}_BASE64`) || env(`${name}_PEM`)); }
 function eventPrefix(eventId) { return String(eventId || '').replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '').toUpperCase(); }
+function cents(key) { const value = Number(env(key)); return Number.isInteger(value) && value >= 50 ? value : null; }
+function integer(key, min = 1, max = 100) { const value = Number(env(key)); return Number.isInteger(value) && value >= min && value <= max ? value : null; }
 function stripeMode() {
   const key = String(env('STRIPE_SECRET_KEY') || '');
   return key.startsWith('sk_live_') ? 'live' : key.startsWith('sk_test_') ? 'test' : key ? 'configured' : 'missing';
 }
 function itemState(runbook, id) { return runbook.items.find((item) => item.id === id)?.status || 'pending'; }
 function light(id, label, state, detail) { return { id, label, state, detail }; }
-function runbookLight(runbook, id, label) {
+function runbookLight(runbook, id, label, { hard = false } = {}) {
   const status = itemState(runbook, id);
-  return light(id, label, status === 'passed' ? 'green' : status === 'failed' ? 'red' : 'yellow', status === 'passed' ? 'Passed' : status === 'failed' ? 'Failed — resolve before GO' : 'Pending physical verification');
+  const state = status === 'passed' ? 'green' : status === 'failed' || hard ? 'red' : 'yellow';
+  return light(id, label, state, status === 'passed' ? 'Passed' : status === 'failed' ? 'Failed — resolve before GO' : 'Pending certification');
 }
 
 async function rehearsal(eventId) {
@@ -60,6 +68,29 @@ async function rehearsal(eventId) {
   const failed = items.filter((item) => item.status === 'failed').length;
   const pending = items.length - passed - failed;
   return { items, tester: String(stored?.tester || ''), updatedAt: stored?.updatedAt || null, passed, failed, pending, percent: items.length ? Math.round(passed / items.length * 100) : 0, ready: failed === 0 && pending === 0 };
+}
+
+function pricingState(eventId, runbook) {
+  const prefix = `WILDONES_${eventPrefix(eventId)}`;
+  const ticketPriceCents = cents(`${prefix}_TICKET_PRICE_CENTS`);
+  const drinkPackagePriceCents = cents(`${prefix}_DRINK_PACKAGE_PRICE_CENTS`);
+  const drinkPackageCredits = integer(`${prefix}_DRINK_PACKAGE_CREDITS`, 1, 24);
+  const lateStayPriceCents = cents(`${prefix}_LATE_STAY_PRICE_CENTS`);
+  const lateStayDepartureTime = String(env(`${prefix}_LATE_STAY_DEPARTURE_TIME`) || '').trim() || null;
+  const valuesConfigured = Boolean(ticketPriceCents && drinkPackagePriceCents && drinkPackageCredits && lateStayPriceCents && lateStayDepartureTime);
+  const placeholderDetected = [ticketPriceCents, drinkPackagePriceCents, lateStayPriceCents].some((value) => value === 100);
+  const approved = itemState(runbook, 'pricing-approved') === 'passed';
+  return {
+    ticketPriceCents,
+    drinkPackagePriceCents,
+    drinkPackageCredits,
+    lateStayPriceCents,
+    lateStayDepartureTime,
+    valuesConfigured,
+    placeholderDetected,
+    approved,
+    ready: valuesConfigured && !placeholderDetected && approved
+  };
 }
 
 async function snapshot(event) {
@@ -81,6 +112,7 @@ async function snapshot(event) {
       applications: apps.length,
       approved: apps.filter((app) => ['approved', 'public_sale'].includes(app.status) || ['approved', 'public_sale'].includes(app.decision)).length,
       invitations: invites.length,
+      invitationEmailsSent: apps.filter((app) => app.invitationEmailSentAt).length,
       activeTickets: activeTickets.length,
       checkedIn: checked,
       unsignedWaivers: Math.max(0, activeTickets.length - signed),
@@ -99,8 +131,9 @@ async function snapshot(event) {
   };
 }
 
-function readiness(event) {
+function readiness(event, runbook) {
   const prefix = eventPrefix(event.eventId);
+  const pricing = pricingState(event.eventId, runbook);
   const config = {
     database: configured('DATABASE_URL'),
     admin: configured('WILDONES_ADMIN_KEY', 'WILDONES_ADMIN_SESSION_SECRET'),
@@ -113,18 +146,30 @@ function readiness(event) {
     bar: configured('WILDONES_BAR_KEY', 'WILDONES_BAR_SESSION_SECRET'),
     passport: configured('WILDONES_PASSPORT_SESSION_SECRET'),
     venue: configured(`WILDONES_${prefix}_VENUE_NAME`, `WILDONES_${prefix}_VENUE_ADDRESS`),
-    wallet: configured('WILDONES_APPLE_PASS_TYPE_ID', 'WILDONES_APPLE_TEAM_ID', 'WILDONES_APPLE_WWDR_CERT_BASE64', 'WILDONES_APPLE_PASS_CERT_BASE64', 'WILDONES_APPLE_PASS_KEY_BASE64')
+    wallet: configured('WILDONES_APPLE_PASS_TYPE_ID', 'WILDONES_APPLE_TEAM_ID') && configuredCertificate('WILDONES_APPLE_WWDR_CERT') && configuredCertificate('WILDONES_APPLE_PASS_CERT') && configuredCertificate('WILDONES_APPLE_PASS_KEY')
   };
   const coreBlockers = [];
   for (const [key, label] of [['database', 'Database'], ['admin', 'Admin authentication'], ['stripe', 'Stripe'], ['turnstile', 'Turnstile'], ['email', 'Email'], ['ticketSigning', 'Ticket signing'], ['gate', 'Gate credentials'], ['bar', 'Bar credentials'], ['venue', 'Private venue']]) if (!config[key]) coreBlockers.push(label);
   const launchBlockers = [...coreBlockers];
+  if (!pricing.valuesConfigured) launchBlockers.push('Final pricing values');
+  else if (pricing.placeholderDetected) launchBlockers.push('Replace $1.00 commissioning prices');
+  if (pricing.valuesConfigured && !pricing.placeholderDetected && !pricing.approved) launchBlockers.push('Final pricing approval');
   if (config.stripe && config.stripeMode !== 'live') launchBlockers.push('Stripe live mode');
   if (!config.wallet) launchBlockers.push('Apple Wallet signing');
-  return { config, coreReady: coreBlockers.length === 0, coreBlockers, launchReady: launchBlockers.length === 0, launchBlockers, blockers: coreBlockers };
+  for (const [id, label] of [
+    ['invite-email-delivery', 'Invitation email delivery'],
+    ['live-stripe-payment', 'Live Stripe payment test'],
+    ['wallet-install', 'Apple Wallet device install'],
+    ['gate-scan', 'Physical gate scan'],
+    ['bartender-redemption', 'Bartender redemption'],
+    ['refund', 'Refund verification']
+  ]) if (itemState(runbook, id) !== 'passed') launchBlockers.push(label);
+  if (!runbook.ready) launchBlockers.push('Complete rehearsal checklist');
+  return { config, pricing, coreReady: coreBlockers.length === 0, coreBlockers, launchReady: launchBlockers.length === 0 && runbook.ready, launchBlockers: [...new Set(launchBlockers)], blockers: coreBlockers };
 }
 
 function operationalStatus(ready, live, runbook) {
-  const { config } = ready;
+  const { config, pricing } = ready;
   const unsigned = Number(live.counts?.unsignedWaivers || 0);
   const stripeState = !config.stripe ? 'red' : config.stripeMode === 'live' ? 'green' : 'yellow';
   const stripeDetail = !config.stripe ? 'Stripe configuration missing' : config.stripeMode === 'live' ? 'Live payments enabled' : `${String(config.stripeMode || 'configured').toUpperCase()} mode — rehearsal only`;
@@ -134,13 +179,13 @@ function operationalStatus(ready, live, runbook) {
   const liveGo = ready.coreReady && config.stripeMode === 'live';
   const launchGo = ready.launchReady && runbook.ready;
   const rehearsalGo = runbook.ready;
-  const physical = ['wallet-install', 'gate-scan', 'bartender-redemption', 'refund'];
+  const physical = ['wallet-install', 'gate-scan', 'bartender-redemption', 'refund', 'offline-fallback'];
   const physicalPending = physical.filter((id) => itemState(runbook, id) !== 'passed').length;
   return {
     decisions: {
       eventDay: { go: eventDayGo, label: eventDayGo ? 'GO' : 'NO-GO', summary: eventDayGo ? 'Critical event-day systems, payments and waiver gates are green.' : 'One or more event-day gates require action before doors open.' },
       live: { go: liveGo, label: liveGo ? 'GO' : 'NO-GO', summary: liveGo ? 'Core live operations are available.' : 'A critical live-operations dependency is not ready.' },
-      launch: { go: launchGo, label: launchGo ? 'GO' : 'NO-GO', summary: launchGo ? 'Infrastructure and the complete rehearsal are certified for launch.' : 'Launch remains blocked until every red/yellow launch gate is cleared.' },
+      launch: { go: launchGo, label: launchGo ? 'GO' : 'NO-GO', summary: launchGo ? 'Every hard launch gate and rehearsal check has passed.' : 'Sales remain locked until pricing, live payments, Wallet and all operational certifications are green.' },
       rehearsal: { go: rehearsalGo, label: rehearsalGo ? 'GO' : 'NO-GO', summary: rehearsalGo ? 'All rehearsal checks are passed.' : `${runbook.failed} failed and ${runbook.pending} pending rehearsal checks remain.` }
     },
     indicators: {
@@ -161,14 +206,22 @@ function operationalStatus(ready, live, runbook) {
         fallbackLight
       ],
       launch: [
-        light('core', 'Core platform', ready.coreReady ? 'green' : 'red', ready.coreReady ? 'Core production dependencies configured' : `Missing: ${ready.coreBlockers.join(' · ')}`),
+        light('pricing', 'Final pricing', pricing.ready ? 'green' : 'red', pricing.ready ? 'Prices configured and approved' : pricing.placeholderDetected ? '$1.00 commissioning prices are still present' : pricing.valuesConfigured ? 'Pricing values set; approval still pending' : 'One or more pricing values are missing'),
         light('stripe', 'Stripe live mode', config.stripeMode === 'live' ? 'green' : 'red', stripeDetail),
-        light('wallet', 'Apple Wallet', config.wallet ? 'green' : 'red', config.wallet ? 'Pass signing configured' : 'Wallet signing credentials missing'),
-        light('venue', 'Private venue', config.venue ? 'green' : 'red', config.venue ? 'Server-side venue configured' : 'Realm venue secrets missing'),
-        light('rehearsal', 'Full rehearsal', runbook.ready ? 'green' : runbook.failed ? 'red' : 'yellow', `${runbook.passed} passed · ${runbook.failed} failed · ${runbook.pending} pending`),
-        light('physical', 'Physical device certification', physicalPending === 0 ? 'green' : 'yellow', physicalPending === 0 ? 'Wallet, gate, bartender and refund verified' : `${physicalPending} physical certification check${physicalPending === 1 ? '' : 's'} remain`)
+        runbookLight(runbook, 'live-stripe-payment', 'Live payment test', { hard: true }),
+        light('wallet-config', 'Apple Wallet signing', config.wallet ? 'green' : 'red', config.wallet ? 'Pass signing credentials configured' : 'Pass Type ID / Team ID / signing certificates missing'),
+        runbookLight(runbook, 'wallet-install', 'Wallet on iPhone', { hard: true }),
+        runbookLight(runbook, 'invite-email-delivery', 'Invite email delivery', { hard: true }),
+        runbookLight(runbook, 'gate-scan', 'Physical gate scan', { hard: true }),
+        runbookLight(runbook, 'bartender-redemption', 'Bartender redemption', { hard: true }),
+        runbookLight(runbook, 'refund', 'Refund verification', { hard: true }),
+        light('rehearsal', 'Complete rehearsal', runbook.ready ? 'green' : 'red', `${runbook.passed} passed · ${runbook.failed} failed · ${runbook.pending} pending`),
+        light('physical', 'Physical certification', physicalPending === 0 ? 'green' : 'red', physicalPending === 0 ? 'Wallet, gate, bartender, refund and fallback verified' : `${physicalPending} physical certification check${physicalPending === 1 ? '' : 's'} remain`)
       ],
       rehearsal: [
+        runbookLight(runbook, 'pricing-approved', 'Final pricing'),
+        runbookLight(runbook, 'invite-email-delivery', 'Invite email delivery'),
+        runbookLight(runbook, 'live-stripe-payment', 'Live Stripe payment'),
         runbookLight(runbook, 'wallet-install', 'Apple Wallet'),
         runbookLight(runbook, 'gate-scan', 'Gate scan'),
         runbookLight(runbook, 'bartender-redemption', 'Bartender redemption'),
@@ -188,7 +241,7 @@ export default async (req) => {
   if (!event) return json({ error: 'Unknown event.' }, 400);
   if (req.method === 'GET') {
     const [live, runbook] = await Promise.all([snapshot(event), rehearsal(eventId)]);
-    const ready = readiness(event);
+    const ready = readiness(event, runbook);
     return json({ event: toPublicEvent(event), events: listEvents({ includeHidden: true }).map(toPublicEvent), ...ready, live, rehearsal: runbook, ...operationalStatus(ready, live, runbook), generatedAt: new Date().toISOString() });
   }
   if (req.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
