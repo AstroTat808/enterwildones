@@ -18,6 +18,15 @@
       widget=api().render('#passport-turnstile-widget',{sitekey:d.turnstileSiteKey,action:'passport_login',theme:'dark'});
     })();return securityPromise;
   }
+  async function openPurchase(eventSlug,button){
+    button.disabled=true;button.textContent='Opening secure ticket access…';
+    try{
+      const r=await fetch('/api/passport/ticket-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:eventSlug})});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok||!d.nextUrl)throw new Error(d.error||'Ticket access could not be opened.');
+      location.assign(d.nextUrl);
+    }catch(err){button.disabled=false;button.textContent='Purchase Ticket';q('#progress').textContent=err.message||'Ticket access could not be opened.';}
+  }
   function render(selected='cycle'){
     window.WildOnesBrand?.set({realm:selected});
     q('#realmFilter').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.realm===selected)));
@@ -27,14 +36,17 @@
       const link=active&&typeof x.ticket.ticketUrl==='string'&&x.ticket.ticketUrl.startsWith('/ticket?token=')?x.ticket.ticketUrl:e.routes.event;
       const cls=realmClass(e.realm),meta=window.WildOnesBrand?.meta(e.realm);
       const ticketMeta=x.ticket?`<div class="passport-ticket-meta"><p>Ticket ${esc(x.ticket.ticketId)}</p><p>${x.waiverSigned?'Waiver recorded':'Waiver required before entry'}</p></div>`:'';
+      const invitationMeta=x.invitation&&x.invitation.status==='redeemed'&&!x.ticket?`<p class="passport-entitlements">INVITATION REDEEMED${x.commissioningAccess?' · COMMISSIONING ACCESS':''}</p>`:'';
       const activeEntitlements=x.entitlements.filter(a=>a.status==='active');
       const entitlementBlock=activeEntitlements.length?`<p class="passport-entitlements">${activeEntitlements.map(a=>esc(String(a.addonType).replaceAll('_',' '))).join(' / ')}</p>`:'';
-      return `<article class="passport-card" data-brand-realm="${esc(e.realm)}"><img class="passport-card-logo" src="${esc(window.WildOnesBrand.asset(e.realm))}" alt="${esc(window.WildOnesBrand.label(e.realm))}" width="768" height="768" loading="lazy"><span class="realm-chip ${cls}">${esc(meta?.sub||e.realm)}</span><h2 class="realm-key ${cls}">${esc(e.name)}</h2><strong class="passport-state">${esc(state)}</strong><p class="passport-card-tagline">${esc(e.copy.tagline)}</p>${ticketMeta}${entitlementBlock}<a class="button ghost" href="${esc(link)}">${active&&link.startsWith('/ticket?')?'Open Digital Ticket':'Explore the Realm'}</a></article>`;
+      const action=x.purchaseAvailable?`<button class="button" type="button" data-purchase-event="${esc(e.slug)}">Purchase Ticket</button>`:`<a class="button ghost" href="${esc(link)}">${active&&link.startsWith('/ticket?')?'Open Digital Ticket':'Explore the Realm'}</a>`;
+      return `<article class="passport-card" data-brand-realm="${esc(e.realm)}"><img class="passport-card-logo" src="${esc(window.WildOnesBrand.asset(e.realm))}" alt="${esc(window.WildOnesBrand.label(e.realm))}" width="768" height="768" loading="lazy"><span class="realm-chip ${cls}">${esc(meta?.sub||e.realm)}</span><h2 class="realm-key ${cls}">${esc(e.name)}</h2><strong class="passport-state">${esc(state)}</strong><p class="passport-card-tagline">${esc(e.copy.tagline)}</p>${ticketMeta}${invitationMeta}${entitlementBlock}${action}</article>`;
     }).join('');
+    q('#realms').querySelectorAll('[data-purchase-event]').forEach(button=>button.addEventListener('click',()=>openPurchase(button.dataset.purchaseEvent,button)));
   }
   async function load(){
     try{
-      const r=await fetch('/api/passport'),d=await r.json();
+      const r=await fetch('/api/passport',{cache:'no-store'}),d=await r.json();
       if(r.status===401||d.authenticated===false){login.hidden=false;account.hidden=true;await security();return;}
       if(!r.ok)throw new Error('Your Passport is temporarily unavailable. Please refresh.');
       records=Array.isArray(d.realms)?d.realms:[];login.hidden=true;account.hidden=false;

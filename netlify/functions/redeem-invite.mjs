@@ -1,5 +1,6 @@
 import { blobStore } from './_blob-store.mjs';
 import { inviteAccessCookie, redeemInvitation } from './_invitations.mjs';
+import { checkoutAllowed } from './_checkout-access.mjs';
 import { clientIp, json, readBody } from './_response.mjs';
 import { sameOrigin } from './_security.mjs';
 import { STORES, sha256 } from './_stores.mjs';
@@ -14,8 +15,9 @@ export default async (req) => {
   let body; try { body = await readBody(req); } catch { return json({ error: 'Invalid request.' }, 400); }
   try {
     const result = await redeemInvitation(body.code);
-    await writeAudit({ eventId: result.event.eventId, action: 'invitation.redeemed', actor: 'guest', targetType: 'invitation', targetId: result.invitation.invitationId, detail: { applicationId: result.invitation.applicationId, userId: result.invitation.userId } });
-    return json({ ok: true, accessGranted: true, event: toPublicEvent(result.event), invitationId: result.invitation.invitationId, nextUrl: result.event.ticketSalesOpen ? `/ticket-access?event=${encodeURIComponent(result.event.slug)}` : result.event.routes.event, ticketSalesOpen: result.event.ticketSalesOpen }, 200, { 'Set-Cookie': inviteAccessCookie(result.event.eventId, result.access.token, result.access.exp) });
+    const purchaseAvailable = checkoutAllowed(result.event, result.invitation);
+    await writeAudit({ eventId: result.event.eventId, action: 'invitation.redeemed', actor: 'guest', targetType: 'invitation', targetId: result.invitation.invitationId, detail: { applicationId: result.invitation.applicationId, userId: result.invitation.userId, purchaseAvailable } });
+    return json({ ok: true, accessGranted: true, event: toPublicEvent(result.event), invitationId: result.invitation.invitationId, nextUrl: purchaseAvailable ? `/ticket-access?event=${encodeURIComponent(result.event.slug)}` : result.event.routes.event, ticketSalesOpen: result.event.ticketSalesOpen, purchaseAvailable }, 200, { 'Set-Cookie': inviteAccessCookie(result.event.eventId, result.access.token, result.access.exp) });
   } catch (error) { const status = error.code === 'INVALID_CODE' ? 400 : ['USED', 'EXPIRED', 'REVOKED'].includes(error.code) ? 409 : 500; return json({ error: error.message || 'Invitation redemption failed.', code: error.code || 'redeem_failed' }, status); }
 };
 export const config = { path: '/api/redeem-invite' };
