@@ -1,0 +1,166 @@
+/* ENTER WILD ONES — final homepage presentation pass.
+   Purposefully loaded after home.css and home-regression-fixes.css so these
+   refinements remain isolated from application, ticketing, payment and admin UI. */
+
+/* Match the festival names in the cycle statement to the realm numeral palette. */
+body.cinematic-home .v2-cycle-summary .realm-name{
+  display:inline-block;
+  font-weight:760;
+  letter-spacing:.055em;
+  text-shadow:0 0 18px currentColor;
+  text-rendering:geometricPrecision;
+}
+body.cinematic-home .v2-cycle-summary .realm-aureva{color:#f1d68c}
+body.cinematic-home .v2-cycle-summary .realm-halora{color:#72d9e8}
+body.cinematic-home .v2-cycle-summary .realm-sunveil{color:#ff7a3a}
+body.cinematic-home .v2-cycle-summary .realm-nocturne{color:#b48cff}
+
+/* Passport finale — stronger hierarchy, correct emblem proportions and a more
+   intentional transition from the realm sequence into the account experience. */
+body.cinematic-home .v2-passport{
+  padding:clamp(126px,10vw,170px) max(24px,6vw) clamp(138px,11vw,186px);
+  background:
+    radial-gradient(ellipse at 50% 24%,rgba(240,207,122,.105),transparent 28%),
+    radial-gradient(ellipse at 50% 72%,rgba(142,110,218,.055),transparent 36%),
+    linear-gradient(180deg,#020307 0%,#050407 48%,#010204 100%);
+}
+body.cinematic-home .v2-passport::after{
+  top:52px;
+  width:min(500px,62vw);
+  background:linear-gradient(90deg,transparent,rgba(240,207,122,.42),transparent);
+}
+
+/* The supplied master artwork is square. Lock both intrinsic and rendered
+   proportions so browser/device layout cannot stretch the watermark. */
+body.cinematic-home .v2-passport-mark{
+  display:block;
+  left:50%;
+  top:48%;
+  width:min(600px,72vw);
+  height:auto!important;
+  max-width:none;
+  aspect-ratio:1 / 1;
+  object-fit:contain;
+  object-position:center;
+  transform:translate(-50%,-50%);
+  transform-origin:center;
+  opacity:.045;
+  filter:saturate(.96) contrast(1.03) brightness(1.04);
+  pointer-events:none;
+  user-select:none;
+}
+
+body.cinematic-home .v2-passport .v2-kicker{
+  margin-bottom:18px;
+  color:#f0cf7a;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.39em;
+  text-shadow:0 0 22px rgba(240,207,122,.16);
+}
+body.cinematic-home .v2-passport h2{
+  max-width:9.7ch;
+  margin:0 auto 28px;
+  color:#fbf4e9;
+  font-size:clamp(56px,6.8vw,98px);
+  line-height:.94;
+  letter-spacing:-.052em;
+  text-wrap:balance;
+  text-shadow:
+    0 0 24px rgba(240,207,122,.07),
+    0 18px 52px rgba(0,0,0,.52);
+}
+body.cinematic-home .v2-passport>p:not(.v2-kicker){
+  max-width:780px;
+  margin:0 auto 31px;
+  color:#d1c7bb;
+  font-size:clamp(15px,1.35vw,18px);
+  line-height:1.82;
+  letter-spacing:.012em;
+}
+body.cinematic-home .v2-passport-features{
+  gap:10px 30px;
+  margin:5px auto 36px;
+  color:#9b9185;
+  font-size:8.5px;
+  font-weight:650;
+  letter-spacing:.22em;
+}
+body.cinematic-home .v2-passport-features span+span::before{
+  left:-18px;
+  color:rgba(240,207,122,.58);
+}
+body.cinematic-home .v2-passport .button{
+  min-width:min(360px,92vw);
+  min-height:62px;
+  padding:0 30px;
+  border:1px solid rgba(255,239,195,.28);
+  border-radius:2px;
+  background:linear-gradient(180deg,#efd78f 0%,#d9b660 52%,#c39239 100%);
+  color:#100b04;
+  font-size:10.5px;
+  font-weight:850;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  box-shadow:
+    0 18px 52px rgba(199,151,47,.22),
+    inset 0 1px 0 rgba(255,255,255,.30);
+  transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;
+}
+body.cinematic-home .v2-passport .button:hover,
+body.cinematic-home .v2-passport .button:focus-visible{
+  transform:translateY(-2px);
+  filter:brightness(1.045);
+  box-shadow:
+    0 22px 62px rgba(199,151,47,.29),
+    inset 0 1px 0 rgba(255,255,255,.34);
+}
+
+@media(max-width:860px){
+  body.cinematic-home .v2-cycle-summary .realm-name{letter-spacing:.04em}
+  body.cinematic-home .v2-passport{
+    padding:104px 20px 116px;
+  }
+  body.cinematic-home .v2-passport::after{top:36px}
+  body.cinematic-home .v2-passport-mark{
+    top:45%;
+    width:min(520px,108vw);
+    opacity:.038;
+  }
+  body.cinematic-home .v2-passport .v2-kicker{
+    font-size:8.5px;
+    letter-spacing:.32em;
+  }
+  body.cinematic-home .v2-passport h2{
+    max-width:10ch;
+    margin-bottom:23px;
+    font-size:clamp(48px,13vw,66px);
+    line-height:.98;
+  }
+  body.cinematic-home .v2-passport>p:not(.v2-kicker){
+    max-width:35rem;
+    margin-bottom:27px;
+    font-size:14.5px;
+    line-height:1.75;
+  }
+  body.cinematic-home .v2-passport-features{
+    gap:9px 16px;
+    margin-bottom:30px;
+    font-size:7.5px;
+    letter-spacing:.16em;
+  }
+  body.cinematic-home .v2-passport-features span+span::before{display:none}
+  body.cinematic-home .v2-passport .button{
+    width:min(100%,340px);
+    min-width:0;
+    min-height:56px;
+    border-radius:2px;
+    font-size:10px;
+  }
+}
+
+@media(max-width:430px){
+  body.cinematic-home .v2-passport{padding-inline:18px}
+  body.cinematic-home .v2-passport-mark{width:min(560px,128vw)}
+  body.cinematic-home .v2-passport-features{max-width:330px}
+}
