@@ -1,6 +1,18 @@
 /* Passport card layout repair and hierarchy polish.
    Keeps the shared realm system intact while preventing inline heading/status collisions. */
 
+.passport-account-panel{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:22px 28px;
+  align-items:center;
+  padding:clamp(28px,3vw,38px);
+}
+.passport-account-copy h2{margin:0 0 10px}
+.passport-account-copy p{margin:0;color:var(--muted)}
+.passport-account-panel #logout{justify-self:end;margin:0}
+.passport-account-panel .passport-filter{grid-column:1/-1;margin-top:4px}
+
 body #realms.passport-grid > article.passport-card{
   display:flex;
   flex-direction:column;
@@ -11,10 +23,10 @@ body #realms.passport-grid > article.passport-card{
 
 body #realms.passport-grid > article.passport-card > .passport-card-logo{
   display:block;
-  width:min(88%,460px);
+  width:min(76%,380px);
   max-width:100%;
   aspect-ratio:1;
-  margin:0 auto 14px;
+  margin:0 auto 12px;
   align-self:center;
   object-fit:contain;
 }
@@ -38,7 +50,7 @@ body #realms.passport-grid > article.passport-card > h2.realm-key{
 body #realms.passport-grid > article.passport-card > .passport-state{
   display:block;
   width:100%;
-  margin:0 0 22px;
+  margin:0 0 20px;
   color:var(--realm-fallback,var(--accent));
   font-size:10px;
   font-weight:850;
@@ -94,14 +106,10 @@ body #realms.passport-grid > article.passport-card > a.button{
 }
 
 @media(max-width:760px){
-  body #realms.passport-grid > article.passport-card{
-    padding:22px 20px 24px;
-  }
-  body #realms.passport-grid > article.passport-card > .passport-card-logo{
-    width:min(84%,360px);
-    margin-bottom:10px;
-  }
-  body #realms.passport-grid > article.passport-card > h2.realm-key{
-    font-size:clamp(30px,10vw,40px);
-  }
+  .passport-account-panel{grid-template-columns:1fr;gap:18px;padding:24px 20px}
+  .passport-account-panel #logout{justify-self:start}
+  .passport-account-panel .passport-filter{grid-column:auto;margin-top:0}
+  body #realms.passport-grid > article.passport-card{padding:22px 20px 24px}
+  body #realms.passport-grid > article.passport-card > .passport-card-logo{width:min(82%,330px);margin-bottom:10px}
+  body #realms.passport-grid > article.passport-card > h2.realm-key{font-size:clamp(30px,10vw,40px)}
 }
