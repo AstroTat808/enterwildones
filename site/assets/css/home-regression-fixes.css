@@ -1,6 +1,7 @@
-/* ENTER WILD ONES — homepage regression fixes after CSS consolidation.
+/* ENTER WILD ONES — homepage regression fixes + premium polish.
    Keeps the hero artwork readable, restores per-realm gradient typography,
-   and protects serif descenders from clipping across desktop and mobile. */
+   protects serif descenders, improves navigation legibility, and upgrades
+   primary homepage controls without touching application/ticketing logic. */
 
 /* Preserve the Four Realms title outside tight line boxes. */
 body.cinematic-home .v2-cycle,
@@ -39,8 +40,76 @@ body.cinematic-home .v2-cycle-title .realm-night{
   background-image:linear-gradient(180deg,#f0e4ff 0%,#d3baff 25%,#9c75ef 61%,#b491ff 100%);
 }
 
-/* Desktop/tablet: let the campaign artwork breathe. The copy remains connected
-   to the hero with only a shallow overlap instead of covering the lower artwork. */
+/* Shared premium control treatment. */
+body.cinematic-home .v2-actions .button,
+body.cinematic-home .v2-passport .button,
+body.cinematic-home .v2-realm-link{
+  text-rendering:geometricPrecision;
+}
+
+body.cinematic-home .v2-actions .button{
+  min-height:54px;
+  padding-inline:24px;
+  font-size:10.5px;
+  font-weight:800;
+  letter-spacing:.15em;
+}
+
+body.cinematic-home .v2-passport .button{
+  min-height:56px;
+  min-width:250px;
+  padding-inline:26px;
+  font-size:10.5px;
+  font-weight:800;
+  letter-spacing:.15em;
+  box-shadow:0 20px 58px rgba(199,151,47,.19),inset 0 1px rgba(255,255,255,.30);
+}
+
+/* Desktop/tablet header: larger mark and more readable navigation. */
+@media (min-width:861px){
+  body.cinematic-home{--bar-height:82px}
+
+  body.cinematic-home .topbar{
+    min-height:82px;
+    padding-top:7px;
+    padding-bottom:7px;
+  }
+  body.cinematic-home.scrolled .topbar{min-height:72px}
+
+  body.cinematic-home .brand-icon{
+    width:72px;
+    height:68px;
+    flex:0 0 72px;
+  }
+  body.cinematic-home .brand-icon img{
+    width:68px!important;
+    height:68px!important;
+    max-width:none!important;
+    object-fit:contain!important;
+    transform:scale(1.14);
+    transform-origin:left center;
+  }
+
+  body.cinematic-home .desktop-nav{
+    gap:5px;
+    padding:6px;
+  }
+  body.cinematic-home .desktop-nav a{
+    min-height:44px;
+    display:inline-flex;
+    align-items:center;
+    padding:0 17px;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.12em;
+  }
+
+  body.cinematic-home .v2-progress{top:82px}
+  body.cinematic-home.scrolled .v2-progress{top:72px}
+}
+
+/* Desktop/tablet: preserve the complete top edge of the campaign art.
+   The former parallax scale/translation was clipping artwork embedded near the top. */
 @media (min-width:861px){
   body.cinematic-home .v2-hero{
     min-height:0;
@@ -51,54 +120,151 @@ body.cinematic-home .v2-cycle-title .realm-night{
 
   body.cinematic-home .v2-hero::before{
     inset:var(--bar-height) 0 auto;
-    height:clamp(620px,calc(100svh - var(--bar-height)),900px);
+    height:clamp(650px,calc(100svh - var(--bar-height)),930px);
     background:
-      linear-gradient(90deg,rgba(1,2,5,.40),transparent 15% 85%,rgba(1,2,5,.40)),
-      linear-gradient(180deg,transparent 56%,rgba(2,3,7,.08) 72%,rgba(2,3,7,.52) 92%,#020307 100%);
+      linear-gradient(90deg,rgba(1,2,5,.36),transparent 15% 85%,rgba(1,2,5,.36)),
+      linear-gradient(180deg,transparent 60%,rgba(2,3,7,.06) 75%,rgba(2,3,7,.46) 92%,#020307 100%);
   }
 
   body.cinematic-home .v2-hero-media{
     grid-area:1/1;
-    height:clamp(620px,calc(100svh - var(--bar-height)),900px);
+    height:clamp(650px,calc(100svh - var(--bar-height)),930px);
     min-height:0;
+    overflow:hidden;
+  }
+
+  body.cinematic-home .v2-hero-media img{
+    object-fit:cover;
+    object-position:center top;
+    transform:none!important;
+    filter:saturate(1.07) contrast(1.03) brightness(.985);
   }
 
   body.cinematic-home .v2-hero-copy{
     grid-area:2/1;
     align-self:start;
-    width:min(calc(100% - 64px),980px);
-    margin:-44px auto 72px;
-    padding:24px 30px 26px;
+    width:min(calc(100% - 64px),1000px);
+    margin:-28px auto 54px;
+    padding:28px 32px 30px;
     background:
-      radial-gradient(circle at 50% -25%,rgba(240,207,122,.07),transparent 48%),
-      linear-gradient(90deg,transparent,rgba(2,3,7,.92) 13% 87%,transparent);
-    backdrop-filter:blur(12px) saturate(112%);
-    -webkit-backdrop-filter:blur(12px) saturate(112%);
+      radial-gradient(circle at 50% -28%,rgba(240,207,122,.075),transparent 48%),
+      linear-gradient(90deg,transparent,rgba(2,3,7,.94) 11% 89%,transparent);
+    backdrop-filter:blur(14px) saturate(115%);
+    -webkit-backdrop-filter:blur(14px) saturate(115%);
   }
+
+  body.cinematic-home .v2-hero-copy>p:not(.v2-kicker){font-size:15.5px;line-height:1.72}
 }
 
 @media (min-width:1600px){
-  body.cinematic-home .v2-hero-copy{width:min(calc(100% - 80px),1040px)}
+  body.cinematic-home .v2-hero-copy{width:min(calc(100% - 80px),1080px)}
 }
 
 @media (min-width:861px) and (max-width:1100px){
   body.cinematic-home .v2-hero-media{
-    height:clamp(620px,74vw,760px);
+    height:clamp(640px,74vw,800px);
     min-height:0;
   }
-  body.cinematic-home .v2-hero::before{height:clamp(620px,74vw,760px)}
+  body.cinematic-home .v2-hero::before{height:clamp(640px,74vw,800px)}
   body.cinematic-home .v2-hero-copy{
-    width:min(calc(100% - 48px),900px);
-    margin:-34px auto 60px;
+    width:min(calc(100% - 48px),920px);
+    margin:-24px auto 50px;
   }
 }
 
-/* Mobile already stacks artwork and copy. Keep that separation explicit and
-   give the cycle title extra breathing room for serif descenders. */
+/* Tighter, more intentional transition into the Four Realms manifesto. */
+body.cinematic-home .v2-cycle{
+  padding-top:116px;
+  padding-bottom:100px;
+}
+body.cinematic-home .v2-cycle-summary{max-width:800px}
+
+/* Realm navigation cards: stronger hierarchy and easier targets. */
+body.cinematic-home .v2-realm-nav a{
+  min-height:136px;
+  padding:27px 27px 25px;
+}
+body.cinematic-home .v2-nav-num{font-size:54px}
+body.cinematic-home .v2-nav-name{font-size:13px;letter-spacing:.22em}
+body.cinematic-home .v2-nav-sub{font-size:9px;letter-spacing:.30em}
+
+/* Sticky realm progression: legible enough to function as navigation, not decoration. */
+body.cinematic-home .v2-progress{
+  box-shadow:0 16px 42px rgba(0,0,0,.20);
+}
+body.cinematic-home .v2-progress-inner{width:min(100%,1040px)}
+body.cinematic-home .v2-progress a{
+  min-height:52px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:13px 16px 12px;
+  font-size:9.5px;
+  letter-spacing:.21em;
+}
+
+/* Festival metadata and discovery CTA: convert the undersized text link into a
+   proper premium action while keeping each realm's accent color. */
+body.cinematic-home .v2-meta{gap:10px;margin:34px 0 28px}
+body.cinematic-home .v2-meta span{
+  min-height:38px;
+  padding:0 14px;
+  font-size:9.5px;
+  font-weight:650;
+  letter-spacing:.14em;
+}
+body.cinematic-home .v2-realm-link{
+  gap:14px;
+  min-height:56px;
+  margin-top:4px;
+  padding:0 22px;
+  border:1px solid color-mix(in srgb,var(--realm) 34%,rgba(255,255,255,.10));
+  border-radius:999px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--realm) 7%,rgba(10,12,18,.82)),rgba(4,6,11,.80));
+  color:#f5eee5;
+  font-size:11.5px;
+  font-weight:800;
+  letter-spacing:.14em;
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 14px 34px rgba(0,0,0,.15);
+  transition:transform .24s ease,gap .24s ease,color .24s ease,border-color .24s ease,background .24s ease,box-shadow .24s ease;
+}
+body.cinematic-home .v2-realm-link:hover,
+body.cinematic-home .v2-realm-link:focus-visible{
+  gap:18px;
+  transform:translateY(-2px);
+  color:#fffaf3;
+  border-color:color-mix(in srgb,var(--realm) 72%,rgba(255,255,255,.18));
+  background:linear-gradient(180deg,color-mix(in srgb,var(--realm) 12%,rgba(10,12,18,.86)),rgba(4,6,11,.84));
+  box-shadow:inset 0 1px rgba(255,255,255,.05),0 18px 42px rgba(0,0,0,.20),0 0 24px color-mix(in srgb,var(--realm) 10%,transparent);
+}
+
+/* Passport section: keep the emblem atmospheric rather than competing with copy. */
+body.cinematic-home .v2-passport-mark{
+  top:43%;
+  width:min(700px,74vw);
+  opacity:.036;
+}
+body.cinematic-home .v2-passport h2{text-shadow:0 16px 48px rgba(0,0,0,.36)}
+
+/* Small desktop refinement. */
+@media (max-width:1100px) and (min-width:861px){
+  body.cinematic-home .v2-realm-nav a{min-height:126px;padding:24px 22px}
+  body.cinematic-home .v2-nav-num{font-size:50px}
+  body.cinematic-home .v2-nav-name{font-size:12px}
+  body.cinematic-home .v2-progress a{font-size:9px}
+}
+
+/* Mobile already stacks artwork and copy. Preserve that separation while
+   increasing tap targets and keeping the complete top of the hero artwork visible. */
 @media (max-width:860px){
-  body.cinematic-home .v2-hero-copy{
-    transform:none;
+  body.cinematic-home .v2-hero-copy{transform:none}
+  body.cinematic-home .v2-hero-media img{
+    object-position:center top;
+    transform:none!important;
   }
+
+  body.cinematic-home .v2-cycle{padding:82px 18px 78px}
   body.cinematic-home .v2-cycle-title{
     line-height:1.07;
     padding-bottom:.18em;
@@ -107,4 +273,53 @@ body.cinematic-home .v2-cycle-title .realm-night{
     padding-bottom:.12em;
     line-height:1.06;
   }
+
+  body.cinematic-home .v2-actions .button{
+    min-height:52px;
+    font-size:10px;
+  }
+
+  body.cinematic-home .v2-realm-nav a{
+    min-height:106px;
+    padding:19px 16px;
+  }
+  body.cinematic-home .v2-nav-num{font-size:42px}
+  body.cinematic-home .v2-nav-name{font-size:11px;letter-spacing:.17em}
+  body.cinematic-home .v2-nav-sub{font-size:8px;letter-spacing:.22em}
+
+  body.cinematic-home .v2-progress a{
+    min-height:48px;
+    padding:10px 7px 9px;
+    font-size:8px;
+    letter-spacing:.14em;
+  }
+
+  body.cinematic-home .v2-meta span{
+    min-height:36px;
+    padding:0 12px;
+    font-size:8.5px;
+  }
+  body.cinematic-home .v2-realm-link{
+    min-height:54px;
+    padding:0 20px;
+    font-size:10.5px;
+    letter-spacing:.13em;
+  }
+
+  body.cinematic-home .v2-passport-mark{
+    top:40%;
+    width:min(106vw,520px);
+    opacity:.032;
+  }
+  body.cinematic-home .v2-passport .button{
+    width:min(100%,340px);
+    min-height:54px;
+    font-size:10px;
+  }
+}
+
+@media (max-width:430px){
+  body.cinematic-home .v2-cycle{padding-inline:14px}
+  body.cinematic-home .v2-progress a{font-size:7.5px;letter-spacing:.11em}
+  body.cinematic-home .v2-realm-nav a{padding-inline:13px}
 }
