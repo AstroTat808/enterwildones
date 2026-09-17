@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 const root = new URL('../', import.meta.url);
 const read = path => readFileSync(new URL(path, root));
 const html = read('site/index.html').toString('utf8');
-const css = read('site/assets/css/home-v2.css').toString('utf8');
+const css = read('site/assets/css/home.css').toString('utf8');
 const js = read('site/assets/js/home-v2.js').toString('utf8');
 const manifest = JSON.parse(read('site/assets/images/campaign/manifest.json'));
 
@@ -37,14 +37,30 @@ assert(html.includes('four-realms-portals-wide-1280.webp'));
 assert(html.includes('four-realms-portals-wide-1672.webp'));
 assert(html.includes('four-realms-portals-wide.jpg'));
 assert(html.includes('fetchpriority="high"'));
-assert(html.includes('/assets/css/home-v2.css'));
-assert(html.includes('/assets/css/home-v4.css'));
+assert(html.includes('/assets/css/home.css'));
+for (const legacy of [
+  '/assets/css/home-v2.css',
+  '/assets/css/home-v4.css',
+  '/assets/css/home-hero-no-overlap.css',
+  '/assets/css/home-mobile-polish.css',
+  '/assets/css/home-mobile-final-tuning.css',
+  '/assets/css/home-desktop-cleanup.css',
+  '/assets/css/home-art-direction.css',
+  '/assets/css/home-art-direction-v2.css',
+  '/assets/css/home-realm-atmospheres.css',
+  '/assets/css/home-premium.css',
+  '/assets/css/home-mobile-logos.css',
+  '/assets/css/campaign-hero.css',
+  '/assets/css/brand-refresh.css'
+]) assert(!html.includes(legacy), `Legacy homepage CSS still linked: ${legacy}`);
 assert(html.includes('/assets/js/home-v2.js'));
-assert(!html.includes('/assets/css/campaign-hero.css'));
-assert(!html.includes('/assets/css/home-premium.css'));
-assert(!html.includes('/assets/css/home-mobile-logos.css'));
-assert(!html.includes('/assets/css/brand-refresh.css'));
 assert(css.includes('prefers-reduced-motion'));
+assert(css.includes('@media (max-width:1100px)'));
+assert(css.includes('@media (max-width:860px)'));
+assert(css.includes('#aureva::before'));
+assert(css.includes('#halora::before'));
+assert(css.includes('#sunveil::before'));
+assert(css.includes('#nocturne::before'));
 assert(js.includes('IntersectionObserver'));
 assert(html.includes('class="v2-progress"'));
 assert(html.includes('class="v2-passport'));
@@ -55,4 +71,4 @@ for (const realm of ['aureva','halora','sunveil','nocturne']) {
 }
 assert(html.includes('/assets/images/realms/enter-wild-ones-1200.webp'));
 assert(!/a new realm awakens|stay close|something extraordinary is coming/i.test(html));
-console.log('V4 campaign verified: refreshed Four Realms artwork, cinematic hero, realm chapters, progress navigation, Passport CTA and responsive motion safeguards.');
+console.log('Canonical homepage campaign verified: one homepage stylesheet, responsive breakpoints, Four Realms artwork, realm chapters, progress navigation, Passport CTA and motion safeguards.');
