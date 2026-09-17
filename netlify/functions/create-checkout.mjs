@@ -2,6 +2,7 @@ import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
 import { resolveEvent } from './_events.mjs';
 import { readInviteAccess } from './_invitations.mjs';
+import { checkoutAllowed } from './_checkout-access.mjs';
 import { makeCheckoutReturn } from './_checkout-return.mjs';
 import { currentTicketOffer, ticketPriceEnv, ticketProductName, loadInvitation, existingTicketForInvitation, existingTicketForUser, finalizePaidSession } from './_payments.mjs';
 import { makeTicketToken } from './_ticket-token.mjs';
@@ -45,12 +46,8 @@ export default async (req) => {
 
   const event = resolveEvent({ eventId: body.eventId, slug: body.event });
   if (!event || event.visibility !== 'public') return json({ error: 'Event not found.' }, 404);
-  if (!event.ticketSalesOpen) return json({ error: `Ticket sales for ${event.name} are not open.`, code: 'sales_closed' }, 403);
   if (Date.now() >= new Date(event.endsAt).getTime()) return json({ error: `Ticket sales for ${event.name} have ended.`, code: 'sales_ended' }, 403);
 
-  // Resolve the release exactly once. The amount, product label, metadata and stored
-  // payment record all use this same snapshot, even if a release cutoff occurs while
-  // the Stripe request is being created.
   const offer = currentTicketOffer(event.eventId);
   const price = offer?.priceCents || null;
   if (!price) return json({ error: `Ticket price is not configured for ${event.name}.`, code: 'price_not_configured', requiredEnv: ticketPriceEnv(event.eventId) }, 503);
@@ -60,6 +57,7 @@ export default async (req) => {
   if (!access) return json({ error: 'Your event access is missing or expired. Re-enter through the event access flow.', code: 'event_access_required' }, 401);
   const invitation = await loadInvitation(event.eventId, access.invitationId);
   if (!invitation || invitation.userId !== access.userId || invitation.applicationId !== access.applicationId || !['redeemed', 'fulfilled'].includes(invitation.status)) return json({ error: 'This event access is not eligible for checkout.' }, 403);
+  if (!checkoutAllowed(event, invitation)) return json({ error: `Ticket sales for ${event.name} are not open.`, code: 'sales_closed' }, 403);
   if (!invitation.userId || !invitation.applicationId) return json({ error: 'This admission requires a registered Wild Ones identity.', code: 'identity_required' }, 409);
   if (Number(invitation.maxTickets || 1) !== 1) return json({ error: 'Multi-ticket invitations require the group-ticket identity flow and cannot use single-person checkout.', code: 'group_ticket_required' }, 409);
 
@@ -142,7 +140,7 @@ export default async (req) => {
       updatedAt: now
     };
     await Promise.all([payments.setJSON(eventKey(event.eventId, session.id), record), payments.setJSON(latestKey, record)]);
-    await writeAudit({ eventId: event.eventId, action: 'checkout.created', actor: 'guest', targetType: 'payment', targetId: session.id, detail: { invitationId: invitation.invitationId, attempt, ticketTier: tierPhase, ticketTierName: tierName, amountTotal: price } });
+    await writeAudit({ eventId: event.eventId, action: 'checkout.created', actor: 'guest', targetType: 'payment', targetId: session.id, detail: { invitationId: invitation.invitationId, attempt, ticketTier: tierPhase, ticketTierName: tierName, amountTotal: price, commissioning: !event.ticketSalesOpen } });
     return json({ ok: true, checkoutUrl: session.url, reused: false });
   } catch (error) {
     return json({ error: error.message || 'Checkout could not be created.' }, 502);
