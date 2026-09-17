@@ -20,6 +20,43 @@ body.cinematic-home .v2-passport::before {
     linear-gradient(180deg, #020307, #040408 52%, #020307);
 }
 
+/* Carry each realm's color language into the Cycle headline and supporting copy. */
+body.cinematic-home .v2-cycle-title .realm-word,
+body.cinematic-home .v2-cycle-summary .realm-name {
+  transition: color .22s ease, text-shadow .22s ease, filter .22s ease;
+}
+
+body.cinematic-home .v2-cycle-title .realm-light,
+body.cinematic-home .v2-cycle-summary .realm-aureva {
+  color: #f1d68c;
+}
+
+body.cinematic-home .v2-cycle-title .realm-balance,
+body.cinematic-home .v2-cycle-summary .realm-halora {
+  color: #72d9e8;
+}
+
+body.cinematic-home .v2-cycle-title .realm-fire,
+body.cinematic-home .v2-cycle-summary .realm-sunveil {
+  color: #ff7a3a;
+}
+
+body.cinematic-home .v2-cycle-title .realm-night,
+body.cinematic-home .v2-cycle-summary .realm-nocturne {
+  color: #b48cff;
+}
+
+body.cinematic-home .v2-cycle-title .realm-word {
+  display: inline-block;
+  text-shadow: 0 0 26px color-mix(in srgb, currentColor 12%, transparent);
+}
+
+body.cinematic-home .v2-cycle-summary .realm-name {
+  font-weight: 700;
+  letter-spacing: .025em;
+  text-shadow: 0 0 16px color-mix(in srgb, currentColor 10%, transparent);
+}
+
 @media (min-width: 861px) {
   body.cinematic-home .desktop-nav a {
     font-size: 10.5px;
@@ -49,6 +86,75 @@ body.cinematic-home .v2-passport::before {
   body.cinematic-home .v2-cycle > div > p {
     font-size: 17px;
     line-height: 1.8;
+  }
+
+  /* Premium realm-tile hover: restrained lift, color bloom, brighter edge and numeral glow. */
+  body.cinematic-home .v2-realm-nav a {
+    isolation: isolate;
+    will-change: transform, box-shadow, border-color;
+  }
+
+  body.cinematic-home .v2-realm-nav a::before {
+    z-index: -1;
+    inset: -48% -10%;
+    opacity: .42;
+    transform: scale(.92);
+    filter: blur(2px);
+    transition: opacity .38s ease, transform .45s cubic-bezier(.2,.7,.2,1), filter .38s ease;
+  }
+
+  body.cinematic-home .v2-realm-nav a::after {
+    transition: opacity .35s ease, box-shadow .35s ease, left .35s ease, right .35s ease;
+  }
+
+  body.cinematic-home .v2-realm-nav a:hover,
+  body.cinematic-home .v2-realm-nav a:focus-visible {
+    transform: translateY(-6px) scale(1.012);
+    border-color: color-mix(in srgb, var(--realm) 62%, rgba(255,255,255,.08));
+    background:
+      linear-gradient(145deg, color-mix(in srgb, var(--realm) 15%, transparent), rgba(255,255,255,.028));
+    box-shadow:
+      0 28px 72px rgba(0,0,0,.34),
+      0 0 36px color-mix(in srgb, var(--realm) 16%, transparent),
+      inset 0 1px rgba(255,255,255,.045);
+  }
+
+  body.cinematic-home .v2-realm-nav a:hover::before,
+  body.cinematic-home .v2-realm-nav a:focus-visible::before {
+    opacity: .82;
+    transform: scale(1.08);
+    filter: blur(0);
+  }
+
+  body.cinematic-home .v2-realm-nav a:hover::after,
+  body.cinematic-home .v2-realm-nav a:focus-visible::after {
+    left: 7%;
+    right: 7%;
+    opacity: .95;
+    box-shadow: 0 0 18px color-mix(in srgb, var(--realm) 58%, transparent);
+  }
+
+  body.cinematic-home .v2-realm-nav a:hover .v2-nav-num,
+  body.cinematic-home .v2-realm-nav a:focus-visible .v2-nav-num {
+    text-shadow:
+      0 0 20px color-mix(in srgb, var(--realm) 48%, transparent),
+      0 0 42px color-mix(in srgb, var(--realm) 20%, transparent);
+  }
+
+  body.cinematic-home .v2-realm-nav a:hover .v2-nav-name,
+  body.cinematic-home .v2-realm-nav a:focus-visible .v2-nav-name {
+    color: #fff8ee;
+  }
+
+  body.cinematic-home .v2-realm-nav a:hover .v2-nav-sub,
+  body.cinematic-home .v2-realm-nav a:focus-visible .v2-nav-sub {
+    color: color-mix(in srgb, var(--realm) 62%, #817a72);
+  }
+
+  body.cinematic-home .v2-nav-num,
+  body.cinematic-home .v2-nav-name,
+  body.cinematic-home .v2-nav-sub {
+    transition: color .3s ease, text-shadow .3s ease;
   }
 
   body.cinematic-home .v2-nav-name {
@@ -122,5 +228,18 @@ body.cinematic-home .v2-passport::before {
     min-height: 50px;
     padding: 15px 26px;
     font-size: 10.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.cinematic-home .v2-realm-nav a,
+  body.cinematic-home .v2-realm-nav a::before,
+  body.cinematic-home .v2-realm-nav a::after,
+  body.cinematic-home .v2-nav-num,
+  body.cinematic-home .v2-nav-name,
+  body.cinematic-home .v2-nav-sub,
+  body.cinematic-home .v2-cycle-title .realm-word,
+  body.cinematic-home .v2-cycle-summary .realm-name {
+    transition: none;
   }
 }
