@@ -15,152 +15,256 @@ body.cinematic-home .v2-cycle-summary .realm-halora{color:#72d9e8}
 body.cinematic-home .v2-cycle-summary .realm-sunveil{color:#ff7a3a}
 body.cinematic-home .v2-cycle-summary .realm-nocturne{color:#b48cff}
 
-/* Passport finale — stronger hierarchy, correct emblem proportions and a more
-   intentional transition from the realm sequence into the account experience. */
+/* Passport finale — deliberately different from the hero sections above it.
+   Instead of another oversized centered billboard, this is a restrained two-column
+   identity panel with the master mark treated like a physical credential. */
 body.cinematic-home .v2-passport{
-  padding:clamp(126px,10vw,170px) max(24px,6vw) clamp(138px,11vw,186px);
+  position:relative;
+  isolation:isolate;
+  display:grid;
+  grid-template-columns:minmax(0,1.08fr) minmax(340px,.92fr);
+  grid-template-areas:
+    "kicker mark"
+    "title mark"
+    "copy mark"
+    "features mark"
+    "cta mark";
+  align-items:center;
+  column-gap:clamp(56px,7vw,112px);
+  row-gap:0;
+  min-height:0;
+  padding:
+    clamp(112px,9vw,150px)
+    max(6vw,calc((100vw - 1280px)/2))
+    clamp(118px,9vw,154px);
+  text-align:left;
+  overflow:hidden;
+  border-top:1px solid rgba(240,207,122,.08);
   background:
-    radial-gradient(ellipse at 50% 24%,rgba(240,207,122,.105),transparent 28%),
-    radial-gradient(ellipse at 50% 72%,rgba(142,110,218,.055),transparent 36%),
-    linear-gradient(180deg,#020307 0%,#050407 48%,#010204 100%);
+    radial-gradient(circle at 78% 47%,rgba(240,207,122,.075),transparent 24%),
+    radial-gradient(circle at 18% 22%,rgba(127,102,196,.035),transparent 27%),
+    linear-gradient(180deg,#020307 0%,#050507 54%,#010204 100%);
+  content-visibility:auto;
+  contain-intrinsic-size:680px;
+}
+body.cinematic-home .v2-passport::before{
+  content:"";
+  position:absolute;
+  z-index:-2;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent 0 49.95%,rgba(255,255,255,.035) 50%,transparent 50.05%),
+    radial-gradient(ellipse at 76% 48%,rgba(233,204,126,.05),transparent 31%);
 }
 body.cinematic-home .v2-passport::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:max(6vw,calc((100vw - 1280px)/2));
+  right:max(6vw,calc((100vw - 1280px)/2));
   top:52px;
-  width:min(500px,62vw);
-  background:linear-gradient(90deg,transparent,rgba(240,207,122,.42),transparent);
-}
-
-/* The supplied master artwork is square. Lock both intrinsic and rendered
-   proportions so browser/device layout cannot stretch the watermark. */
-body.cinematic-home .v2-passport-mark{
-  display:block;
-  left:50%;
-  top:48%;
-  width:min(600px,72vw);
-  height:auto!important;
-  max-width:none;
-  aspect-ratio:1 / 1;
-  object-fit:contain;
-  object-position:center;
-  transform:translate(-50%,-50%);
-  transform-origin:center;
-  opacity:.045;
-  filter:saturate(.96) contrast(1.03) brightness(1.04);
+  height:1px;
+  background:linear-gradient(90deg,rgba(240,207,122,.42),rgba(240,207,122,.06) 38%,transparent 65%);
   pointer-events:none;
-  user-select:none;
 }
 
 body.cinematic-home .v2-passport .v2-kicker{
-  margin-bottom:18px;
-  color:#f0cf7a;
-  font-size:10px;
+  grid-area:kicker;
+  justify-self:start;
+  margin:0 0 20px;
+  color:#e9c66f;
+  font-size:9px;
   font-weight:800;
-  letter-spacing:.39em;
-  text-shadow:0 0 22px rgba(240,207,122,.16);
+  letter-spacing:.38em;
+  text-transform:uppercase;
+  text-shadow:0 0 20px rgba(240,207,122,.12);
 }
 body.cinematic-home .v2-passport h2{
-  max-width:9.7ch;
-  margin:0 auto 28px;
-  color:#fbf4e9;
-  font-size:clamp(56px,6.8vw,98px);
-  line-height:.94;
-  letter-spacing:-.052em;
+  grid-area:title;
+  max-width:8.4ch;
+  margin:0 0 24px;
+  color:#faf2e7;
+  font:400 clamp(50px,5.6vw,78px)/.96 "Iowan Old Style",Baskerville,Georgia,serif;
+  letter-spacing:-.048em;
   text-wrap:balance;
-  text-shadow:
-    0 0 24px rgba(240,207,122,.07),
-    0 18px 52px rgba(0,0,0,.52);
+  text-shadow:0 16px 46px rgba(0,0,0,.42);
 }
 body.cinematic-home .v2-passport>p:not(.v2-kicker){
-  max-width:780px;
-  margin:0 auto 31px;
-  color:#d1c7bb;
-  font-size:clamp(15px,1.35vw,18px);
-  line-height:1.82;
-  letter-spacing:.012em;
+  grid-area:copy;
+  max-width:610px;
+  margin:0 0 28px;
+  color:#c9beb2;
+  font-size:15.5px;
+  line-height:1.78;
+  letter-spacing:.01em;
 }
 body.cinematic-home .v2-passport-features{
-  gap:10px 30px;
-  margin:5px auto 36px;
-  color:#9b9185;
-  font-size:8.5px;
-  font-weight:650;
-  letter-spacing:.22em;
+  grid-area:features;
+  justify-content:flex-start;
+  gap:8px 20px;
+  max-width:610px;
+  margin:0 0 34px;
+  color:#8f867a;
+  font-size:7.5px;
+  font-weight:700;
+  letter-spacing:.19em;
+  text-transform:uppercase;
+}
+body.cinematic-home .v2-passport-features span{
+  position:relative;
+  padding:7px 0;
 }
 body.cinematic-home .v2-passport-features span+span::before{
-  left:-18px;
-  color:rgba(240,207,122,.58);
+  content:"/";
+  position:absolute;
+  left:-13px;
+  color:rgba(240,207,122,.43);
 }
 body.cinematic-home .v2-passport .button{
-  min-width:min(360px,92vw);
-  min-height:62px;
-  padding:0 30px;
-  border:1px solid rgba(255,239,195,.28);
-  border-radius:2px;
-  background:linear-gradient(180deg,#efd78f 0%,#d9b660 52%,#c39239 100%);
+  grid-area:cta;
+  justify-self:start;
+  min-width:238px;
+  min-height:54px;
+  margin:0;
+  padding:0 26px;
+  border:1px solid rgba(240,207,122,.28);
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(239,215,143,.98),rgba(198,153,62,.98));
   color:#100b04;
-  font-size:10.5px;
+  font-size:9.5px;
   font-weight:850;
   letter-spacing:.16em;
   text-transform:uppercase;
-  box-shadow:
-    0 18px 52px rgba(199,151,47,.22),
-    inset 0 1px 0 rgba(255,255,255,.30);
+  box-shadow:0 15px 42px rgba(199,151,47,.16),inset 0 1px rgba(255,255,255,.28);
   transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;
 }
 body.cinematic-home .v2-passport .button:hover,
 body.cinematic-home .v2-passport .button:focus-visible{
   transform:translateY(-2px);
   filter:brightness(1.045);
+  box-shadow:0 20px 50px rgba(199,151,47,.23),inset 0 1px rgba(255,255,255,.32);
+}
+
+/* Treat the master mark as the credential itself instead of a muddy watermark. */
+body.cinematic-home .v2-passport-mark{
+  grid-area:mark;
+  align-self:center;
+  justify-self:end;
+  position:relative;
+  z-index:2;
+  left:auto;
+  top:auto;
+  width:min(430px,32vw);
+  height:auto!important;
+  max-width:100%;
+  aspect-ratio:1 / 1;
+  margin:0;
+  padding:clamp(18px,2vw,28px);
+  object-fit:contain;
+  object-position:center;
+  transform:none;
+  opacity:.95;
+  border:1px solid rgba(240,207,122,.13);
+  border-radius:20px;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(240,207,122,.06),transparent 44%),
+    linear-gradient(145deg,rgba(14,14,17,.94),rgba(5,6,9,.98));
   box-shadow:
-    0 22px 62px rgba(199,151,47,.29),
-    inset 0 1px 0 rgba(255,255,255,.34);
+    inset 0 1px rgba(255,255,255,.025),
+    inset 0 0 80px rgba(240,207,122,.025),
+    0 34px 90px rgba(0,0,0,.34),
+    0 0 0 8px rgba(255,255,255,.008);
+  filter:saturate(.95) contrast(1.03) brightness(1.02);
+  pointer-events:none;
+  user-select:none;
+}
+
+@media(max-width:1040px){
+  body.cinematic-home .v2-passport{
+    grid-template-columns:minmax(0,1fr) minmax(300px,.72fr);
+    column-gap:44px;
+  }
+  body.cinematic-home .v2-passport h2{font-size:clamp(46px,5.8vw,66px)}
+  body.cinematic-home .v2-passport-mark{width:min(360px,34vw)}
 }
 
 @media(max-width:860px){
   body.cinematic-home .v2-cycle-summary .realm-name{letter-spacing:.04em}
   body.cinematic-home .v2-passport{
-    padding:104px 20px 116px;
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "kicker"
+      "title"
+      "copy"
+      "mark"
+      "features"
+      "cta";
+    justify-items:center;
+    row-gap:0;
+    padding:92px 20px 108px;
+    text-align:center;
+    background:
+      radial-gradient(circle at 50% 58%,rgba(240,207,122,.06),transparent 30%),
+      linear-gradient(180deg,#020307 0%,#050507 54%,#010204 100%);
   }
-  body.cinematic-home .v2-passport::after{top:36px}
-  body.cinematic-home .v2-passport-mark{
-    top:45%;
-    width:min(520px,108vw);
-    opacity:.038;
+  body.cinematic-home .v2-passport::before{display:none}
+  body.cinematic-home .v2-passport::after{
+    top:34px;
+    left:22px;
+    right:22px;
+    background:linear-gradient(90deg,transparent,rgba(240,207,122,.34),transparent);
   }
   body.cinematic-home .v2-passport .v2-kicker{
-    font-size:8.5px;
-    letter-spacing:.32em;
+    justify-self:center;
+    margin-bottom:15px;
+    font-size:8px;
+    letter-spacing:.31em;
   }
   body.cinematic-home .v2-passport h2{
-    max-width:10ch;
-    margin-bottom:23px;
-    font-size:clamp(48px,13vw,66px);
+    max-width:9.3ch;
+    margin-bottom:20px;
+    font-size:clamp(46px,12vw,62px);
     line-height:.98;
   }
   body.cinematic-home .v2-passport>p:not(.v2-kicker){
-    max-width:35rem;
-    margin-bottom:27px;
-    font-size:14.5px;
-    line-height:1.75;
+    max-width:34rem;
+    margin-bottom:30px;
+    font-size:14px;
+    line-height:1.74;
+  }
+  body.cinematic-home .v2-passport-mark{
+    justify-self:center;
+    width:min(360px,84vw);
+    margin:0 0 30px;
+    padding:18px;
+    border-radius:16px;
+    opacity:.96;
+    box-shadow:
+      inset 0 1px rgba(255,255,255,.024),
+      inset 0 0 70px rgba(240,207,122,.02),
+      0 26px 62px rgba(0,0,0,.30);
   }
   body.cinematic-home .v2-passport-features{
-    gap:9px 16px;
-    margin-bottom:30px;
-    font-size:7.5px;
-    letter-spacing:.16em;
+    justify-content:center;
+    gap:5px 14px;
+    max-width:34rem;
+    margin-bottom:27px;
+    font-size:7px;
+    letter-spacing:.14em;
   }
   body.cinematic-home .v2-passport-features span+span::before{display:none}
   body.cinematic-home .v2-passport .button{
-    width:min(100%,340px);
+    justify-self:center;
+    width:min(100%,300px);
     min-width:0;
-    min-height:56px;
-    border-radius:2px;
-    font-size:10px;
+    min-height:52px;
+    font-size:9.5px;
   }
 }
 
 @media(max-width:430px){
   body.cinematic-home .v2-passport{padding-inline:18px}
-  body.cinematic-home .v2-passport-mark{width:min(560px,128vw)}
-  body.cinematic-home .v2-passport-features{max-width:330px}
+  body.cinematic-home .v2-passport-mark{width:min(330px,88vw)}
+  body.cinematic-home .v2-passport-features{max-width:315px}
 }
