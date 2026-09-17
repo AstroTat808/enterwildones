@@ -1,26 +1,82 @@
-/* ENTER WILD ONES — shared realm gradient language + minimal Passport close.
-   Loaded last on homepage and realm pages so the four realm accents stay exact
-   without disturbing ticketing, application, admin, or payment behavior. */
+/* ENTER WILD ONES — one shared Four Realms visual language.
+   This layer owns realm gradients, optical text spacing, chips, mobile headline
+   wrapping and restrained realm-aware motion across public, ticket and admin UI. */
 
 :root{
   --wo-light-gradient:linear-gradient(180deg,#fff5c7 0%,#f2d67b 43%,#c89d43 100%);
   --wo-balance-gradient:linear-gradient(180deg,#e6feff 0%,#86e5ee 45%,#3db8ca 100%);
   --wo-fire-gradient:linear-gradient(180deg,#ffdbb4 0%,#ff9551 46%,#d6531b 100%);
   --wo-night-gradient:linear-gradient(180deg,#ecdfff 0%,#b78eff 46%,#7045d5 100%);
+  --realm-text-gradient:var(--wo-light-gradient);
+  --realm-fallback:#f1d68c;
+  --realm-glow:rgba(241,214,140,.16);
+  --realm-chip-fill:rgba(241,214,140,.075);
+  --realm-chip-border:rgba(241,214,140,.28);
 }
 
-.realm-key{
-  display:inline-block;
-  color:var(--realm-fallback,#f1d68c);
-  text-shadow:0 0 24px var(--realm-glow,rgba(241,214,140,.12));
+.realm-light,
+body[data-realm="light"],
+[data-brand-realm="light"]{
+  --realm-text-gradient:var(--wo-light-gradient);
+  --realm-fallback:#f1d68c;
+  --realm-glow:rgba(241,214,140,.18);
+  --realm-chip-fill:rgba(241,214,140,.075);
+  --realm-chip-border:rgba(241,214,140,.30);
 }
-.realm-key.realm-light{--realm-text-gradient:var(--wo-light-gradient);--realm-fallback:#f1d68c;--realm-glow:rgba(241,214,140,.16)}
-.realm-key.realm-balance{--realm-text-gradient:var(--wo-balance-gradient);--realm-fallback:#72d9e8;--realm-glow:rgba(114,217,232,.16)}
-.realm-key.realm-fire{--realm-text-gradient:var(--wo-fire-gradient);--realm-fallback:#ff7a3a;--realm-glow:rgba(255,122,58,.16)}
-.realm-key.realm-night{--realm-text-gradient:var(--wo-night-gradient);--realm-fallback:#b48cff;--realm-glow:rgba(180,140,255,.17)}
+.realm-balance,
+body[data-realm="balance"],
+[data-brand-realm="balance"]{
+  --realm-text-gradient:var(--wo-balance-gradient);
+  --realm-fallback:#72d9e8;
+  --realm-glow:rgba(114,217,232,.18);
+  --realm-chip-fill:rgba(114,217,232,.07);
+  --realm-chip-border:rgba(114,217,232,.29);
+}
+.realm-fire,
+body[data-realm="fire"],
+[data-brand-realm="fire"]{
+  --realm-text-gradient:var(--wo-fire-gradient);
+  --realm-fallback:#ff7a3a;
+  --realm-glow:rgba(255,122,58,.19);
+  --realm-chip-fill:rgba(255,122,58,.075);
+  --realm-chip-border:rgba(255,122,58,.30);
+}
+.realm-night,
+body[data-realm="night"],
+[data-brand-realm="night"]{
+  --realm-text-gradient:var(--wo-night-gradient);
+  --realm-fallback:#b48cff;
+  --realm-glow:rgba(180,140,255,.19);
+  --realm-chip-fill:rgba(180,140,255,.075);
+  --realm-chip-border:rgba(180,140,255,.30);
+}
+.realm-cycle{--realm-fallback:#d9bd78;--realm-glow:rgba(217,189,120,.15);--realm-chip-fill:rgba(217,189,120,.065);--realm-chip-border:rgba(217,189,120,.24)}
+
+/* Descender-safe gradient text. Keep punctuation inside the element so it shares the fill. */
+.realm-key,
+.realm-word,
+.realm-ticket,
+.realm-passport,
+.realm-admin{
+  display:inline-block;
+  max-width:100%;
+  line-height:1.08;
+  padding-bottom:.14em;
+  margin-bottom:-.14em;
+  overflow:visible;
+  color:var(--realm-fallback);
+  text-shadow:0 0 24px var(--realm-glow);
+  background-repeat:no-repeat;
+  background-size:100% 100%;
+  transition:transform .24s cubic-bezier(.2,.7,.2,1),filter .24s ease,text-shadow .24s ease;
+}
 
 @supports ((-webkit-background-clip:text) or (background-clip:text)){
-  .realm-key{
+  .realm-key,
+  .realm-word,
+  .realm-ticket,
+  .realm-passport,
+  .realm-admin{
     background-image:var(--realm-text-gradient);
     -webkit-background-clip:text;
     background-clip:text;
@@ -29,24 +85,74 @@
   }
 }
 
-/* Keep every primary Four Realms cycle label on the same gradient system. */
-body.cinematic-home .v2-cycle-title .realm-light{background-image:var(--wo-light-gradient)}
-body.cinematic-home .v2-cycle-title .realm-balance{background-image:var(--wo-balance-gradient)}
-body.cinematic-home .v2-cycle-title .realm-fire{background-image:var(--wo-fire-gradient)}
-body.cinematic-home .v2-cycle-title .realm-night{background-image:var(--wo-night-gradient)}
+/* Optical headline rhythm. */
+.v2-cycle-title,
+.v2-realm-copy h2,
+.v2-passport h2,
+.cinematic-event .realm-doctrine h2,
+.cinematic-event .aureva-pricing-head h2,
+.workflow-title,
+.passport-header h1,
+.passport-card h2,
+.ticket-page .name,
+.shell-inner>h1{
+  overflow:visible;
+  text-wrap:balance;
+  font-kerning:normal;
+  font-variant-ligatures:common-ligatures;
+}
+.v2-cycle-title,
+.v2-realm-copy h2,
+.cinematic-event .realm-doctrine h2,
+.cinematic-event .aureva-pricing-head h2,
+.passport-header h1,
+.ticket-page .name{letter-spacing:-.035em}
+.v2-realm-copy h2 .realm-key,
+.cinematic-event h2 .realm-key,
+.ticket-page .name.realm-key{letter-spacing:-.025em}
 
-body.cinematic-home .v2-realm-nav [data-realm-link="light"],
-body.cinematic-home .v2-progress a[href="#aureva"]{--realm-text-gradient:var(--wo-light-gradient);--realm-fallback:#f1d68c}
-body.cinematic-home .v2-realm-nav [data-realm-link="balance"],
-body.cinematic-home .v2-progress a[href="#halora"]{--realm-text-gradient:var(--wo-balance-gradient);--realm-fallback:#72d9e8}
-body.cinematic-home .v2-realm-nav [data-realm-link="fire"],
-body.cinematic-home .v2-progress a[href="#sunveil"]{--realm-text-gradient:var(--wo-fire-gradient);--realm-fallback:#ff7a3a}
-body.cinematic-home .v2-realm-nav [data-realm-link="night"],
-body.cinematic-home .v2-progress a[href="#nocturne"]{--realm-text-gradient:var(--wo-night-gradient);--realm-fallback:#b48cff}
+/* Shared premium realm chip for ticketing, Passport and operations. */
+.realm-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  width:max-content;
+  max-width:100%;
+  min-height:28px;
+  padding:6px 10px;
+  border:1px solid var(--realm-chip-border);
+  border-radius:999px;
+  background:linear-gradient(180deg,var(--realm-chip-fill),rgba(255,255,255,.012));
+  color:var(--realm-fallback);
+  font-size:9px;
+  font-weight:800;
+  line-height:1.2;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 9px 24px rgba(0,0,0,.16);
+  transition:transform .22s cubic-bezier(.2,.7,.2,1),border-color .22s ease,box-shadow .22s ease,filter .22s ease;
+}
+.realm-chip::before{
+  content:"";
+  flex:0 0 7px;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--realm-text-gradient,var(--wo-light-gradient));
+  box-shadow:0 0 13px var(--realm-glow);
+}
+.realm-chip.realm-cycle::before{background:linear-gradient(135deg,#f2d67b,#86e5ee 34%,#ff9551 67%,#b78eff)}
 
-body.cinematic-home .v2-realm-nav .v2-nav-sub,
-body.cinematic-home .v2-progress a span{color:var(--realm-fallback)}
-
+/* Homepage cycle labels and progression use the exact same tokens. */
+body.cinematic-home .v2-cycle-title .realm-light{--realm-text-gradient:var(--wo-light-gradient);--realm-fallback:#f1d68c}
+body.cinematic-home .v2-cycle-title .realm-balance{--realm-text-gradient:var(--wo-balance-gradient);--realm-fallback:#72d9e8}
+body.cinematic-home .v2-cycle-title .realm-fire{--realm-text-gradient:var(--wo-fire-gradient);--realm-fallback:#ff7a3a}
+body.cinematic-home .v2-cycle-title .realm-night{--realm-text-gradient:var(--wo-night-gradient);--realm-fallback:#b48cff}
+body.cinematic-home .v2-realm-nav [data-realm-link="light"],body.cinematic-home .v2-progress a[href="#aureva"]{--realm-text-gradient:var(--wo-light-gradient);--realm-fallback:#f1d68c}
+body.cinematic-home .v2-realm-nav [data-realm-link="balance"],body.cinematic-home .v2-progress a[href="#halora"]{--realm-text-gradient:var(--wo-balance-gradient);--realm-fallback:#72d9e8}
+body.cinematic-home .v2-realm-nav [data-realm-link="fire"],body.cinematic-home .v2-progress a[href="#sunveil"]{--realm-text-gradient:var(--wo-fire-gradient);--realm-fallback:#ff7a3a}
+body.cinematic-home .v2-realm-nav [data-realm-link="night"],body.cinematic-home .v2-progress a[href="#nocturne"]{--realm-text-gradient:var(--wo-night-gradient);--realm-fallback:#b48cff}
+body.cinematic-home .v2-realm-nav .v2-nav-sub,body.cinematic-home .v2-progress a span{color:var(--realm-fallback)}
 @supports ((-webkit-background-clip:text) or (background-clip:text)){
   body.cinematic-home .v2-realm-nav .v2-nav-sub,
   body.cinematic-home .v2-progress a span{
@@ -63,123 +169,82 @@ body.cinematic-home .v2-passport{
   min-height:0;
   padding:clamp(96px,8vw,132px) max(24px,6vw) clamp(108px,9vw,146px);
   border-top:1px solid rgba(240,207,122,.075);
-  background:
-    radial-gradient(ellipse at 50% 6%,rgba(240,207,122,.075),transparent 31%),
-    linear-gradient(180deg,#020307 0%,#040407 48%,#010204 100%);
+  background:radial-gradient(ellipse at 50% 6%,rgba(240,207,122,.075),transparent 31%),linear-gradient(180deg,#020307 0%,#040407 48%,#010204 100%);
 }
-body.cinematic-home .v2-passport::before{
-  z-index:-1;
-  background:linear-gradient(180deg,rgba(240,207,122,.018),transparent 32%);
-}
-body.cinematic-home .v2-passport::after{
-  top:40px;
-  bottom:auto;
-  width:min(360px,48vw);
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(240,207,122,.36),transparent);
-}
+body.cinematic-home .v2-passport::before{z-index:-1;background:linear-gradient(180deg,rgba(240,207,122,.018),transparent 32%)}
+body.cinematic-home .v2-passport::after{top:40px;bottom:auto;width:min(360px,48vw);height:1px;background:linear-gradient(90deg,transparent,rgba(240,207,122,.36),transparent)}
 body.cinematic-home .v2-passport-mark{display:none!important}
-body.cinematic-home .v2-passport-inner{
-  position:relative;
-  z-index:1;
-  width:min(100%,820px);
-  margin:0 auto;
-  text-align:center;
-}
-body.cinematic-home .v2-passport .v2-kicker{
-  margin:0 0 16px;
-  color:#d9bd78;
-  font-size:9px;
-  font-weight:750;
-  letter-spacing:.36em;
-  text-shadow:none;
-}
-body.cinematic-home .v2-passport h2{
-  max-width:13ch;
-  margin:0 auto 22px;
-  color:#f8f1e7;
-  font:400 clamp(42px,4.8vw,68px)/1 "Iowan Old Style",Baskerville,Georgia,serif;
-  letter-spacing:-.045em;
-  text-wrap:balance;
-  text-shadow:0 18px 52px rgba(0,0,0,.42);
-}
+body.cinematic-home .v2-passport-inner{position:relative;z-index:1;display:grid;justify-items:center;width:min(100%,820px);margin:0 auto;text-align:center}
+body.cinematic-home .v2-passport .v2-kicker{margin:0 0 16px;color:#d9bd78;font-size:9px;font-weight:750;letter-spacing:.36em;text-shadow:none}
+body.cinematic-home .v2-passport h2{max-width:13ch;margin:0 auto 22px;color:#f8f1e7;font:400 clamp(42px,4.8vw,68px)/1.04 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.045em;text-wrap:balance;text-shadow:0 18px 52px rgba(0,0,0,.42)}
 body.cinematic-home .v2-passport>p:not(.v2-kicker){margin:0}
-body.cinematic-home .v2-passport .v2-passport-copy{
-  max-width:680px;
-  margin:0 auto 26px!important;
-  color:#bdb3a7;
-  font-size:clamp(14px,1.2vw,16px);
-  line-height:1.82;
-  letter-spacing:.01em;
-}
-body.cinematic-home .v2-passport-features{
-  display:flex;
-  justify-content:center;
-  flex-wrap:wrap;
-  gap:8px 25px;
-  margin:0 auto 30px;
-  color:#81796f;
-  font-size:7.5px;
-  font-weight:700;
-  letter-spacing:.22em;
-  text-transform:uppercase;
-}
+body.cinematic-home .v2-passport .v2-passport-copy{max-width:680px;margin:0 auto 26px!important;color:#bdb3a7;font-size:clamp(14px,1.2vw,16px);line-height:1.82;letter-spacing:.01em;text-align:center}
+body.cinematic-home .v2-passport-features{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 25px;margin:0 auto 30px;color:#81796f;font-size:7.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase}
 body.cinematic-home .v2-passport-features span{position:relative}
-body.cinematic-home .v2-passport-features span+span::before{
-  content:"/";
-  display:block;
-  position:absolute;
-  left:-16px;
-  color:rgba(240,207,122,.34);
-}
-body.cinematic-home .v2-passport .button{
-  width:auto;
-  min-width:248px;
-  min-height:48px;
-  margin:0;
-  padding:0 25px;
-  border:1px solid rgba(240,207,122,.31);
-  border-radius:2px;
-  background:linear-gradient(180deg,rgba(240,207,122,.105),rgba(240,207,122,.035));
-  color:#edd596;
-  font-size:9px;
-  font-weight:800;
-  letter-spacing:.18em;
-  text-transform:uppercase;
-  box-shadow:inset 0 1px rgba(255,255,255,.035),0 14px 42px rgba(0,0,0,.22);
-  transition:transform .2s ease,border-color .2s ease,background .2s ease,color .2s ease;
-}
-body.cinematic-home .v2-passport .button:hover,
-body.cinematic-home .v2-passport .button:focus-visible{
-  transform:translateY(-2px);
-  border-color:rgba(240,207,122,.52);
-  background:linear-gradient(180deg,rgba(240,207,122,.15),rgba(240,207,122,.055));
-  color:#f8e3aa;
-  box-shadow:inset 0 1px rgba(255,255,255,.045),0 18px 48px rgba(0,0,0,.27);
-}
-body.cinematic-home .v2-passport .v2-passport-note{
-  margin:18px auto 0!important;
-  color:#5f5a53;
-  font-size:7px;
-  font-weight:700;
-  line-height:1.4;
-  letter-spacing:.26em;
-  text-transform:uppercase;
-}
+body.cinematic-home .v2-passport-features span+span::before{content:"/";display:block;position:absolute;left:-16px;color:rgba(240,207,122,.34)}
+body.cinematic-home .v2-passport .button{width:auto;min-width:248px;min-height:48px;margin:0;padding:0 25px;border:1px solid rgba(240,207,122,.31);border-radius:2px;background:linear-gradient(180deg,rgba(240,207,122,.105),rgba(240,207,122,.035));color:#edd596;font-size:9px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;box-shadow:inset 0 1px rgba(255,255,255,.035),0 14px 42px rgba(0,0,0,.22);transition:transform .2s ease,border-color .2s ease,background .2s ease,color .2s ease,box-shadow .2s ease}
+body.cinematic-home .v2-passport .button:hover,body.cinematic-home .v2-passport .button:focus-visible{transform:translateY(-2px);border-color:rgba(240,207,122,.52);background:linear-gradient(180deg,rgba(240,207,122,.15),rgba(240,207,122,.055));color:#f8e3aa;box-shadow:inset 0 1px rgba(255,255,255,.045),0 18px 48px rgba(0,0,0,.27)}
+body.cinematic-home .v2-passport .v2-passport-note{display:block;width:100%;margin:18px auto 0!important;color:#5f5a53;font-size:7px;font-weight:700;line-height:1.4;letter-spacing:.26em;text-align:center;text-transform:uppercase}
 
-/* Realm pages reuse the exact same gradient language as the homepage. */
-.cinematic-event .realm-doctrine h2 .realm-key,
-.cinematic-event .aureva-pricing-head h2 .realm-key{filter:saturate(.98) brightness(1.03)}
+/* Realm page refinement. */
+.cinematic-event .realm-doctrine h2 .realm-key,.cinematic-event .aureva-pricing-head h2 .realm-key{filter:saturate(.98) brightness(1.03)}
 .cinematic-event .doctrine-index .realm-key{font-weight:850;letter-spacing:.08em}
+.cinematic-event .doctrine-index{overflow:visible}
 
+/* Passport realm cards and filters inherit the same tokens. */
+.passport-filter{display:flex;flex-wrap:wrap;gap:8px}
+.passport-filter .realm-chip{cursor:pointer}
+.passport-filter .realm-chip[aria-pressed="true"]{border-color:var(--realm-fallback);box-shadow:inset 0 0 0 1px var(--realm-chip-border),0 0 24px var(--realm-glow)}
+.passport-card{overflow:visible;transition:transform .24s cubic-bezier(.2,.7,.2,1),border-color .24s ease,box-shadow .24s ease}
+.passport-card h2.realm-key{margin-bottom:6px}
+.passport-card .realm-chip{margin:0 0 12px}
+
+/* Ticketing and generated digital admission. */
+.public-ticket-page .workflow-title.realm-key{padding-bottom:.12em;margin-bottom:-.08em}
+.public-ticket-page .realm-chip{margin-bottom:12px}
+.ticket-page .brand{display:flex;flex-wrap:wrap;align-items:center;gap:9px}
+.ticket-page .realm-chip{margin:0 0 12px}
+.ticket-page .name{line-height:1.02;padding-bottom:.16em;margin-bottom:-.06em}
+.ticket-page .name.realm-key{display:block;width:max-content;max-width:100%}
+
+/* Operations realm identity stays visible without competing with readiness states. */
+.admin-realm-chip{margin-top:8px}
+.admin-toolbar .realm-chip,.command-toolbar .realm-chip{align-self:end}
+
+/* Restrained hover motion uses the active realm's glow; static headlines stay still. */
+@media (hover:hover) and (pointer:fine){
+  .realm-chip:hover,
+  .realm-chip:focus-visible{transform:translateY(-1px);filter:saturate(1.06) brightness(1.05);box-shadow:inset 0 1px rgba(255,255,255,.05),0 10px 28px var(--realm-glow)}
+  a:hover .realm-key,
+  a:focus-visible .realm-key,
+  .passport-card:hover h2.realm-key{transform:translateY(-1px);filter:saturate(1.06) brightness(1.05);text-shadow:0 0 30px var(--realm-glow)}
+  .passport-card:hover{transform:translateY(-2px);border-color:var(--realm-chip-border);box-shadow:0 18px 44px rgba(0,0,0,.24),0 0 28px var(--realm-glow)}
+  body.cinematic-home .v2-realm-nav a:hover .v2-nav-sub,body.cinematic-home .v2-progress a:hover span{filter:saturate(1.08) brightness(1.08)}
+}
+
+/* Mobile line-break control: keep signature gradient words and punctuation together. */
 @media(max-width:860px){
+  .realm-key,.realm-word,.realm-ticket,.realm-passport,.realm-admin{white-space:nowrap}
+  .v2-cycle-title,.v2-realm-copy h2,.cinematic-event .realm-doctrine h2,.cinematic-event .aureva-pricing-head h2,.workflow-title,.passport-header h1,.ticket-page .name{line-height:1.04;text-wrap:balance;overflow-wrap:normal;word-break:normal;hyphens:none}
   body.cinematic-home .v2-passport{padding:82px 20px 94px}
   body.cinematic-home .v2-passport::after{top:30px;width:min(300px,64vw)}
   body.cinematic-home .v2-passport .v2-kicker{font-size:8px;letter-spacing:.30em}
-  body.cinematic-home .v2-passport h2{max-width:12ch;margin-bottom:18px;font-size:clamp(38px,10.5vw,54px);line-height:1.02}
+  body.cinematic-home .v2-passport h2{max-width:12ch;margin-bottom:18px;font-size:clamp(38px,10.5vw,54px);line-height:1.04}
   body.cinematic-home .v2-passport .v2-passport-copy{max-width:34rem;margin-bottom:23px!important;font-size:14px;line-height:1.75}
   body.cinematic-home .v2-passport-features{gap:8px 15px;margin-bottom:26px;font-size:7px;letter-spacing:.17em}
   body.cinematic-home .v2-passport-features span+span::before{display:none}
   body.cinematic-home .v2-passport .button{width:min(100%,290px);min-width:0;min-height:48px}
   body.cinematic-home .v2-passport .v2-passport-note{font-size:6.5px;letter-spacing:.20em}
+  .ticket-page .name{font-size:clamp(42px,14vw,66px)}
+}
+
+@media(max-width:430px){
+  .v2-realm-copy h2{font-size:clamp(40px,12vw,54px)}
+  .workflow-title{font-size:clamp(38px,12vw,54px)}
+  .realm-chip{font-size:8px;letter-spacing:.13em}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .realm-key,.realm-word,.realm-ticket,.realm-passport,.realm-admin,.realm-chip,.passport-card{transition:none!important}
+  .realm-chip:hover,.realm-chip:focus-visible,a:hover .realm-key,a:focus-visible .realm-key,.passport-card:hover,.passport-card:hover h2.realm-key{transform:none!important}
 }
