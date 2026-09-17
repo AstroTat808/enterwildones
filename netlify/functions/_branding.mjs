@@ -5,5 +5,5 @@ export function realmLogo(event,cls='ticket-logo'){
   const name=(Object.hasOwn(artwork,event?.realm)?artwork[event.realm]:artwork.cycle);
   return `<img class="${cls}" src="${realmArtwork(event?.realm)}" alt="${name.replaceAll('-',' ').toUpperCase()}" width="384" height="384" decoding="async">`;
 }
-export const brandStyles='<link rel="stylesheet" href="/assets/css/branding.css"><link rel="stylesheet" href="/assets/css/retina-lockups.css">';
+export const brandStyles='<link rel="stylesheet" href="/assets/css/branding.css"><link rel="stylesheet" href="/assets/css/retina-lockups.css"><link rel="stylesheet" href="/assets/css/realm-luxury-polish.css">';
 export const ticketHeader='<header class="ticket-brand-header"><a href="/">ENTER WILD ONES</a><a href="/passport">MY PASSPORT</a></header>';
