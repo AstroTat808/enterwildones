@@ -1,8 +1,9 @@
 (() => {
   'use strict';
-  const q = s => document.querySelector(s), login=q('#login'), account=q('#account'), status=q('#status');
-  const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let widget=null, securityPromise=null, records=[];
+  const q=s=>document.querySelector(s),login=q('#login'),account=q('#account'),status=q('#status');
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const realmClass=realm=>['light','balance','fire','night'].includes(realm)?`realm-${realm}`:'realm-cycle';
+  let widget=null,securityPromise=null,records=[];
   const api=()=>window.turnstile&&typeof window.turnstile.render==='function'?window.turnstile:null;
   async function security(){
     if(securityPromise)return securityPromise;
@@ -24,7 +25,8 @@
       const e=x.event,state=x.checkedIn?'REALM COMPLETED':x.ticket?String(x.ticket.status).replaceAll('_',' ').toUpperCase():x.application?String(x.application.status).toUpperCase():'NOT ENTERED';
       const active=x.ticket&&['paid','checked_in'].includes(x.ticket.status);
       const link=active&&typeof x.ticket.ticketUrl==='string'&&x.ticket.ticketUrl.startsWith('/ticket?token=')?x.ticket.ticketUrl:e.routes.event;
-      return `<article class="passport-card" data-brand-realm="${esc(e.realm)}"><img src="${esc(window.WildOnesBrand.asset(e.realm))}" alt="${esc(window.WildOnesBrand.label(e.realm))}" width="768" height="768" loading="lazy"><h2>${esc(e.name)}</h2><strong>${esc(state)}</strong><p>${esc(e.copy.tagline)}</p>${x.ticket?`<p>Ticket ${esc(x.ticket.ticketId)}</p><p>${x.waiverSigned?'Waiver recorded':'Waiver required before entry'}</p>`:''}${x.entitlements.filter(a=>a.status==='active').length?`<p>${x.entitlements.filter(a=>a.status==='active').map(a=>esc(String(a.addonType).replaceAll('_',' '))).join(' / ')}</p>`:''}<a class="button ghost" href="${esc(link)}">${active&&link.startsWith('/ticket?')?'Open Digital Ticket':'Explore the Realm'}</a></article>`;
+      const cls=realmClass(e.realm),meta=window.WildOnesBrand?.meta(e.realm);
+      return `<article class="passport-card" data-brand-realm="${esc(e.realm)}"><img src="${esc(window.WildOnesBrand.asset(e.realm))}" alt="${esc(window.WildOnesBrand.label(e.realm))}" width="768" height="768" loading="lazy"><span class="realm-chip ${cls}">${esc(meta?.sub||e.realm)}</span><h2 class="realm-key ${cls}">${esc(e.name)}</h2><strong>${esc(state)}</strong><p>${esc(e.copy.tagline)}</p>${x.ticket?`<p>Ticket ${esc(x.ticket.ticketId)}</p><p>${x.waiverSigned?'Waiver recorded':'Waiver required before entry'}</p>`:''}${x.entitlements.filter(a=>a.status==='active').length?`<p>${x.entitlements.filter(a=>a.status==='active').map(a=>esc(String(a.addonType).replaceAll('_',' '))).join(' / ')}</p>`:''}<a class="button ghost" href="${esc(link)}">${active&&link.startsWith('/ticket?')?'Open Digital Ticket':'Explore the Realm'}</a></article>`;
     }).join('');
   }
   async function load(){
@@ -36,7 +38,7 @@
       q('#welcome').textContent=`Welcome, ${d.user.preferredName||d.user.fullName||'Wild One'}.`;
       q('#progress').textContent=`${d.cycle.completed} of ${d.cycle.total} realms completed`;
       const filters=[{realm:'cycle',name:'All Realms'},...records.map(x=>x.event)];
-      q('#realmFilter').replaceChildren(...filters.map(e=>{const b=document.createElement('button');b.type='button';b.dataset.realm=e.realm;b.textContent=e.name;b.onclick=()=>render(e.realm);return b;}));render();
+      q('#realmFilter').replaceChildren(...filters.map(e=>{const b=document.createElement('button');b.type='button';b.dataset.realm=e.realm;b.className=`realm-chip ${realmClass(e.realm)}`;b.textContent=e.name;b.onclick=()=>render(e.realm);return b;}));render();
     }catch(e){login.hidden=false;status.textContent=e.message||'Passport could not load. Please refresh.';}
   }
   q('#passportLoginForm').addEventListener('submit',async e=>{
