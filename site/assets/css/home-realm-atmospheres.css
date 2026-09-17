@@ -1,0 +1,171 @@
+/* ENTER WILD ONES — realm atmosphere module.
+   Each realm shares the same layout system, but receives its own environmental material language.
+   Presentation only: no workflow, event, ticketing or Passport behavior is changed. */
+
+body.cinematic-home .v2-realm {
+  --realm-atmo-opacity: .66;
+}
+
+body.cinematic-home .v2-realm-art {
+  position: relative;
+  isolation: isolate;
+}
+
+body.cinematic-home .v2-realm-art::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -7%;
+  border-radius: 50%;
+  opacity: var(--realm-atmo-opacity);
+  pointer-events: none;
+  transition: opacity .7s ease, transform .9s cubic-bezier(.2,.7,.2,1), filter .7s ease;
+}
+
+body.cinematic-home .v2-realm-art .realm-logo-frame,
+body.cinematic-home .v2-realm-art .web-lockup,
+body.cinematic-home .v2-realm-art .realm-lockup {
+  position: relative;
+  z-index: 1;
+}
+
+/* AUREVA / LIGHT — warm diffusion, dawn rays and a lifted luminous center. */
+body.cinematic-home #aureva::before {
+  background:
+    linear-gradient(118deg, transparent 0 23%, rgba(255,239,190,.032) 30%, transparent 37% 100%),
+    radial-gradient(ellipse at 22% 43%, rgba(248,217,133,.18), transparent 36%),
+    radial-gradient(ellipse at 16% 52%, rgba(255,250,224,.055), transparent 22%),
+    linear-gradient(180deg, #020307 0%, #080703 49%, #020307 100%);
+}
+
+body.cinematic-home #aureva .v2-realm-art::after {
+  background:
+    repeating-conic-gradient(from -7deg,
+      rgba(255,235,177,.065) 0deg 1deg,
+      transparent 1deg 17deg),
+    radial-gradient(circle at 50% 50%, rgba(255,225,144,.11), transparent 55%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 41%, rgba(0,0,0,.65) 53%, transparent 72%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 0 41%, rgba(0,0,0,.65) 53%, transparent 72%);
+  transform: rotate(-4deg) scale(.97);
+  filter: blur(.15px);
+}
+
+body.cinematic-home #aureva .v2-realm-copy::after {
+  background: linear-gradient(90deg, rgba(255,237,184,.92), rgba(207,156,54,.34), transparent);
+}
+
+/* HALORA / BALANCE — mirrored cyan-violet pressure with a restrained axis through the world. */
+body.cinematic-home #halora::before {
+  background:
+    linear-gradient(90deg, transparent 0 49.88%, rgba(222,249,255,.042) 49.96% 50.04%, transparent 50.12% 100%),
+    radial-gradient(ellipse at 22% 48%, rgba(70,214,224,.145), transparent 39%),
+    radial-gradient(ellipse at 78% 48%, rgba(139,101,226,.125), transparent 39%),
+    linear-gradient(180deg, #020307 0%, #04070c 50%, #020307 100%);
+}
+
+body.cinematic-home #halora .v2-realm-art::after {
+  inset: -4%;
+  border: 1px solid rgba(150,231,240,.045);
+  background:
+    linear-gradient(90deg, rgba(75,215,225,.045), transparent 46% 54%, rgba(143,103,229,.045)),
+    radial-gradient(ellipse at 50% 50%, transparent 0 43%, rgba(198,243,247,.045) 43.5% 44%, transparent 44.5%);
+  box-shadow:
+    inset 60px 0 100px -90px rgba(65,216,225,.18),
+    inset -60px 0 100px -90px rgba(147,101,232,.16);
+  transform: scale(.95);
+}
+
+body.cinematic-home #halora .v2-realm-copy::after {
+  background: linear-gradient(90deg, rgba(111,224,233,.78), rgba(145,106,226,.38), transparent);
+}
+
+/* SUNVEIL / FIRE — horizon heat, sunset color pressure and a low glowing plane. */
+body.cinematic-home #sunveil::before {
+  background:
+    linear-gradient(180deg, transparent 0 57%, rgba(255,107,46,.038) 59%, rgba(255,73,45,.02) 61%, transparent 65%),
+    radial-gradient(ellipse at 74% 61%, rgba(255,113,46,.185), transparent 38%),
+    radial-gradient(ellipse at 88% 43%, rgba(205,63,162,.07), transparent 31%),
+    linear-gradient(180deg, #020307 0%, #0a0404 53%, #020307 100%);
+}
+
+body.cinematic-home #sunveil .v2-realm-art::after {
+  inset: -5% -9%;
+  border-radius: 42%;
+  background:
+    linear-gradient(180deg, transparent 0 53%, rgba(255,168,84,.105) 54%, rgba(255,94,43,.048) 55.5%, transparent 59%),
+    radial-gradient(ellipse at 50% 60%, rgba(255,116,49,.115), transparent 50%);
+  transform: scale(1.02,.92);
+  filter: blur(.25px);
+}
+
+body.cinematic-home #sunveil .v2-realm-copy::after {
+  background: linear-gradient(90deg, rgba(255,136,62,.90), rgba(207,66,139,.28), transparent);
+}
+
+/* NOCTURNE / NIGHT — deeper negative space, celestial halos and a colder violet falloff. */
+body.cinematic-home #nocturne::before {
+  background:
+    radial-gradient(circle at 76% 34%, rgba(178,136,255,.13), transparent 27%),
+    radial-gradient(ellipse at 63% 59%, rgba(59,77,145,.10), transparent 36%),
+    radial-gradient(circle at 86% 67%, rgba(242,209,139,.025), transparent 14%),
+    linear-gradient(180deg, #010205 0%, #04030b 50%, #010204 100%);
+}
+
+body.cinematic-home #nocturne .v2-realm-art::after {
+  inset: -2%;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 38%, rgba(184,145,255,.052) 38.5% 39%, transparent 39.5%),
+    radial-gradient(circle at 50% 50%, rgba(112,82,193,.075), transparent 56%);
+  box-shadow: 0 0 120px rgba(82,62,154,.045);
+  transform: scale(.94);
+}
+
+body.cinematic-home #nocturne .v2-realm-copy::after {
+  background: linear-gradient(90deg, rgba(187,151,255,.80), rgba(231,196,127,.24), transparent);
+}
+
+/* The active realm breathes slightly forward without turning the page into an effects demo. */
+body.cinematic-home[data-realm="light"] #aureva,
+body.cinematic-home[data-realm="balance"] #halora,
+body.cinematic-home[data-realm="fire"] #sunveil,
+body.cinematic-home[data-realm="night"] #nocturne {
+  --realm-atmo-opacity: .92;
+}
+
+body.cinematic-home[data-realm="light"] #aureva .v2-realm-art::after,
+body.cinematic-home[data-realm="balance"] #halora .v2-realm-art::after,
+body.cinematic-home[data-realm="fire"] #sunveil .v2-realm-art::after,
+body.cinematic-home[data-realm="night"] #nocturne .v2-realm-art::after {
+  transform: scale(1);
+}
+
+/* Keep realm-specific environments quieter on smaller displays so artwork and copy remain primary. */
+@media (max-width: 860px) {
+  body.cinematic-home .v2-realm {
+    --realm-atmo-opacity: .43;
+  }
+
+  body.cinematic-home[data-realm="light"] #aureva,
+  body.cinematic-home[data-realm="balance"] #halora,
+  body.cinematic-home[data-realm="fire"] #sunveil,
+  body.cinematic-home[data-realm="night"] #nocturne {
+    --realm-atmo-opacity: .56;
+  }
+
+  body.cinematic-home .v2-realm-art::after {
+    inset: 0;
+  }
+
+  body.cinematic-home #halora::before {
+    background:
+      radial-gradient(ellipse at 20% 43%, rgba(70,214,224,.095), transparent 36%),
+      radial-gradient(ellipse at 80% 43%, rgba(139,101,226,.085), transparent 36%),
+      linear-gradient(180deg, #020307 0%, #04070c 50%, #020307 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.cinematic-home .v2-realm-art::after {
+    transition: none !important;
+  }
+}

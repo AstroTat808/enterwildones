@@ -1,0 +1,457 @@
+/* ENTER WILD ONES — full-homepage art direction v2.
+   Presentation-only refinement layer. Loaded after all prior homepage CSS so the visual system
+   reads as one premium festival brand without touching operational flows. */
+
+body.cinematic-home {
+  --wo-max: 1480px;
+  --wo-hairline: rgba(255,255,255,.055);
+  --wo-gold-line: rgba(240,207,122,.20);
+  --wo-copy: #c9c0b5;
+  --wo-copy-strong: #eee4d7;
+}
+
+/* 1. MASTHEAD — reduce UI chrome and make the header read like a festival masthead. */
+body.cinematic-home .topbar {
+  min-height: 74px;
+  padding-inline: max(26px, calc((100vw - var(--wo-max))/2));
+  background:
+    linear-gradient(180deg, rgba(1,2,5,.985), rgba(2,3,7,.88));
+  border-bottom-color: rgba(240,207,122,.10);
+  box-shadow: 0 18px 54px rgba(0,0,0,.24);
+}
+
+body.cinematic-home.scrolled .topbar {
+  min-height: 66px;
+  background: rgba(2,3,7,.94);
+  box-shadow: 0 20px 64px rgba(0,0,0,.34);
+}
+
+body.cinematic-home .desktop-nav {
+  border-color: rgba(255,255,255,.055);
+  background: rgba(255,255,255,.012);
+  box-shadow: none;
+}
+
+body.cinematic-home .desktop-nav a {
+  color: #a9a094;
+}
+
+body.cinematic-home .desktop-nav a:hover,
+body.cinematic-home .desktop-nav a:focus-visible {
+  color: #f6ecdf;
+  background: rgba(255,255,255,.025);
+}
+
+/* 2. HERO — let the campaign art dominate; turn the copy into an editorial title card, not an app panel. */
+body.cinematic-home .v2-hero {
+  min-height: min(1040px, 100svh);
+}
+
+body.cinematic-home .v2-hero::before {
+  background:
+    linear-gradient(90deg, rgba(1,2,5,.48), transparent 15% 85%, rgba(1,2,5,.48)),
+    linear-gradient(180deg, transparent 46%, rgba(2,3,7,.10) 64%, rgba(2,3,7,.70) 88%, #020307 100%);
+}
+
+body.cinematic-home .v2-hero-media::after {
+  background:
+    radial-gradient(ellipse at 50% 42%, transparent 42%, rgba(1,2,5,.16) 74%, rgba(1,2,5,.30) 100%),
+    linear-gradient(180deg, transparent 48%, rgba(2,3,7,.16) 68%, #020307 100%);
+}
+
+body.cinematic-home .v2-hero-copy {
+  width: min(calc(100% - 64px), 980px);
+  margin-bottom: clamp(62px, 7vh, 92px);
+  padding: 24px 30px 26px;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+  border-color: rgba(240,207,122,.16);
+  background:
+    radial-gradient(circle at 50% -25%, rgba(240,207,122,.08), transparent 48%),
+    linear-gradient(90deg, transparent, rgba(2,3,7,.80) 16% 84%, transparent);
+  backdrop-filter: blur(14px) saturate(116%);
+  -webkit-backdrop-filter: blur(14px) saturate(116%);
+  box-shadow: none;
+}
+
+body.cinematic-home .v2-hero-copy::before,
+body.cinematic-home .v2-hero-copy::after {
+  width: clamp(44px, 6vw, 94px);
+  opacity: .48;
+}
+
+body.cinematic-home .v2-hero h1 {
+  font-size: clamp(46px, 5.1vw, 76px);
+  line-height: .95;
+  letter-spacing: -.045em;
+}
+
+body.cinematic-home .v2-hero-copy > p:not(.v2-kicker) {
+  max-width: 680px;
+  color: var(--wo-copy);
+}
+
+body.cinematic-home .v2-actions {
+  gap: 10px;
+}
+
+body.cinematic-home .v2-actions .button {
+  border-radius: 2px;
+}
+
+/* 3. THE CYCLE — make this the brand manifesto, not a navigation block. */
+body.cinematic-home .v2-cycle {
+  padding-top: 144px;
+  padding-bottom: 132px;
+  border-top: 1px solid rgba(240,207,122,.05);
+}
+
+body.cinematic-home .v2-cycle::before {
+  top: 46px;
+  font-size: 26px;
+  color: rgba(240,207,122,.16);
+}
+
+body.cinematic-home .v2-cycle-inner {
+  max-width: 1220px;
+}
+
+body.cinematic-home .v2-cycle .v2-kicker {
+  margin-bottom: 18px;
+}
+
+body.cinematic-home .v2-cycle-title {
+  font-size: clamp(50px, 6.3vw, 92px);
+  line-height: .98;
+  letter-spacing: -.048em;
+}
+
+body.cinematic-home .v2-cycle-summary {
+  max-width: 760px;
+  margin-top: 26px;
+  font-size: 17px;
+  line-height: 1.82;
+}
+
+body.cinematic-home .v2-realm-nav {
+  margin-top: 58px;
+  border-color: rgba(255,255,255,.055);
+  background: rgba(255,255,255,.018);
+}
+
+body.cinematic-home .v2-realm-nav a {
+  min-height: 126px;
+  padding: 24px 24px 22px;
+  background-color: #030409;
+}
+
+body.cinematic-home .v2-realm-nav a::after {
+  bottom: -1px;
+  height: 1px;
+}
+
+body.cinematic-home .v2-nav-num {
+  font-size: 50px;
+  font-weight: 400;
+}
+
+body.cinematic-home .v2-nav-name {
+  font-size: 12px;
+  letter-spacing: .24em;
+}
+
+body.cinematic-home .v2-nav-sub {
+  margin-top: 6px;
+  font-size: 8px;
+  letter-spacing: .32em;
+}
+
+/* 4. STICKY PROGRESSION — more like a chapter marker, less like secondary navigation. */
+body.cinematic-home .v2-progress {
+  top: 74px;
+  border-top: 0;
+  border-bottom: 1px solid rgba(255,255,255,.055);
+  background: rgba(2,3,7,.86);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+}
+
+body.cinematic-home.scrolled .v2-progress {
+  top: 66px;
+}
+
+body.cinematic-home .v2-progress-inner {
+  width: min(100%, 920px);
+}
+
+body.cinematic-home .v2-progress a {
+  padding: 12px 14px 11px;
+  color: #706a62;
+  font-size: 8px;
+  letter-spacing: .24em;
+}
+
+body.cinematic-home .v2-progress a span {
+  opacity: .78;
+}
+
+body.cinematic-home .v2-progress a[aria-current=true] {
+  color: #f5ecdf;
+}
+
+/* 5. REALM CHAPTERS — stronger rhythm, editorial framing and unique color atmospheres. */
+body.cinematic-home .v2-realm {
+  min-height: min(1020px, 108svh);
+  padding-top: clamp(112px, 10vw, 164px);
+  padding-bottom: clamp(112px, 10vw, 164px);
+  border-bottom: 0;
+}
+
+body.cinematic-home .v2-realm::after {
+  inset: 5% max(22px, 3.2%);
+  border-color: rgba(255,255,255,.032);
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.018),
+    inset 0 0 140px rgba(0,0,0,.09);
+}
+
+body.cinematic-home .v2-realm + .v2-realm::before {
+  box-shadow: 0 -1px rgba(255,255,255,.03);
+}
+
+body.cinematic-home .v2-realm-art {
+  transform: translateZ(0);
+}
+
+body.cinematic-home .v2-realm-art[data-realm-mark]::before {
+  opacity: .034;
+  font-size: clamp(280px, 31vw, 560px);
+  filter: blur(.2px);
+}
+
+body.cinematic-home .v2-realm-art .web-lockup-art,
+body.cinematic-home .v2-realm-art .realm-logo {
+  filter:
+    drop-shadow(0 42px 100px rgba(0,0,0,.58))
+    drop-shadow(0 0 38px color-mix(in srgb, var(--realm) 6%, transparent));
+}
+
+body.cinematic-home .v2-realm-copy {
+  max-width: 590px;
+  padding: 28px 0;
+}
+
+body.cinematic-home .v2-realm-copy::before {
+  color: rgba(255,255,255,.13);
+}
+
+body.cinematic-home .v2-realm-index {
+  font-size: 9.5px;
+  letter-spacing: .34em;
+}
+
+body.cinematic-home .v2-realm h2 {
+  margin-top: 30px;
+  margin-bottom: 22px;
+  font-size: clamp(58px, 5.8vw, 92px);
+  line-height: .94;
+  letter-spacing: -.05em;
+}
+
+body.cinematic-home .v2-realm-copy > p {
+  max-width: 535px;
+  color: var(--wo-copy);
+  font-size: 17px;
+  line-height: 1.88;
+}
+
+body.cinematic-home .v2-meta {
+  margin-top: 34px;
+  margin-bottom: 26px;
+}
+
+body.cinematic-home .v2-meta span {
+  border-radius: 2px;
+  border-color: rgba(255,255,255,.075);
+  background: rgba(255,255,255,.012);
+  color: #aba296;
+}
+
+body.cinematic-home .v2-realm-link {
+  min-height: 52px;
+  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: .16em;
+}
+
+/* Active chapter gets a barely perceptible increase in depth while scrolling. */
+body.cinematic-home[data-realm="light"] #aureva::after,
+body.cinematic-home[data-realm="balance"] #halora::after,
+body.cinematic-home[data-realm="fire"] #sunveil::after,
+body.cinematic-home[data-realm="night"] #nocturne::after {
+  border-color: color-mix(in srgb, var(--realm) 12%, rgba(255,255,255,.035));
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.025),
+    inset 0 0 160px color-mix(in srgb, var(--realm) 2.5%, rgba(0,0,0,.08));
+}
+
+/* 6. PASSPORT — finish with a cinematic brand destination, not a utility CTA. */
+body.cinematic-home .v2-passport {
+  padding-top: 154px;
+  padding-bottom: 164px;
+  border-top: 1px solid rgba(240,207,122,.06);
+}
+
+body.cinematic-home .v2-passport::before {
+  background:
+    radial-gradient(ellipse at 50% 32%, rgba(240,207,122,.10), transparent 30%),
+    radial-gradient(ellipse at 50% 74%, rgba(120,92,198,.045), transparent 34%),
+    linear-gradient(180deg, #020307, #040407 52%, #010204);
+}
+
+body.cinematic-home .v2-passport h2 {
+  font-size: clamp(54px, 6.5vw, 92px);
+  line-height: .96;
+}
+
+body.cinematic-home .v2-passport p {
+  max-width: 690px;
+  color: var(--wo-copy);
+  font-size: 17px;
+  line-height: 1.85;
+}
+
+body.cinematic-home .v2-passport-features {
+  margin-top: 6px;
+  gap: 10px 28px;
+  color: #8c8377;
+}
+
+body.cinematic-home .v2-passport-features span {
+  position: relative;
+}
+
+body.cinematic-home .v2-passport-features span + span::before {
+  content: "·";
+  position: absolute;
+  left: -17px;
+  color: rgba(240,207,122,.42);
+}
+
+body.cinematic-home .v2-passport .button {
+  margin-top: 4px;
+  border-radius: 2px;
+}
+
+/* 7. FOOTER — quieter finish and more breathing room. */
+body.cinematic-home .site-footer {
+  padding-top: 58px;
+  padding-bottom: 42px;
+  border-top-color: rgba(240,207,122,.10);
+  background: #010204;
+}
+
+body.cinematic-home .site-footer nav a {
+  color: #8f887e;
+}
+
+body.cinematic-home .site-footer nav a:hover,
+body.cinematic-home .site-footer nav a:focus-visible {
+  color: #efe5d7;
+}
+
+/* Mobile: preserve the art-first rhythm and remove desktop architectural excess. */
+@media (max-width: 860px) {
+  body.cinematic-home .topbar,
+  body.cinematic-home.scrolled .topbar {
+    min-height: 64px;
+  }
+
+  body.cinematic-home .v2-hero {
+    min-height: 0;
+  }
+
+  body.cinematic-home .v2-hero-copy {
+    width: calc(100% - 28px);
+    margin: 14px auto 28px;
+    padding: 24px 20px 22px;
+    border: 1px solid rgba(240,207,122,.16);
+    border-radius: 10px;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(240,207,122,.055), transparent 34%),
+      linear-gradient(180deg, rgba(5,7,12,.92), rgba(2,3,7,.985));
+  }
+
+  body.cinematic-home .v2-cycle {
+    padding: 90px 18px 86px;
+  }
+
+  body.cinematic-home .v2-cycle-title {
+    font-size: clamp(44px, 12vw, 62px);
+  }
+
+  body.cinematic-home .v2-cycle-summary {
+    font-size: 14px;
+  }
+
+  body.cinematic-home .v2-realm-nav a {
+    min-height: 100px;
+    padding: 18px 15px;
+  }
+
+  body.cinematic-home .v2-progress,
+  body.cinematic-home.scrolled .v2-progress {
+    top: 64px;
+  }
+
+  body.cinematic-home .v2-realm {
+    min-height: 0;
+    padding: 78px 18px 86px;
+  }
+
+  body.cinematic-home .v2-realm h2 {
+    font-size: clamp(46px, 13vw, 64px);
+  }
+
+  body.cinematic-home .v2-realm-copy > p,
+  body.cinematic-home .v2-passport p {
+    font-size: 14px;
+  }
+
+  body.cinematic-home .v2-meta span {
+    border-radius: 999px;
+  }
+
+  body.cinematic-home .v2-passport {
+    padding: 104px 20px 112px;
+  }
+
+  body.cinematic-home .v2-passport-features span + span::before {
+    display: none;
+  }
+}
+
+@media (max-width: 430px) {
+  body.cinematic-home .v2-cycle {
+    padding-inline: 14px;
+  }
+
+  body.cinematic-home .v2-realm {
+    padding-inline: 14px;
+  }
+
+  body.cinematic-home .v2-realm::after {
+    inset-inline: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.cinematic-home .v2-realm,
+  body.cinematic-home .v2-realm::after,
+  body.cinematic-home .v2-realm-art,
+  body.cinematic-home .v2-realm-link,
+  body.cinematic-home .v2-actions .button {
+    transition: none !important;
+  }
+}
