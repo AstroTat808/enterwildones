@@ -67,7 +67,7 @@ async function loadAurevaPricing(){
   document.body.dataset.realm=e.realm;
   document.title=`${e.name} - ENTER WILD ONES`;
   text('[data-eyebrow]',e.copy.eyebrow);text('[data-name]',e.name);text('[data-description]',e.copy.description);text('[data-tagline]',e.copy.tagline);
-  text('[data-date]',fmt.format(new Date(e.startsAt)));text('[data-age]',`${e.minimumAge}+`);text('[data-status]',e.ticketSalesOpen?'TICKETS OPEN':e.applicationOpen?'ACCESS OPEN':String(e.status).toUpperCase());
+  text('[data-date]',fmt.format(new Date(e.startsAt)));text('[data-age]',`${e.minimumAge}+`);text('[data-status]',e.ticketSalesOpen?'TICKETS OPEN':e.applicationOpen?'PASSAGE REQUESTS OPEN':String(e.status).toUpperCase());
   const w=worlds[e.realm];
   if(w){
     html('[data-doctrine-index]',w.index);
@@ -81,7 +81,7 @@ async function loadAurevaPricing(){
   if(e.accessMode==='public'&&e.ticketSalesOpen){
     const a=document.createElement('a');a.className='button';a.href=`/public-tickets/${encodeURIComponent(e.slug)}`;a.textContent='Get Tickets';actions.prepend(a);title.textContent='PUBLIC TICKETS';copy.textContent=`Register the ticket holder and continue to secure ${e.name} checkout.`;
   }else if(e.applicationOpen&&e.routes.apply){
-    const a=document.createElement('a');a.className='button';a.href=e.routes.apply;a.textContent='Request Access';actions.prepend(a);title.textContent='REQUEST ACCESS';copy.textContent=`Submit an access request for ${e.name}.`;
+    const a=document.createElement('a');a.className='button';a.href=e.routes.apply;a.textContent='REQUEST PASSAGE';actions.prepend(a);title.textContent='REQUEST PASSAGE';copy.textContent=`Submit a passage request for ${e.name}. Each request is reviewed before an invitation is issued.`;
   }else if(e.ticketSalesOpen&&e.accessMode!=='public'){
     title.textContent='INVITATION CHECKOUT';copy.textContent=`${e.name} ticket sales are open for approved guests. Redeem your invitation to verify access and continue to secure checkout.`;
   }else if(e.accessMode==='public'){
