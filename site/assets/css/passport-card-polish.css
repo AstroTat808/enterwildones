@@ -1,0 +1,115 @@
+/* Passport card layout repair and hierarchy polish.
+   Keeps the shared realm system intact while preventing inline heading/status collisions. */
+
+.passport-account-panel{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:22px 28px;
+  align-items:center;
+  padding:clamp(28px,3vw,38px);
+}
+.passport-account-copy h2{margin:0 0 10px}
+.passport-account-copy p{margin:0;color:var(--muted)}
+.passport-account-panel #logout{justify-self:end;margin:0}
+.passport-account-panel .passport-filter{grid-column:1/-1;margin-top:4px}
+
+body #realms.passport-grid > article.passport-card{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  height:100%;
+  padding:clamp(24px,2.5vw,32px);
+}
+
+body #realms.passport-grid > article.passport-card > .passport-card-logo{
+  display:block;
+  width:min(76%,380px);
+  max-width:100%;
+  aspect-ratio:1;
+  margin:0 auto 12px;
+  align-self:center;
+  object-fit:contain;
+}
+
+body #realms.passport-grid > article.passport-card > .realm-chip{
+  margin:0 0 12px;
+}
+
+body #realms.passport-grid > article.passport-card > h2.realm-key{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  margin:0 0 5px;
+  padding-bottom:.16em;
+  font-size:clamp(32px,3.2vw,42px);
+  line-height:1.05;
+  letter-spacing:-.035em;
+  overflow:visible;
+}
+
+body #realms.passport-grid > article.passport-card > .passport-state{
+  display:block;
+  width:100%;
+  margin:0 0 20px;
+  color:var(--realm-fallback,var(--accent));
+  font-size:10px;
+  font-weight:850;
+  line-height:1.45;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+
+body #realms.passport-grid > article.passport-card > .passport-card-tagline{
+  margin:0 0 18px;
+  color:#b7aea3;
+  font-size:15px;
+  line-height:1.65;
+}
+
+body #realms.passport-grid > article.passport-card > .passport-ticket-meta{
+  display:grid;
+  gap:8px;
+  width:100%;
+  margin:0 0 14px;
+  padding:15px 0;
+  border-top:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+body #realms.passport-grid > article.passport-card > .passport-ticket-meta p{
+  margin:0;
+  color:#968e84;
+  font-size:12px;
+  line-height:1.55;
+}
+
+body #realms.passport-grid > article.passport-card > .passport-entitlements{
+  width:100%;
+  margin:0 0 18px;
+  color:#c8bba9;
+  font-size:12px;
+  line-height:1.55;
+}
+
+body #realms.passport-grid > article.passport-card > .passport-entitlements::before{
+  content:"ADD-ONS";
+  display:block;
+  margin-bottom:5px;
+  color:var(--realm-fallback,var(--accent));
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.17em;
+}
+
+body #realms.passport-grid > article.passport-card > a.button{
+  margin-top:auto;
+}
+
+@media(max-width:760px){
+  .passport-account-panel{grid-template-columns:1fr;gap:18px;padding:24px 20px}
+  .passport-account-panel #logout{justify-self:start}
+  .passport-account-panel .passport-filter{grid-column:auto;margin-top:0}
+  body #realms.passport-grid > article.passport-card{padding:22px 20px 24px}
+  body #realms.passport-grid > article.passport-card > .passport-card-logo{width:min(82%,330px);margin-bottom:10px}
+  body #realms.passport-grid > article.passport-card > h2.realm-key{font-size:clamp(30px,10vw,40px)}
+}

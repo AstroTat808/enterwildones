@@ -1,0 +1,241 @@
+/* Individual realm-page luxury polish.
+   Extends the shared Four Realms gradient system without touching event logic. */
+
+.cinematic-event{
+  --event-card-surface:linear-gradient(145deg,rgba(10,11,16,.92),rgba(3,4,8,.82));
+  --event-card-line:color-mix(in srgb,var(--realm-fallback,var(--accent)) 22%,rgba(255,255,255,.055));
+}
+
+/* Slightly larger master lockup in the upper-left navigation. */
+.cinematic-event .topbar{
+  min-height:82px;
+  padding-top:9px;
+  padding-bottom:9px;
+}
+.cinematic-event .brand-icon{
+  width:clamp(215px,20vw,292px);
+  height:64px;
+}
+.cinematic-event .brand-icon img{
+  filter:drop-shadow(0 9px 26px color-mix(in srgb,var(--realm-fallback,var(--accent)) 12%,transparent));
+}
+
+/* Realm identity becomes the headline color instead of generic white. */
+.cinematic-event .event-heading-copy::before{display:none}
+.cinematic-event .event-heading-copy .eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  width:max-content;
+  max-width:100%;
+  min-height:30px;
+  margin:0 0 22px;
+  padding:7px 11px;
+  border:1px solid var(--realm-chip-border);
+  border-radius:999px;
+  background:linear-gradient(180deg,var(--realm-chip-fill),rgba(255,255,255,.012));
+  color:var(--realm-fallback,var(--accent));
+  font-size:9px;
+  font-weight:850;
+  line-height:1.2;
+  letter-spacing:.20em;
+  text-transform:uppercase;
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 10px 30px rgba(0,0,0,.20);
+}
+.cinematic-event .event-heading-copy .eyebrow::before{
+  content:"";
+  width:7px;
+  height:7px;
+  flex:0 0 7px;
+  border-radius:50%;
+  background:var(--realm-text-gradient);
+  box-shadow:0 0 14px var(--realm-glow);
+}
+.cinematic-event .event-heading-copy h1{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  padding:0 0 .12em;
+  margin:0 0 -.06em;
+  overflow:visible;
+  color:var(--realm-fallback,var(--accent));
+  text-shadow:0 0 34px var(--realm-glow),0 24px 60px rgba(0,0,0,.38);
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .cinematic-event .event-heading-copy h1{
+    background-image:var(--realm-text-gradient);
+    background-repeat:no-repeat;
+    background-size:100% 100%;
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    -webkit-text-fill-color:transparent;
+  }
+}
+.cinematic-event .event-heading-copy .intro{
+  max-width:610px;
+  color:#c1b8ad;
+  font-size:clamp(16px,1.18vw,19px);
+  line-height:1.82;
+}
+
+/* Date / age / status read as deliberate information badges. */
+.cinematic-event .event-mini{
+  display:grid;
+  grid-template-columns:repeat(3,max-content);
+  gap:10px;
+  align-items:stretch;
+  margin-top:32px;
+}
+.cinematic-event .event-mini .event-badge{
+  position:relative;
+  display:grid;
+  gap:5px;
+  align-content:center;
+  min-height:58px;
+  padding:10px 15px 9px;
+  border:1px solid var(--event-card-line);
+  border-radius:12px;
+  background:
+    radial-gradient(circle at 10% 0%,var(--realm-chip-fill),transparent 54%),
+    rgba(255,255,255,.025);
+  color:#f2e9dc;
+  font-size:10px;
+  font-weight:750;
+  line-height:1.25;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  box-shadow:inset 0 1px rgba(255,255,255,.04),0 13px 32px rgba(0,0,0,.18);
+  backdrop-filter:blur(12px);
+}
+.cinematic-event .event-mini .event-badge::before{
+  display:block;
+  color:var(--realm-fallback,var(--accent));
+  font-size:7px;
+  font-weight:850;
+  line-height:1;
+  letter-spacing:.22em;
+  opacity:.88;
+}
+.cinematic-event .event-mini .event-badge-date::before{content:"DATE"}
+.cinematic-event .event-mini .event-badge-age::before{content:"AGES"}
+.cinematic-event .event-mini .event-badge-status::before{content:"STATUS"}
+.cinematic-event .event-mini .event-badge-status{
+  border-color:color-mix(in srgb,var(--realm-fallback,var(--accent)) 40%,rgba(255,255,255,.07));
+  box-shadow:inset 0 1px rgba(255,255,255,.045),0 13px 32px rgba(0,0,0,.18),0 0 24px var(--realm-glow);
+}
+
+/* More architectural card treatment for doctrine + access areas. */
+.cinematic-event .realm-doctrine-grid{
+  border-color:var(--event-card-line);
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 28px 90px rgba(0,0,0,.26),inset 0 1px rgba(255,255,255,.025);
+}
+.cinematic-event .realm-doctrine-grid article{
+  position:relative;
+  background:linear-gradient(180deg,rgba(10,11,16,.91),rgba(3,4,8,.88));
+}
+.cinematic-event .realm-doctrine-grid article::after{
+  content:"";
+  position:absolute;
+  left:26px;
+  right:26px;
+  bottom:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--realm-chip-border),transparent);
+  opacity:.4;
+}
+.cinematic-event .realm-doctrine-grid strong{color:#f7efe4}
+.cinematic-event .realm-doctrine-grid p{color:#aaa197}
+
+.cinematic-event .event-access{
+  border-color:var(--event-card-line);
+  background:
+    radial-gradient(circle at 86% 12%,var(--realm-chip-fill),transparent 34%),
+    var(--event-card-surface);
+  box-shadow:0 42px 120px rgba(0,0,0,.40),inset 0 1px rgba(255,255,255,.045),0 0 42px color-mix(in srgb,var(--realm-glow) 45%,transparent);
+}
+.cinematic-event .event-access .eyebrow{
+  display:inline-flex;
+  width:max-content;
+  margin-bottom:15px;
+  color:var(--realm-fallback,var(--accent));
+  font-weight:850;
+  letter-spacing:.22em;
+}
+.cinematic-event .event-access h2{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  padding-bottom:.10em;
+  overflow:visible;
+  color:var(--realm-fallback,var(--accent));
+  text-shadow:0 0 28px var(--realm-glow);
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .cinematic-event .event-access h2{
+    background-image:var(--realm-text-gradient);
+    background-repeat:no-repeat;
+    background-size:100% 100%;
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    -webkit-text-fill-color:transparent;
+  }
+}
+.cinematic-event .event-access .intro{
+  color:#b8afa5;
+  font-size:15px;
+}
+.cinematic-event .event-access .button.ghost{
+  border-color:var(--realm-chip-border);
+  background:linear-gradient(180deg,var(--realm-chip-fill),rgba(255,255,255,.014));
+  color:#f7eee1;
+  box-shadow:inset 0 1px rgba(255,255,255,.04),0 14px 42px rgba(0,0,0,.25);
+}
+.cinematic-event .event-access .text-link{
+  color:var(--realm-fallback,var(--accent));
+  font-weight:800;
+}
+
+@media (hover:hover) and (pointer:fine){
+  .cinematic-event .event-mini .event-badge{
+    transition:transform .22s cubic-bezier(.2,.7,.2,1),border-color .22s ease,box-shadow .22s ease;
+  }
+  .cinematic-event .event-mini .event-badge:hover{
+    transform:translateY(-2px);
+    border-color:var(--realm-chip-border);
+    box-shadow:inset 0 1px rgba(255,255,255,.05),0 16px 38px rgba(0,0,0,.22),0 0 24px var(--realm-glow);
+  }
+}
+
+@media(max-width:1050px){
+  .cinematic-event .event-heading-copy .eyebrow{margin-left:auto;margin-right:auto}
+  .cinematic-event .event-heading-copy h1{margin-left:auto;margin-right:auto}
+  .cinematic-event .event-mini{justify-content:center;grid-template-columns:repeat(3,minmax(0,max-content))}
+  .cinematic-event .event-access h2{margin-left:auto;margin-right:auto}
+  .cinematic-event .event-access .eyebrow{margin-left:auto;margin-right:auto}
+}
+
+@media(max-width:760px){
+  .cinematic-event .topbar{min-height:72px}
+  .cinematic-event .brand-icon{width:clamp(175px,54vw,230px);height:54px}
+  .cinematic-event .event-heading-copy .eyebrow{font-size:8px;letter-spacing:.16em}
+  .cinematic-event .event-heading-copy h1{font-size:clamp(50px,16vw,78px);line-height:.90}
+  .cinematic-event .event-mini{
+    grid-template-columns:1fr;
+    width:min(100%,420px);
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .cinematic-event .event-mini .event-badge{
+    min-height:54px;
+    text-align:left;
+  }
+  .cinematic-event .realm-doctrine-grid{border-radius:16px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .cinematic-event .event-mini .event-badge{transition:none}
+}
