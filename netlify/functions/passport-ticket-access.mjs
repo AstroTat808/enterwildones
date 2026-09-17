@@ -19,7 +19,7 @@ export default async(req)=>{
   if(!event)return json({error:'Event not found.'},404);
   const invitation=await findRedeemedInvitationForUser(event.eventId,user.userId,user.email);
   if(!invitation)return json({error:'Redeem your invitation before purchasing admission.',code:'invite_not_redeemed'},409);
-  if(!checkoutAllowed(event,invitation))return json({error:`Ticket sales for ${event.name} are not open.`,code:'sales_closed'},403);
+  if(!checkoutAllowed(event,invitation,user.email))return json({error:`Ticket sales for ${event.name} are not open.`,code:'sales_closed'},403);
   if(invitation.status==='fulfilled'||Number(invitation.purchaseCount||0)>=1)return json({error:'This invitation has already been used for admission.',code:'invite_fulfilled'},409);
   if(Number(invitation.maxTickets||1)!==1)return json({error:'This invitation requires the group-ticket flow.',code:'group_ticket_required'},409);
   const access=createInvitationAccess(invitation,event);
