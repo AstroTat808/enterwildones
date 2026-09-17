@@ -10,8 +10,12 @@
   });
   const valid = value => Object.hasOwn(realms,value) ? value : 'cycle';
   const asset = realm => `/assets/images/realms/${realms[valid(realm)].slug}-1200.webp`;
+  const canonicalHome = document.body.classList.contains('cinematic-home');
 
-  if(!document.querySelector('link[data-wild-ones-polish]')){
+  // The public homepage now owns its complete visual system in /assets/css/home.css.
+  // Keep shared lockup/optical support, but do not re-inject historical global polish
+  // layers that would reintroduce cascade conflicts on the canonical homepage.
+  if(!canonicalHome && !document.querySelector('link[data-wild-ones-polish]')){
     const link=document.createElement('link');
     link.rel='stylesheet';
     link.href='/assets/css/visual-polish.css';
@@ -32,7 +36,7 @@
     optics.dataset.wildOnesLogoOptics='';
     document.head.append(optics);
   }
-  if(!document.querySelector('link[data-wild-ones-prelaunch]')){
+  if(!canonicalHome && !document.querySelector('link[data-wild-ones-prelaunch]')){
     const prelaunch=document.createElement('link');
     prelaunch.rel='stylesheet';
     prelaunch.href='/assets/css/prelaunch-polish.css';
@@ -46,8 +50,6 @@
     wrap.className=`web-lockup web-lockup--official ${variant}-lockup`;
     wrap.dataset.webRealm=key;
     wrap.dataset.webVariant=variant;
-    // Browser-optimized lockups are decoded synchronously to avoid intermittent
-    // WebKit/Safari paint omissions after DOM replacement.
     wrap.innerHTML=`<img class="web-lockup-art" src="${asset(key)}" alt="" decoding="sync">`;
     wrap.setAttribute('role','img');
     wrap.setAttribute('aria-label',meta.label);
@@ -180,7 +182,7 @@
   if(inferred)document.body.dataset.realm=inferred;
   if(!document.body.dataset.realm)document.body.dataset.realm='cycle';
 
-  addCosmos();
+  if(!canonicalHome)addCosmos();
   sync();
   motion();
   requestAnimationFrame(()=>document.documentElement.classList.add('motion-ready'));
