@@ -18,23 +18,26 @@ export function ticketPricingSchedule(eventId){
   const phase1={phase:1,name:String(env(ticketTierEnvName(eventId,1,'NAME'))||'').trim()||null,priceCents:cents(env(ticketTierEnvName(eventId,1,'PRICE_CENTS'))),startsAt:null,endsAt:instant(env(ticketTierEnvName(eventId,1,'ENDS_AT')))};
   const phase2={phase:2,name:String(env(ticketTierEnvName(eventId,2,'NAME'))||'').trim()||null,priceCents:cents(env(ticketTierEnvName(eventId,2,'PRICE_CENTS'))),startsAt:phase1.endsAt,endsAt:instant(env(ticketTierEnvName(eventId,2,'ENDS_AT')))};
   const phase3={phase:3,name:String(env(ticketTierEnvName(eventId,3,'NAME'))||'').trim()||null,priceCents:cents(env(ticketTierEnvName(eventId,3,'PRICE_CENTS'))),startsAt:phase2.endsAt,endsAt:null};
-  const tiered=Boolean(phase1.name&&phase1.priceCents&&phase1.endsAt&&phase2.name&&phase2.priceCents);
+  // A release can be fully described before its transition date is chosen. In that
+  // state phase 1 remains authoritative indefinitely and phase 2 is advertised as next.
+  const tiered=Boolean(phase1.name&&phase1.priceCents&&phase2.name&&phase2.priceCents);
+  const cutoffConfigured=Boolean(phase1.endsAt);
   const wantsPhase3=Boolean(phase3.priceCents||phase3.name||phase2.endsAt);
-  const complete=Boolean(tiered&&(!wantsPhase3||(phase2.endsAt&&phase3.name&&phase3.priceCents)));
-  return {tiered,complete,fallbackPriceCents,phases:[phase1,phase2,phase3],wantsPhase3};
+  const complete=Boolean(tiered&&cutoffConfigured&&(!wantsPhase3||(phase2.endsAt&&phase3.name&&phase3.priceCents)));
+  return {tiered,complete,cutoffConfigured,fallbackPriceCents,phases:[phase1,phase2,phase3],wantsPhase3};
 }
 
 export function currentTicketOffer(eventId,at=Date.now()){
   const schedule=ticketPricingSchedule(eventId),now=at instanceof Date?at.getTime():Number(at);
   if(schedule.tiered){
-    const [p1,p2,p3]=schedule.phases,firstEnd=Date.parse(p1.endsAt),secondEnd=p2.endsAt?Date.parse(p2.endsAt):null;
+    const [p1,p2,p3]=schedule.phases,firstEnd=p1.endsAt?Date.parse(p1.endsAt):null,secondEnd=p2.endsAt?Date.parse(p2.endsAt):null;
     let current,next=null;
-    if(Number.isFinite(firstEnd)&&now<firstEnd){current=p1;next=p2;}
+    if(!Number.isFinite(firstEnd)||now<firstEnd){current=p1;next=p2;}
     else if(p3.name&&p3.priceCents&&secondEnd&&Number.isFinite(secondEnd)&&now>=secondEnd){current=p3;}
     else {current=p2;if(p3.name&&p3.priceCents&&secondEnd&&Number.isFinite(secondEnd))next=p3;}
-    return {...current,next:next?{phase:next.phase,name:next.name,priceCents:next.priceCents,startsAt:next.startsAt}:null,scheduleComplete:schedule.complete};
+    return {...current,next:next?{phase:next.phase,name:next.name,priceCents:next.priceCents,startsAt:next.startsAt}:null,scheduleComplete:schedule.complete,cutoffConfigured:schedule.cutoffConfigured};
   }
-  return schedule.fallbackPriceCents?{phase:0,name:'GENERAL ADMISSION',priceCents:schedule.fallbackPriceCents,startsAt:null,endsAt:null,next:null,scheduleComplete:!schedule.wantsPhase3}:null;
+  return schedule.fallbackPriceCents?{phase:0,name:'GENERAL ADMISSION',priceCents:schedule.fallbackPriceCents,startsAt:null,endsAt:null,next:null,scheduleComplete:!schedule.wantsPhase3,cutoffConfigured:false}:null;
 }
 
 export function ticketPriceCents(eventId,at=Date.now()){return currentTicketOffer(eventId,at)?.priceCents||null;}
