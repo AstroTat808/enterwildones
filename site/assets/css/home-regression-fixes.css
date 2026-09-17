@@ -1,0 +1,110 @@
+/* ENTER WILD ONES — homepage regression fixes after CSS consolidation.
+   Keeps the hero artwork readable, restores per-realm gradient typography,
+   and protects serif descenders from clipping across desktop and mobile. */
+
+/* Preserve the Four Realms title outside tight line boxes. */
+body.cinematic-home .v2-cycle,
+body.cinematic-home .v2-cycle-inner,
+body.cinematic-home .v2-cycle-title,
+body.cinematic-home .v2-cycle-title .realm-word{
+  overflow:visible;
+}
+
+body.cinematic-home .v2-cycle-title{
+  line-height:1.02;
+  padding-bottom:.14em;
+}
+
+body.cinematic-home .v2-cycle-title .realm-word{
+  display:inline-block;
+  padding-bottom:.10em;
+  line-height:1.04;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  filter:drop-shadow(0 10px 28px rgba(0,0,0,.28));
+}
+
+body.cinematic-home .v2-cycle-title .realm-light{
+  background-image:linear-gradient(180deg,#fff7cf 0%,#f4df96 26%,#d7b35e 62%,#f2d989 100%);
+}
+body.cinematic-home .v2-cycle-title .realm-balance{
+  background-image:linear-gradient(180deg,#ecfeff 0%,#b9f3f8 25%,#74d9e6 61%,#9be8f1 100%);
+}
+body.cinematic-home .v2-cycle-title .realm-fire{
+  background-image:linear-gradient(180deg,#ffe0bf 0%,#ffb273 25%,#f47c3d 61%,#ff9d5d 100%);
+}
+body.cinematic-home .v2-cycle-title .realm-night{
+  background-image:linear-gradient(180deg,#f0e4ff 0%,#d3baff 25%,#9c75ef 61%,#b491ff 100%);
+}
+
+/* Desktop/tablet: let the campaign artwork breathe. The copy remains connected
+   to the hero with only a shallow overlap instead of covering the lower artwork. */
+@media (min-width:861px){
+  body.cinematic-home .v2-hero{
+    min-height:0;
+    grid-template-rows:auto auto;
+    align-items:start;
+    overflow:visible;
+  }
+
+  body.cinematic-home .v2-hero::before{
+    inset:var(--bar-height) 0 auto;
+    height:clamp(620px,calc(100svh - var(--bar-height)),900px);
+    background:
+      linear-gradient(90deg,rgba(1,2,5,.40),transparent 15% 85%,rgba(1,2,5,.40)),
+      linear-gradient(180deg,transparent 56%,rgba(2,3,7,.08) 72%,rgba(2,3,7,.52) 92%,#020307 100%);
+  }
+
+  body.cinematic-home .v2-hero-media{
+    grid-area:1/1;
+    height:clamp(620px,calc(100svh - var(--bar-height)),900px);
+    min-height:0;
+  }
+
+  body.cinematic-home .v2-hero-copy{
+    grid-area:2/1;
+    align-self:start;
+    width:min(calc(100% - 64px),980px);
+    margin:-44px auto 72px;
+    padding:24px 30px 26px;
+    background:
+      radial-gradient(circle at 50% -25%,rgba(240,207,122,.07),transparent 48%),
+      linear-gradient(90deg,transparent,rgba(2,3,7,.92) 13% 87%,transparent);
+    backdrop-filter:blur(12px) saturate(112%);
+    -webkit-backdrop-filter:blur(12px) saturate(112%);
+  }
+}
+
+@media (min-width:1600px){
+  body.cinematic-home .v2-hero-copy{width:min(calc(100% - 80px),1040px)}
+}
+
+@media (min-width:861px) and (max-width:1100px){
+  body.cinematic-home .v2-hero-media{
+    height:clamp(620px,74vw,760px);
+    min-height:0;
+  }
+  body.cinematic-home .v2-hero::before{height:clamp(620px,74vw,760px)}
+  body.cinematic-home .v2-hero-copy{
+    width:min(calc(100% - 48px),900px);
+    margin:-34px auto 60px;
+  }
+}
+
+/* Mobile already stacks artwork and copy. Keep that separation explicit and
+   give the cycle title extra breathing room for serif descenders. */
+@media (max-width:860px){
+  body.cinematic-home .v2-hero-copy{
+    transform:none;
+  }
+  body.cinematic-home .v2-cycle-title{
+    line-height:1.07;
+    padding-bottom:.18em;
+  }
+  body.cinematic-home .v2-cycle-title .realm-word{
+    padding-bottom:.12em;
+    line-height:1.06;
+  }
+}
