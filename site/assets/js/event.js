@@ -1,5 +1,6 @@
 const slug=new URLSearchParams(location.search).get('event')||location.pathname.split('/').filter(Boolean).pop();
 const fmt=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'Pacific/Honolulu'});
+const releaseFmt=new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'Pacific/Honolulu',timeZoneName:'short'});
 const worlds=Object.freeze({
   light:{index:'REALM I / LIGHT',title:'Begin in radiance.',energyTitle:'Awaken',energyCopy:'Warm, expansive and ceremonial. AUREVA is the first opening of the cycle: a world designed around emergence, connection and the feeling of stepping into first light.',soundTitle:'Ascend',soundCopy:'Melodic electronic music, luminous builds and euphoric release shape an upward arc from arrival through the final hours.',ritualTitle:'Arrive',ritualCopy:'The first realm establishes the Wild Ones language. Cross the threshold, leave the ordinary outside and begin the cycle together.'},
   balance:{index:'REALM II / BALANCE',title:'Stand between worlds.',energyTitle:'Align',energyCopy:'HALORA lives at the equinox: equal parts light and shadow, restraint and release. Its atmosphere is intentional, symmetrical and suspended between opposites.',soundTitle:'Resolve',soundCopy:'Tension and harmony trade places throughout the night. Rhythmic precision, contrast and carefully timed release create the realm’s equilibrium.',ritualTitle:'Center',ritualCopy:'This is the midpoint state: neither beginning nor ending. Enter with the cycle already in motion and find the moment where opposing forces become one.'},
@@ -15,6 +16,12 @@ function countdownText(ms){
   if(ms<=0)return 'TRANSITIONING NOW';
   const total=Math.floor(ms/1000),days=Math.floor(total/86400),hours=Math.floor((total%86400)/3600),minutes=Math.floor((total%3600)/60),seconds=total%60;
   return `${days}D ${String(hours).padStart(2,'0')}H ${String(minutes).padStart(2,'0')}M ${String(seconds).padStart(2,'0')}S`;
+}
+
+function releaseTime(value){
+  if(!value)return null;
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?null:releaseFmt.format(d).toUpperCase();
 }
 
 function markRelease(phase,current,next){
@@ -41,6 +48,10 @@ async function loadAurevaPricing(){
   const p1=document.querySelector('[data-release-phase="1"] .release-price'),p2=document.querySelector('[data-release-phase="2"] .release-price');
   if(p1&&phase1?.priceCents)p1.textContent=money(phase1.priceCents);
   if(p2&&phase2?.priceCents)p2.textContent=money(phase2.priceCents);
+  const m1=document.querySelector('[data-release-meta="1"]'),m2=document.querySelector('[data-release-meta="2"]');
+  const transition=releaseTime(phase1?.endsAt);
+  if(m1)m1.textContent=transition?`ENDS ${transition}`:'OPENING RELEASE · LIMITED WINDOW';
+  if(m2)m2.textContent=transition?`BEGINS ${transition}`:'BEGINS WHEN FIRST LIGHT CLOSES';
   const lock=document.querySelector('[data-sales-lock]');
   if(lock)lock.textContent=data.salesOpen?`${current?.name||'Admission'} is now available at ${money(current?.priceCents)}.`:'Ticket sales remain locked while final production systems are certified.';
   const wrap=document.querySelector('[data-release-countdown-wrap]'),counter=document.querySelector('[data-release-countdown]'),label=document.querySelector('[data-release-countdown-label]');
@@ -55,9 +66,7 @@ async function loadAurevaPricing(){
       if(remaining<=0){clearInterval(countdownTimer);countdownTimer=null;setTimeout(loadAurevaPricing,800);}
     };
     tick();countdownTimer=setInterval(tick,1000);
-  }else{
-    if(wrap)wrap.hidden=true;
-  }
+  }else if(wrap){wrap.hidden=true;}
   if(pricingRefreshTimer)clearTimeout(pricingRefreshTimer);
   pricingRefreshTimer=setTimeout(loadAurevaPricing,60000);
 }
