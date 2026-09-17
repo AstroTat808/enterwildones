@@ -57,7 +57,9 @@ export default async (req) => {
   if (!access) return json({ error: 'Your event access is missing or expired. Re-enter through the event access flow.', code: 'event_access_required' }, 401);
   const invitation = await loadInvitation(event.eventId, access.invitationId);
   if (!invitation || invitation.userId !== access.userId || invitation.applicationId !== access.applicationId || !['redeemed', 'fulfilled'].includes(invitation.status)) return json({ error: 'This event access is not eligible for checkout.' }, 403);
-  if (!checkoutAllowed(event, invitation)) return json({ error: `Ticket sales for ${event.name} are not open.`, code: 'sales_closed' }, 403);
+  const user = await blobStore(STORES.users).get(access.userId, { type: 'json' }).catch(() => null);
+  const trustedEmail = user?.status === 'active' ? user.email : null;
+  if (!checkoutAllowed(event, invitation, trustedEmail)) return json({ error: `Ticket sales for ${event.name} are not open.`, code: 'sales_closed' }, 403);
   if (!invitation.userId || !invitation.applicationId) return json({ error: 'This admission requires a registered Wild Ones identity.', code: 'identity_required' }, 409);
   if (Number(invitation.maxTickets || 1) !== 1) return json({ error: 'Multi-ticket invitations require the group-ticket identity flow and cannot use single-person checkout.', code: 'group_ticket_required' }, 409);
 

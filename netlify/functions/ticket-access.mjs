@@ -1,8 +1,10 @@
+import { blobStore } from './_blob-store.mjs';
 import { resolveEvent,toPublicEvent } from './_events.mjs';
 import { readInviteAccess } from './_invitations.mjs';
 import { checkoutAllowed } from './_checkout-access.mjs';
 import { existingTicketForInvitation,loadInvitation,currentTicketOffer } from './_payments.mjs';
 import { json } from './_response.mjs';
+import { STORES } from './_stores.mjs';
 
 export default async(req)=>{
   if(req.method!=='GET')return json({error:'Method not allowed.'},405);
@@ -13,8 +15,10 @@ export default async(req)=>{
   if(!access)return json({error:'Invitation access is missing or expired.',eligible:false},401);
   const invitation=await loadInvitation(event.eventId,access.invitationId);
   if(!invitation||invitation.userId!==access.userId||invitation.applicationId!==access.applicationId)return json({error:'Invitation access does not match this event.',eligible:false},403);
+  const user=await blobStore(STORES.users).get(access.userId,{type:'json'}).catch(()=>null);
+  const trustedEmail=user?.status==='active'?user.email:null;
   const existing=await existingTicketForInvitation(event.eventId,invitation.invitationId),offer=currentTicketOffer(event.eventId);
-  const purchaseAvailable=checkoutAllowed(event,invitation);
+  const purchaseAvailable=checkoutAllowed(event,invitation,trustedEmail);
   return json({
     event:toPublicEvent(event),
     eligible:purchaseAvailable&&invitation.status==='redeemed'&&Number(invitation.maxTickets||1)===1&&!existing,

@@ -26,10 +26,11 @@ export default async(req)=>{
     ]);
     const ticket=tickets.sort((a,b)=>String(b.issuedAt||'').localeCompare(String(a.issuedAt||'')))[0]||null;
     const invitation=invitations.sort((a,b)=>String(b.redeemedAt||b.createdAt||'').localeCompare(String(a.redeemedAt||a.createdAt||'')))[0]||null;
-    const purchaseAvailable=Boolean(!ticket&&invitation&&invitation.status==='redeemed'&&Number(invitation.maxTickets||1)===1&&checkoutAllowed(event,invitation));
+    const application=applications[0]||null;
+    const purchaseAvailable=Boolean(!ticket&&invitation&&invitation.status==='redeemed'&&Number(invitation.maxTickets||1)===1&&checkoutAllowed(event,invitation,user.email,application?.email));
     realms.push({
       event:toPublicEvent(event),
-      application:applications[0]||null,
+      application,
       invitation:invitation?{invitationId:invitation.invitationId,status:invitation.status,redeemedAt:invitation.redeemedAt||null,maxTickets:invitation.maxTickets||1}:null,
       purchaseAvailable,
       commissioningAccess:Boolean(purchaseAvailable&&!event.ticketSalesOpen),

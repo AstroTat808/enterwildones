@@ -15,7 +15,9 @@ export default async (req) => {
   let body; try { body = await readBody(req); } catch { return json({ error: 'Invalid request.' }, 400); }
   try {
     const result = await redeemInvitation(body.code);
-    const purchaseAvailable = checkoutAllowed(result.event, result.invitation);
+    const user = await blobStore(STORES.users).get(result.invitation.userId, { type: 'json' }).catch(() => null);
+    const trustedEmail = user?.status === 'active' ? user.email : null;
+    const purchaseAvailable = checkoutAllowed(result.event, result.invitation, trustedEmail);
     await writeAudit({ eventId: result.event.eventId, action: 'invitation.redeemed', actor: 'guest', targetType: 'invitation', targetId: result.invitation.invitationId, detail: { applicationId: result.invitation.applicationId, userId: result.invitation.userId, purchaseAvailable } });
     return json({ ok: true, accessGranted: true, event: toPublicEvent(result.event), invitationId: result.invitation.invitationId, nextUrl: purchaseAvailable ? `/ticket-access?event=${encodeURIComponent(result.event.slug)}` : result.event.routes.event, ticketSalesOpen: result.event.ticketSalesOpen, purchaseAvailable }, 200, { 'Set-Cookie': inviteAccessCookie(result.event.eventId, result.access.token, result.access.exp) });
   } catch (error) { const status = error.code === 'INVALID_CODE' ? 400 : ['USED', 'EXPIRED', 'REVOKED'].includes(error.code) ? 409 : 500; return json({ error: error.message || 'Invitation redemption failed.', code: error.code || 'redeem_failed' }, status); }
