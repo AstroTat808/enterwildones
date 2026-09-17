@@ -12,9 +12,8 @@
   const asset = realm => `/assets/images/realms/${realms[valid(realm)].slug}-1200.webp`;
   const canonicalHome = document.body.classList.contains('cinematic-home');
 
-  // The public homepage now owns its complete visual system in /assets/css/home.css.
-  // Keep shared lockup/optical support, but do not re-inject historical global polish
-  // layers that would reintroduce cascade conflicts on the canonical homepage.
+  // The public homepage owns its structural worldbuilding. Shared brand layers below
+  // are intentionally narrow so realm identity stays consistent without cascade drift.
   if(!canonicalHome && !document.querySelector('link[data-wild-ones-polish]')){
     const link=document.createElement('link');
     link.rel='stylesheet';
@@ -35,6 +34,13 @@
     optics.href='/assets/css/logo-optics.css';
     optics.dataset.wildOnesLogoOptics='';
     document.head.append(optics);
+  }
+  if(!document.querySelector('link[href="/assets/css/realm-luxury-polish.css"]')){
+    const realmPolish=document.createElement('link');
+    realmPolish.rel='stylesheet';
+    realmPolish.href='/assets/css/realm-luxury-polish.css';
+    realmPolish.dataset.wildOnesRealmPolish='';
+    document.head.append(realmPolish);
   }
   if(!canonicalHome && !document.querySelector('link[data-wild-ones-prelaunch]')){
     const prelaunch=document.createElement('link');
@@ -174,7 +180,7 @@
     sync();
   }
 
-  window.WildOnesBrand=Object.freeze({asset,set,sync,label:realm=>realms[valid(realm)].label,lockup});
+  window.WildOnesBrand=Object.freeze({asset,set,sync,label:realm=>realms[valid(realm)].label,meta:realm=>realms[valid(realm)],lockup});
 
   const path=location.pathname.split('/').filter(Boolean);
   const slug=new URLSearchParams(location.search).get('event')||(['events','apply','public-tickets'].includes(path[0])?path[1]:'');
