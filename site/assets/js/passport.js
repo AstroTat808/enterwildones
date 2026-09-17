@@ -26,7 +26,10 @@
       const active=x.ticket&&['paid','checked_in'].includes(x.ticket.status);
       const link=active&&typeof x.ticket.ticketUrl==='string'&&x.ticket.ticketUrl.startsWith('/ticket?token=')?x.ticket.ticketUrl:e.routes.event;
       const cls=realmClass(e.realm),meta=window.WildOnesBrand?.meta(e.realm);
-      return `<article class="passport-card" data-brand-realm="${esc(e.realm)}"><img src="${esc(window.WildOnesBrand.asset(e.realm))}" alt="${esc(window.WildOnesBrand.label(e.realm))}" width="768" height="768" loading="lazy"><span class="realm-chip ${cls}">${esc(meta?.sub||e.realm)}</span><h2 class="realm-key ${cls}">${esc(e.name)}</h2><strong>${esc(state)}</strong><p>${esc(e.copy.tagline)}</p>${x.ticket?`<p>Ticket ${esc(x.ticket.ticketId)}</p><p>${x.waiverSigned?'Waiver recorded':'Waiver required before entry'}</p>`:''}${x.entitlements.filter(a=>a.status==='active').length?`<p>${x.entitlements.filter(a=>a.status==='active').map(a=>esc(String(a.addonType).replaceAll('_',' '))).join(' / ')}</p>`:''}<a class="button ghost" href="${esc(link)}">${active&&link.startsWith('/ticket?')?'Open Digital Ticket':'Explore the Realm'}</a></article>`;
+      const ticketMeta=x.ticket?`<div class="passport-ticket-meta"><p>Ticket ${esc(x.ticket.ticketId)}</p><p>${x.waiverSigned?'Waiver recorded':'Waiver required before entry'}</p></div>`:'';
+      const activeEntitlements=x.entitlements.filter(a=>a.status==='active');
+      const entitlementBlock=activeEntitlements.length?`<p class="passport-entitlements">${activeEntitlements.map(a=>esc(String(a.addonType).replaceAll('_',' '))).join(' / ')}</p>`:'';
+      return `<article class="passport-card" data-brand-realm="${esc(e.realm)}"><img class="passport-card-logo" src="${esc(window.WildOnesBrand.asset(e.realm))}" alt="${esc(window.WildOnesBrand.label(e.realm))}" width="768" height="768" loading="lazy"><span class="realm-chip ${cls}">${esc(meta?.sub||e.realm)}</span><h2 class="realm-key ${cls}">${esc(e.name)}</h2><strong class="passport-state">${esc(state)}</strong><p class="passport-card-tagline">${esc(e.copy.tagline)}</p>${ticketMeta}${entitlementBlock}<a class="button ghost" href="${esc(link)}">${active&&link.startsWith('/ticket?')?'Open Digital Ticket':'Explore the Realm'}</a></article>`;
     }).join('');
   }
   async function load(){
