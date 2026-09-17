@@ -1,0 +1,301 @@
+/* ENTER WILD ONES — premium guest workflow surfaces.
+   Shared across Passport, invitation redemption, ticket access and generated ticket states. */
+:root{
+  --tx-ivory:#f7f0e5;
+  --tx-muted:#b7ada0;
+  --tx-dim:#7c746b;
+  --tx-line:rgba(255,255,255,.12);
+  --tx-glass:rgba(6,7,11,.72);
+  --tx-glass-deep:rgba(4,5,9,.87);
+  --tx-gold:#e6c879;
+  --tx-radius:26px;
+  --tx-shadow:0 30px 90px rgba(0,0,0,.48);
+  --tx-cycle-gradient:linear-gradient(90deg,#f2d67b 0%,#fff0bd 18%,#80e2ee 39%,#ff9551 64%,#b78eff 86%,#efe2c8 100%);
+}
+
+.tx-page,
+.passport-page,
+.invite-page,
+.ticket-access-page,
+.tx-generated-page{
+  min-height:100vh;
+  background:#030407;
+  color:var(--tx-ivory);
+}
+
+.tx-page::before,
+.passport-page::before,
+.invite-page::before,
+.ticket-access-page::before,
+.tx-generated-page::before{
+  content:"";
+  position:fixed;
+  z-index:-3;
+  inset:0;
+  background-image:url('/assets/images/campaign/four-realms-portals-wide-1672.webp');
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  opacity:.24;
+  filter:saturate(.9) contrast(1.06) brightness(.68);
+  transform:scale(1.015);
+}
+
+.tx-page::after,
+.passport-page::after,
+.invite-page::after,
+.ticket-access-page::after,
+.tx-generated-page::after{
+  content:"";
+  position:fixed;
+  z-index:-2;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 38%,rgba(10,13,24,.08),rgba(3,4,8,.68) 58%,rgba(2,3,6,.94) 100%),
+    linear-gradient(180deg,rgba(2,3,6,.68),rgba(2,3,6,.92));
+}
+
+.tx-page .ambient,
+.passport-page .ambient,
+.invite-page .ambient,
+.ticket-access-page .ambient{opacity:.42}
+
+.tx-cycle-title{
+  display:inline-block;
+  padding-bottom:.08em;
+  color:#f3d88a;
+  background:var(--tx-cycle-gradient);
+  background-size:100% 100%;
+  text-shadow:0 0 34px rgba(215,172,88,.11);
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .tx-cycle-title{
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    -webkit-text-fill-color:transparent;
+  }
+}
+
+.tx-hero-shell{
+  min-height:calc(100vh - 126px);
+  display:grid;
+  place-items:center;
+  width:min(1180px,calc(100% - 36px));
+  margin:0 auto;
+  padding:calc(var(--bar-height,84px) + 56px) 0 72px;
+}
+
+.tx-hero-card{
+  position:relative;
+  isolation:isolate;
+  width:min(880px,100%);
+  padding:clamp(32px,6vw,68px);
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:var(--tx-radius);
+  background:
+    radial-gradient(circle at 50% -15%,rgba(232,200,121,.09),transparent 34%),
+    linear-gradient(180deg,rgba(11,13,20,.76),rgba(5,6,11,.88));
+  box-shadow:var(--tx-shadow),inset 0 1px rgba(255,255,255,.045);
+  backdrop-filter:blur(18px) saturate(1.06);
+  -webkit-backdrop-filter:blur(18px) saturate(1.06);
+  text-align:center;
+  overflow:hidden;
+}
+.tx-hero-card::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:68%;
+  height:1px;
+  left:16%;
+  top:0;
+  background:linear-gradient(90deg,transparent,rgba(232,200,121,.62),rgba(121,218,232,.46),rgba(255,149,81,.46),rgba(183,142,255,.52),transparent);
+}
+.tx-hero-card .eyebrow{margin:0 0 18px;color:#d7c8ac;letter-spacing:.34em}
+.tx-hero-card h1,
+.tx-hero-card .tx-title{
+  max-width:12ch;
+  margin:0 auto 24px;
+  font:400 clamp(48px,7vw,86px)/.98 "Iowan Old Style",Baskerville,Georgia,serif;
+  letter-spacing:-.052em;
+  text-wrap:balance;
+}
+.tx-hero-card .tx-copy,
+.tx-hero-card .intro,
+.tx-hero-card .status{
+  max-width:670px;
+  margin:0 auto;
+  color:var(--tx-muted);
+  font-size:clamp(15px,1.5vw,18px);
+  line-height:1.75;
+}
+.tx-note{
+  margin:22px auto 0;
+  color:var(--tx-dim);
+  font-size:11px;
+  line-height:1.65;
+  letter-spacing:.03em;
+}
+.tx-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:30px}
+.tx-actions .button,
+.tx-hero-card .button,
+.tx-hero-card button.button{
+  min-height:50px;
+  padding:15px 24px;
+  border:1px solid rgba(242,226,190,.72);
+  border-radius:10px;
+  background:linear-gradient(180deg,#f5efe4,#ddd3c2);
+  color:#08090c;
+  box-shadow:0 14px 38px rgba(0,0,0,.28);
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease,border-color .2s ease;
+}
+.tx-actions .button.ghost,
+.tx-hero-card .button.ghost{background:rgba(255,255,255,.02);color:#eee5d8;border-color:rgba(255,255,255,.16);box-shadow:none}
+@media(hover:hover) and (pointer:fine){
+  .tx-actions .button:hover,.tx-actions .button:focus-visible,.tx-hero-card .button:hover,.tx-hero-card .button:focus-visible{transform:translateY(-2px);filter:brightness(1.03);box-shadow:0 18px 44px rgba(0,0,0,.34)}
+}
+
+/* Passport dashboard */
+.passport-page .shell{padding-top:calc(var(--bar-height,84px) + 56px);padding-bottom:88px}
+.passport-page .shell-inner{width:min(1200px,100%)}
+.passport-page .passport-header{
+  position:relative;
+  min-height:440px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  margin-bottom:34px;
+  padding:60px clamp(20px,5vw,70px);
+  border:1px solid rgba(255,255,255,.105);
+  border-radius:30px;
+  background:linear-gradient(180deg,rgba(5,7,12,.58),rgba(4,5,9,.82));
+  box-shadow:var(--tx-shadow),inset 0 1px rgba(255,255,255,.04);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  overflow:hidden;
+}
+.passport-page .passport-header::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:url('/assets/images/campaign/four-realms-portals-wide-1672.webp') center/cover no-repeat;
+  opacity:.17;
+  filter:saturate(.9) brightness(.72);
+}
+.passport-page .passport-header .page-brand{width:min(280px,52vw);margin:0 auto 8px}
+.passport-page .passport-header h1{max-width:10ch;margin:10px auto 18px;font-size:clamp(54px,8vw,104px);text-align:center}
+.passport-page .passport-header .lede{margin:0 auto;max-width:620px;text-align:center}
+.passport-page #login.panel,
+.passport-page .passport-account-panel{
+  border-radius:22px;
+  border-color:rgba(255,255,255,.12);
+  background:linear-gradient(180deg,rgba(10,12,18,.78),rgba(5,6,10,.9));
+  box-shadow:0 22px 68px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.04);
+  backdrop-filter:blur(14px);
+}
+.passport-page #login.panel{max-width:840px;margin:0 auto;padding:clamp(28px,4vw,46px)}
+.passport-page #login.panel h2{margin-top:0;font-size:clamp(34px,4vw,52px)}
+.passport-page .loginrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;margin-top:24px}
+.passport-page .loginrow input{min-height:52px;padding:0 16px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(1,2,5,.76);color:#fff;font-size:16px}
+.passport-page #status{min-height:20px;margin-bottom:0;color:#aaa}
+.passport-page #realms.passport-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:20px}
+.passport-page #realms.passport-grid>.passport-card{
+  position:relative;
+  border-radius:24px;
+  border:1px solid var(--realm-chip-border,rgba(255,255,255,.12));
+  background:radial-gradient(circle at 50% 0,var(--realm-glow,rgba(255,255,255,.05)),transparent 34%),linear-gradient(180deg,rgba(9,11,16,.9),rgba(4,5,9,.95));
+  box-shadow:0 18px 55px rgba(0,0,0,.36),inset 0 1px rgba(255,255,255,.04);
+  overflow:hidden;
+}
+.passport-page #realms.passport-grid>.passport-card::after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--realm-fallback,rgba(255,255,255,.3)),transparent);
+  opacity:.45;
+}
+.passport-page .passport-state{font-variant-numeric:tabular-nums}
+
+/* Invitation / ticket workflow hero composition */
+.invite-page .shell{padding:0}
+.invite-page .shell-inner{width:100%;max-width:none}
+.invite-page .invite-workflow{width:min(900px,100%);margin:auto}
+.invite-page .code-entry{max-width:620px;margin:30px auto 0;text-align:left;border-radius:18px;background:rgba(3,4,8,.58)}
+.invite-page .field input{min-height:52px;border-radius:10px;background:rgba(2,3,6,.78)}
+.invite-page #granted{max-width:620px;margin:30px auto 0;border-radius:18px}
+
+.ticket-access-page .purchase{
+  width:min(900px,calc(100% - 36px));
+  margin:0 auto;
+  padding:calc(var(--bar-height,84px) + 56px) 0 72px;
+}
+.ticket-access-page .purchase>.page-brand{width:min(260px,56vw);margin:0 auto 12px}
+.ticket-access-page .purchase>.eyebrow{text-align:center}
+.ticket-access-page .purchase>.panel{
+  margin-top:24px;
+  padding:clamp(34px,6vw,62px);
+  border-radius:24px;
+  text-align:center;
+  background:linear-gradient(180deg,rgba(9,11,16,.78),rgba(4,5,9,.9));
+  box-shadow:var(--tx-shadow),inset 0 1px rgba(255,255,255,.04);
+  backdrop-filter:blur(15px);
+}
+.ticket-access-page .purchase h1{margin:0 auto 10px;font:400 clamp(48px,8vw,82px)/1 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.045em}
+.ticket-access-page .purchase #realm{color:#a99e90;letter-spacing:.14em;text-transform:uppercase;font-size:10px}
+.ticket-access-page .purchase .price{font-size:clamp(56px,10vw,84px);margin:22px 0 14px}
+.ticket-access-page #release{display:inline-flex!important;margin:8px auto 0;padding:7px 11px;border:1px solid color-mix(in srgb,var(--accent) 44%,transparent);border-radius:999px}
+.ticket-access-page #release[hidden]{display:none!important}
+.ticket-access-page #releaseCountdown{font-variant-numeric:tabular-nums;letter-spacing:.08em;color:#d5c6ae}
+.ticket-access-page #buy{margin-top:24px}
+
+/* Generated server-rendered pages */
+.tx-generated-page{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.tx-generated-page a{color:inherit;text-decoration:none}
+.tx-generated-page .topbar{
+  position:relative;
+  z-index:10;
+  min-height:84px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+  padding:18px max(22px,5vw);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(180deg,rgba(2,3,6,.9),rgba(2,3,6,.3));
+}
+.tx-generated-page .tx-brand{font-size:11px;font-weight:900;letter-spacing:.25em}
+.tx-generated-page .tx-nav{display:flex;gap:22px;font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#b2a99d}
+.tx-generated-page .site-footer{position:relative;z-index:2;padding:38px 22px 42px;border-top:1px solid rgba(255,255,255,.09);text-align:center;color:#716b63;font-size:8px;letter-spacing:.19em}
+.tx-generated-page .site-footer nav{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+.tx-generated-page .tx-generated-shell{min-height:calc(100vh - 168px);display:grid;place-items:center;padding:60px 18px 72px}
+.tx-generated-page .tx-generated-card{width:min(880px,100%);padding:clamp(32px,6vw,68px);border:1px solid rgba(255,255,255,.13);border-radius:26px;background:linear-gradient(180deg,rgba(10,12,18,.76),rgba(4,5,9,.9));box-shadow:var(--tx-shadow);backdrop-filter:blur(16px);text-align:center}
+.tx-generated-page .tx-generated-card .eyebrow{color:#d7c8ac;font-size:10px;font-weight:800;letter-spacing:.3em;text-transform:uppercase}
+.tx-generated-page .tx-generated-card h1{max-width:12ch;margin:18px auto 22px;font:400 clamp(44px,7vw,82px)/.98 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.05em;text-wrap:balance}
+.tx-generated-page .tx-generated-card p{max-width:650px;margin:0 auto;color:var(--tx-muted);font-size:16px;line-height:1.75}
+.tx-generated-page .tx-generated-card form{margin-top:28px}
+.tx-generated-page .tx-generated-card button,.tx-generated-page .tx-generated-card .button{min-height:50px;padding:15px 24px;border:1px solid rgba(242,226,190,.72);border-radius:10px;background:linear-gradient(180deg,#f5efe4,#ddd3c2);color:#08090c;font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
+.tx-generated-page .tx-generated-note{margin-top:22px!important;color:var(--tx-dim)!important;font-size:11px!important}
+
+@media(max-width:760px){
+  .tx-page::before,.passport-page::before,.invite-page::before,.ticket-access-page::before,.tx-generated-page::before{background-image:url('/assets/images/campaign/four-realms-portals-768.webp');background-size:cover;opacity:.21}
+  .tx-hero-shell{width:min(100% - 24px,900px);padding-top:calc(var(--bar-height,74px) + 28px);padding-bottom:48px}
+  .tx-hero-card{padding:34px 20px;border-radius:20px}
+  .tx-hero-card h1,.tx-hero-card .tx-title{font-size:clamp(42px,13vw,64px)}
+  .passport-page .shell{padding-left:12px;padding-right:12px;padding-top:calc(var(--bar-height,74px) + 28px)}
+  .passport-page .passport-header{min-height:390px;padding:42px 18px;border-radius:22px}
+  .passport-page #realms.passport-grid{grid-template-columns:1fr}
+  .passport-page .loginrow{grid-template-columns:1fr}
+  .ticket-access-page .purchase{width:min(100% - 24px,900px);padding-top:calc(var(--bar-height,74px) + 28px)}
+  .ticket-access-page .purchase>.panel{padding:32px 20px}
+  .tx-generated-page .topbar{padding:15px 18px}.tx-generated-page .tx-nav{gap:12px}.tx-generated-page .tx-nav a:first-child{display:none}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .tx-actions .button,.tx-hero-card .button,.passport-page #realms.passport-grid>.passport-card{transition:none!important;transform:none!important}
+}
