@@ -40,7 +40,6 @@ permissions:
   actions: read
 
 env:
-  LEGACY_VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v4
   VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v5
   APPROVED_REALM_VISUAL_CASES: realm-quiz-intro-desktop,realm-quiz-result-desktop,realm-quiz-intro-1366,realm-quiz-question-1366,realm-quiz-aureva-result-1366,realm-quiz-halora-result-1366,realm-quiz-sunveil-result-1366,realm-quiz-nocturne-result-1366
 
@@ -99,21 +98,21 @@ jobs:
         with:
           path: .visual-baselines
           key: ${{ env.VISUAL_BASELINE_KEY }}
-      - name: Restore legacy approved baseline for intentional visual update
+      - name: Capture deployed main as fallback baseline
         if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
-        uses: actions/cache/restore@v4
-        with:
-          path: .visual-baselines-v4
-          key: ${{ env.LEGACY_VISUAL_BASELINE_KEY }}
+        run: >-
+          python scripts/visual_regression.py
+          --mode capture-production
+          --baseline-dir .visual-baselines-production
       - name: Establish approved Find Your Realm baseline for this visual change
         if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
         run: >-
           python scripts/visual_regression.py
           --mode seed-approved-preview
           --baseline-dir .visual-baselines
-          --legacy-baseline-dir .visual-baselines-v4
+          --production-baseline-dir .visual-baselines-production
           --approved-cases "${APPROVED_REALM_VISUAL_CASES}"
-      - name: Seed approved baseline from deployed main
+      - name: Seed approved baseline from deployed production
         if: steps.baseline.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
         run: python scripts/visual_regression.py --mode capture-production --baseline-dir .visual-baselines
       - name: Save approved screenshot baseline on main
