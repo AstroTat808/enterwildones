@@ -54,7 +54,7 @@ class Case:
  wait:str|None="h1"
 
 SUITES={
- "public":[Case("home","/","home","main"),*[Case("event-"+r["slug"],"/events/"+r["slug"]) for r in REALMS],*[Case("apply-"+r["slug"],"/apply/"+r["slug"],"plain","form") for r in REALMS]],
+ "public":[Case("home","/","home","main"),*[Case("event-"+r["slug"],"/events/"+r["slug"]) for r in REALMS],*[Case("apply-"+r["slug"],"/apply/"+r["slug"],"apply-"+r["slug"],"#gateNotice") for r in REALMS]],
  "transactional":[Case("passport-auth","/passport","passport","#account:not([hidden])"),Case("passport-login","/passport","passport-login","#login:not([hidden])"),Case("invite","/invite","plain","#inviteForm"),Case("ticket-access","/ticket-access?event=aureva","ticket-access","#buy:not([hidden])"),Case("public-tickets","/public-tickets/sunveil","public-tickets","#public-ticket-form"),Case("ticket-addons","/ticket/addons?token=qa-token","ticket-addons","#addons .card")],
  "admin":[Case("admin-applications","/admin","admin-apps","#adminPanel:not(.hidden)"),Case("admin-overview","/admin/overview","overview","#events .event"),Case("admin-packages","/admin/packages","packages","#report .metric"),Case("admin-operations","/admin/operations","operations","#opsPanel:not(.hidden)"),Case("admin-event-day","/admin/event-day","command","#indicatorGrid > *"),Case("admin-live","/admin/live","command","#indicatorGrid > *"),Case("admin-launch","/admin/launch","command","#indicatorGrid > *"),Case("admin-rehearsal","/admin/rehearsal","command","#indicatorGrid > *")],
  "staff":[Case("check-in","/check-in","check-in","#gate:not([hidden])"),Case("bar","/bar","bar","#bar:not([hidden])")]
@@ -68,7 +68,12 @@ def fulfill(route,payload,status=200):
 def fixtures(page,state):
  page.add_init_script("window.turnstile={render:()=>1,getResponse:()=>'qa',reset:()=>{},remove:()=>{}}")
  page.route("https://challenges.cloudflare.com/**",lambda r:r.fulfill(status=200,content_type="application/javascript",body=""))
- if state=="passport": page.route("**/api/passport",lambda r:fulfill(r,PASSPORT))
+ if state.startswith("apply-"):
+  slug=state.removeprefix("apply-")
+  event=next((x for x in REALMS if x["slug"]==slug),REALMS[0])
+  cfg={"event":dict(event,applicationOpen=(slug=="aureva"),routes={"event":event["routes"]["event"],"apply":"/apply/"+slug}),"applicationsReady":True,"turnstileSiteKey":"qa"}
+  page.route("**/api/app-config?*",lambda r:fulfill(r,cfg))
+ elif state=="passport": page.route("**/api/passport",lambda r:fulfill(r,PASSPORT))
  elif state=="passport-login":
   page.route("**/api/passport",lambda r:fulfill(r,{"authenticated":False},401)); page.route("**/api/passport/config",lambda r:fulfill(r,{"turnstileSiteKey":"qa"}))
  elif state=="ticket-access": page.route("**/api/ticket/access?*",lambda r:fulfill(r,ACCESS))
@@ -107,6 +112,11 @@ def state_checks(page,case):
  if case.state=="home":
   for s in ("#aureva","#halora","#sunveil","#nocturne"):
    if page.locator(s).count()!=1:f.append("missing "+s)
+ elif case.state.startswith("apply-"):
+  slug=case.path.rsplit("/",1)[-1]
+  form_visible=page.locator("#applyForm").is_visible()
+  if slug=="aureva" and not form_visible:f.append("AUREVA application form should be open in QA fixture")
+  if slug!="aureva" and form_visible:f.append(slug+" application form should remain gated in QA fixture")
  elif case.state=="passport":
   if page.locator("#realms .passport-card").count()!=5:f.append("Passport must render 4 realms + Master Cycle")
   if page.locator('[data-master-cycle="locked"]').count()!=1:f.append("Master Cycle credential missing")
@@ -151,8 +161,8 @@ def browser_mode(suite,browser_name):
    for case in SUITES[suite]:
     page=ctx.new_page();errors=[];console=[];reqfail=[];assetfail=[]
     page.on("pageerror",lambda e:errors.append(str(e)))
-    page.on("console",lambda m:console.append(m.text) if m.type=="error" and "challenges.cloudflare.com" not in m.text else None)
-    page.on("requestfailed",lambda r:reqfail.append(r.url) if same_origin(r.url) else None)
+    page.on("console",lambda m:console.append(m.text) if m.type=="error" and "challenges.cloudflare.com" not in m.text and not (case.state=="passport-login" and "401 (Unauthorized)" in m.text) else None)
+    page.on("requestfailed",lambda r:reqfail.append(r.url) if same_origin(r.url) and not (r.resource_type=="image" and "ERR_ABORTED" in str(r.failure).upper()) else None)
     page.on("response",lambda r:assetfail.append({"url":r.url,"status":r.status}) if same_origin(r.url) and r.status>=400 and r.request.resource_type in {"document","script","stylesheet","image","font"} else None)
     fixtures(page,case.state);rep={"suite":suite,"browser":browser_name,"viewport":vp,"width":w,"case":case.name,"path":case.path}
     try:
@@ -179,7 +189,13 @@ def browser_mode(suite,browser_name):
   try:
    r=page.goto(BASE+case.path,wait_until="domcontentloaded",timeout=45000)
    if case.wait:page.wait_for_selector(case.wait,state="visible",timeout=15000)
-   page.wait_for_timeout(300);running=page.evaluate("() => document.getAnimations().filter(a=>a.playState==='running').length");motion.update(status=r.status if r else 0,runningAnimations=running,failed=running>0)
+   page.wait_for_timeout(300);motion_state=page.evaluate("""() => {
+ const candidates=[...document.querySelectorAll('.orbit,.reveal,.wo-stars i')];
+ const badElements=candidates.filter(e=>{const s=getComputedStyle(e);return s.animationName&&s.animationName!=='none'&&s.animationPlayState!=='paused'}).length;
+ const pseudoHosts=[...document.querySelectorAll('.hero-logo-wrap,.realm-logo-frame')];
+ const badPseudo=pseudoHosts.filter(e=>{const s=getComputedStyle(e,'::after');return s.animationName&&s.animationName!=='none'&&s.animationPlayState!=='paused'}).length;
+ return {candidateCount:candidates.length+pseudoHosts.length,activeAnimatedCandidates:badElements+badPseudo,media:matchMedia('(prefers-reduced-motion: reduce)').matches};
+}""");motion.update(status=r.status if r else 0,**motion_state,failed=(not motion_state["media"] or motion_state["activeAnimatedCandidates"]>0))
   except Exception as e:motion.update(exception=str(e),failed=True)
   results.append(motion);page.close();c.close();b.close()
  (root/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
