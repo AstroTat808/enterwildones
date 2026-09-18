@@ -12,13 +12,56 @@ ROOT=Path(__file__).resolve().parents[1]
 SITE=ROOT/"site"
 OUT=ROOT/"visual-regression-results"
 
+# One stable screenshot for every major guest, ticketing, admin and event-day state.
 CASES=[
  {"name":"home-desktop","path":"/","state":"home","viewport":(1440,1000),"dpr":1,"wait":"main"},
+ {"name":"realm-quiz-intro-desktop","path":"/find-your-realm","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizIntro:not([hidden])"},
+ {"name":"realm-quiz-result-desktop","path":"/find-your-realm?realm=nocturne","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizResult:not([hidden])"},
+
+ {"name":"application-open-desktop","path":"/apply/aureva","state":"apply-aureva","viewport":(1440,1000),"dpr":1,"wait":"#applyForm"},
+ {"name":"application-gated-desktop","path":"/apply/nocturne","state":"apply-nocturne","viewport":(1440,1000),"dpr":1,"wait":"#gateNotice"},
+
  {"name":"passport-auth-desktop","path":"/passport","state":"passport","viewport":(1440,1000),"dpr":1,"wait":"#account:not([hidden])"},
+ {"name":"passport-login-phone","path":"/passport","state":"passport-login","viewport":(390,844),"dpr":2,"wait":"#login:not([hidden])"},
+ {"name":"invite-desktop","path":"/invite","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#inviteForm"},
+ {"name":"ticket-access-desktop","path":"/ticket-access?event=aureva","state":"ticket-access","viewport":(1440,1000),"dpr":1,"wait":"#buy:not([hidden])"},
+ {"name":"public-ticket-desktop","path":"/public-tickets/sunveil","state":"public-tickets","viewport":(1440,1000),"dpr":1,"wait":"#public-ticket-form"},
+ {"name":"ticket-addons-desktop","path":"/ticket/addons?token=qa-token","state":"ticket-addons","viewport":(1440,1000),"dpr":1,"wait":"#addons .card"},
+
+ {"name":"admin-applications-desktop","path":"/admin","state":"admin-apps","viewport":(1440,1000),"dpr":1,"wait":"#adminPanel:not(.hidden)"},
  {"name":"admin-overview-desktop","path":"/admin/overview","state":"overview","viewport":(1440,1000),"dpr":1,"wait":"#events .event"},
+ {"name":"admin-packages-desktop","path":"/admin/packages","state":"packages","viewport":(1440,1000),"dpr":1,"wait":"#report .metric"},
+ {"name":"admin-operations-desktop","path":"/admin/operations","state":"operations","viewport":(1440,1000),"dpr":1,"wait":"#opsPanel:not(.hidden)"},
+ {"name":"admin-event-day-desktop","path":"/admin/event-day","state":"command","viewport":(1440,1000),"dpr":1,"wait":"#indicatorGrid > *"},
+ {"name":"admin-live-desktop","path":"/admin/live","state":"command","viewport":(1440,1000),"dpr":1,"wait":"#indicatorGrid > *"},
+ {"name":"admin-launch-desktop","path":"/admin/launch","state":"command","viewport":(1440,1000),"dpr":1,"wait":"#indicatorGrid > *"},
+ {"name":"admin-rehearsal-desktop","path":"/admin/rehearsal","state":"command","viewport":(1440,1000),"dpr":1,"wait":"#indicatorGrid > *"},
+
  {"name":"check-in-phone","path":"/check-in","state":"check-in","viewport":(390,844),"dpr":2,"wait":"#gate:not([hidden])"},
+ {"name":"bar-phone","path":"/bar","state":"bar","viewport":(390,844),"dpr":2,"wait":"#bar:not([hidden])"},
 ]
-ROUTES={"/":"index.html","/passport":"passport.html","/admin/overview":"admin-overview.html","/check-in":"check-in.html"}
+
+ROUTES={
+ "/":"index.html",
+ "/find-your-realm":"find-your-realm.html",
+ "/apply/aureva":"apply.html",
+ "/apply/nocturne":"apply.html",
+ "/passport":"passport.html",
+ "/invite":"invite.html",
+ "/ticket-access":"ticket-access.html",
+ "/public-tickets/sunveil":"public-tickets.html",
+ "/ticket/addons":"ticket-addons.html",
+ "/admin":"admin.html",
+ "/admin/overview":"admin-overview.html",
+ "/admin/packages":"admin-packages.html",
+ "/admin/operations":"admin-operations.html",
+ "/admin/event-day":"admin-event-day.html",
+ "/admin/live":"admin-live.html",
+ "/admin/launch":"admin-launch.html",
+ "/admin/rehearsal":"admin-rehearsal.html",
+ "/check-in":"check-in.html",
+ "/bar":"bar.html",
+}
 
 class Handler(SimpleHTTPRequestHandler):
     def log_message(self,*args): pass
@@ -48,17 +91,17 @@ def capture(base_url:str,dest:Path):
         qa.fixtures(page,case["state"])
         page.goto(base_url+case["path"],wait_until="domcontentloaded",timeout=30000)
         page.wait_for_selector(case["wait"],state="visible",timeout=15000)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(550)
         page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
-        page.wait_for_timeout(120)
+        page.wait_for_timeout(140)
         page.evaluate("window.scrollTo(0,0)")
-        page.wait_for_timeout(120)
+        page.wait_for_timeout(140)
         raw=dest/(case["name"]+"-raw.png")
         final=dest/(case["name"]+".png")
         page.screenshot(path=str(raw),full_page=True,animations="disabled",caret="hide")
         normalize(raw).save(final,optimize=True)
         raw.unlink()
-        results.append({"name":case["name"],"path":case["path"],"file":str(final)})
+        results.append({"name":case["name"],"path":case["path"],"state":case["state"],"file":str(final)})
         context.close()
       browser.close()
     return results
@@ -69,7 +112,11 @@ def compare(current_dir:Path,baseline_dir:Path):
     for case in CASES:
       name=case["name"]
       current=normalize(current_dir/(name+".png"))
-      baseline=normalize(baseline_dir/(name+".png"))
+      baseline_path=baseline_dir/(name+".png")
+      if not baseline_path.exists():
+        results.append({"name":name,"failed":True,"reason":"missing approved baseline"})
+        continue
+      baseline=normalize(baseline_path)
       aspect_current=current.height/current.width
       aspect_base=baseline.height/baseline.width
       aspect_delta=abs(aspect_current-aspect_base)/aspect_base
@@ -98,7 +145,7 @@ def main():
     baseline=Path(args.baseline_dir)
     if args.mode=="capture-production":
       result=capture(args.production_base.rstrip("/"),baseline)
-      print(json.dumps({"captured":result},indent=2))
+      print(json.dumps({"captured":result,"count":len(result)},indent=2))
       return 0
 
     server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
