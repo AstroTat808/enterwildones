@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, json, sys, threading
+import argparse, json, sys, threading, shutil
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,6 +17,12 @@ CASES=[
  {"name":"home-desktop","path":"/","state":"home","viewport":(1440,1000),"dpr":1,"wait":"main"},
  {"name":"realm-quiz-intro-desktop","path":"/find-your-realm","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizIntro:not([hidden])"},
  {"name":"realm-quiz-result-desktop","path":"/find-your-realm?realm=nocturne","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizResult:not([hidden])"},
+ {"name":"realm-quiz-intro-1366","path":"/find-your-realm","state":"plain","viewport":(1366,768),"dpr":1,"wait":"#quizIntro:not([hidden])","full_page":False},
+ {"name":"realm-quiz-question-1366","path":"/find-your-realm","state":"plain","viewport":(1366,768),"dpr":1,"wait":"#quizStage:not([hidden])","action":"start-quiz","full_page":False},
+ {"name":"realm-quiz-aureva-result-1366","path":"/find-your-realm?realm=aureva","state":"plain","viewport":(1366,768),"dpr":1,"wait":"#quizResult:not([hidden])","full_page":False},
+ {"name":"realm-quiz-halora-result-1366","path":"/find-your-realm?realm=halora","state":"plain","viewport":(1366,768),"dpr":1,"wait":"#quizResult:not([hidden])","full_page":False},
+ {"name":"realm-quiz-sunveil-result-1366","path":"/find-your-realm?realm=sunveil","state":"plain","viewport":(1366,768),"dpr":1,"wait":"#quizResult:not([hidden])","full_page":False},
+ {"name":"realm-quiz-nocturne-result-1366","path":"/find-your-realm?realm=nocturne","state":"plain","viewport":(1366,768),"dpr":1,"wait":"#quizResult:not([hidden])","full_page":False},
  {"name":"application-open-desktop","path":"/apply/aureva","state":"apply-aureva","viewport":(1440,1000),"dpr":1,"wait":"#applyForm"},
  {"name":"application-gated-desktop","path":"/apply/nocturne","state":"apply-nocturne","viewport":(1440,1000),"dpr":1,"wait":"#gateNotice"},
 
@@ -89,6 +95,9 @@ def capture(base_url:str,dest:Path):
         page=context.new_page()
         qa.fixtures(page,case["state"])
         page.goto(base_url+case["path"],wait_until="domcontentloaded",timeout=30000)
+        if case.get("action")=="start-quiz":
+          page.wait_for_selector("#quizIntro:not([hidden])",state="visible",timeout=15000)
+          page.locator("#quizStart").click()
         page.wait_for_selector(case["wait"],state="visible",timeout=15000)
         page.wait_for_timeout(550)
         page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
@@ -97,13 +106,40 @@ def capture(base_url:str,dest:Path):
         page.wait_for_timeout(140)
         raw=dest/(case["name"]+"-raw.png")
         final=dest/(case["name"]+".png")
-        page.screenshot(path=str(raw),full_page=True,animations="disabled",caret="hide")
+        page.screenshot(path=str(raw),full_page=case.get("full_page",True),animations="disabled",caret="hide")
         normalize(raw).save(final,optimize=True)
         raw.unlink()
         results.append({"name":case["name"],"path":case["path"],"state":case["state"],"file":str(final)})
         context.close()
       browser.close()
     return results
+
+def seed_approved_preview(base_url:str,baseline_dir:Path,production_dir:Path,approved:set[str]):
+    unknown=approved-{case["name"] for case in CASES}
+    if unknown:
+      raise ValueError("unknown approved cases: "+", ".join(sorted(unknown)))
+    current=OUT/"approved-seed-current"
+    if current.exists(): shutil.rmtree(current)
+    capture(base_url,current)
+    if baseline_dir.exists(): shutil.rmtree(baseline_dir)
+    baseline_dir.mkdir(parents=True,exist_ok=True)
+    missing=[]
+    manifest=[]
+    for case in CASES:
+      name=case["name"]
+      source=(current if name in approved else production_dir)/(name+".png")
+      if not source.exists():
+        missing.append(name)
+        continue
+      target=baseline_dir/(name+".png")
+      shutil.copy2(source,target)
+      manifest.append({"name":name,"source":"approved-preview" if name in approved else "deployed-production"})
+    (baseline_dir/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
+    if missing:
+      print(json.dumps({"missingBaselineCases":missing},indent=2))
+      return 1
+    print(json.dumps({"seeded":len(manifest),"approvedPreviewCases":sorted(approved)},indent=2))
+    return 0
 
 def compare(current_dir:Path,baseline_dir:Path):
     OUT.mkdir(exist_ok=True)
@@ -137,8 +173,10 @@ def compare(current_dir:Path,baseline_dir:Path):
 
 def main():
     ap=argparse.ArgumentParser()
-    ap.add_argument("--mode",choices=("capture-production","compare-preview"),required=True)
+    ap.add_argument("--mode",choices=("capture-production","seed-approved-preview","compare-preview"),required=True)
     ap.add_argument("--baseline-dir",default=".visual-baselines")
+    ap.add_argument("--production-baseline-dir",default=".visual-baselines-production")
+    ap.add_argument("--approved-cases",default="")
     ap.add_argument("--production-base",default="https://enterwildones.com")
     args=ap.parse_args()
     baseline=Path(args.baseline_dir)
@@ -149,9 +187,20 @@ def main():
 
     server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
     thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+    base_url=f"http://127.0.0.1:{server.server_address[1]}"
+    if args.mode=="seed-approved-preview":
+      approved={x.strip() for x in args.approved_cases.split(",") if x.strip()}
+      if not approved:
+        server.shutdown();server.server_close()
+        raise ValueError("--approved-cases is required for seed-approved-preview")
+      try:
+        return seed_approved_preview(base_url,baseline,Path(args.production_baseline_dir),approved)
+      finally:
+        server.shutdown();server.server_close()
+
     current=OUT/"current"
     try:
-      capture(f"http://127.0.0.1:{server.server_address[1]}",current)
+      capture(base_url,current)
     finally:
       server.shutdown();server.server_close()
     results=compare(current,baseline)
