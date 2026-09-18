@@ -10,13 +10,22 @@
   --tx-gold:#e6c879;
   --tx-radius:26px;
   --tx-shadow:0 30px 90px rgba(0,0,0,.48);
-  --tx-cycle-gradient:linear-gradient(90deg,#f2d67b 0%,#fff0bd 18%,#80e2ee 39%,#ff9551 64%,#b78eff 86%,#efe2c8 100%);
+  --tx-realm-gradient:linear-gradient(90deg,#f2d67b 0%,#fff0bd 18%,#80e2ee 39%,#ff9551 64%,#b78eff 86%,#efe2c8 100%);
+  --tx-cycle-gradient:var(--tx-realm-gradient);
   --tx-font-display:"Iowan Old Style",Baskerville,Georgia,serif;
   --tx-font-ui:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  --tx-title-tracking:-.048em;
-  --tx-section-tracking:-.032em;
+  --tx-display-size:clamp(3rem,7vw,6.5rem);
+  --tx-page-title-size:clamp(2.75rem,6vw,5.25rem);
+  --tx-section-title-size:clamp(2rem,4vw,3.25rem);
+  --tx-display-leading:.95;
+  --tx-page-title-leading:.98;
+  --tx-title-tracking:-.04em;
+  --tx-section-tracking:-.028em;
   --tx-label-tracking:.20em;
   --tx-copy-leading:1.72;
+  --tx-subheadline-size:clamp(1rem,1.35vw,1.125rem);
+  --tx-subheadline-leading:1.70;
+  --tx-subheadline-tracking:.03em;
 }
 
 :is(.tx-page,.passport-page,.invite-page,.ticket-access-page,.public-ticket-page,.ticket-addons-page,.tx-generated-page){
@@ -47,6 +56,51 @@
 :is(.lede,.tx-copy,.tx-body){
   font-family:var(--tx-font-ui);
   line-height:var(--tx-copy-leading);
+}
+
+/* Shared semantic typography utilities for Passport and ticket flows. */
+.tx-display-title{
+  font-family:var(--tx-font-display)!important;
+  font-size:var(--tx-display-size)!important;
+  font-weight:400!important;
+  line-height:var(--tx-display-leading)!important;
+  letter-spacing:var(--tx-title-tracking)!important;
+  text-wrap:balance;
+}
+.tx-page-title{
+  font-family:var(--tx-font-display)!important;
+  font-size:var(--tx-page-title-size)!important;
+  font-weight:400!important;
+  line-height:var(--tx-page-title-leading)!important;
+  letter-spacing:var(--tx-title-tracking)!important;
+  text-wrap:balance;
+}
+.tx-section-title{
+  font-family:var(--tx-font-display)!important;
+  font-size:var(--tx-section-title-size)!important;
+  font-weight:400!important;
+  line-height:1.04!important;
+  letter-spacing:var(--tx-section-tracking)!important;
+  text-wrap:balance;
+}
+.tx-label{
+  font-family:var(--tx-font-ui)!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  line-height:1.5!important;
+  letter-spacing:var(--tx-label-tracking)!important;
+  text-transform:uppercase;
+}
+.tx-subheadline{
+  max-width:640px;
+  font-family:var(--tx-font-ui)!important;
+  font-size:var(--tx-subheadline-size)!important;
+  font-weight:500!important;
+  line-height:var(--tx-subheadline-leading)!important;
+  letter-spacing:var(--tx-subheadline-tracking)!important;
+  color:rgba(233,224,211,.78);
+  text-wrap:balance;
+  text-shadow:0 1px 22px rgba(0,0,0,.24);
 }
 
 .tx-page,
@@ -99,15 +153,23 @@
 .invite-page .ambient,
 .ticket-access-page .ambient{opacity:.42}
 
+.realm-gradient-title,
 .tx-cycle-title{
   display:inline-block;
   padding-bottom:.08em;
   color:#f3d88a;
-  background:var(--tx-cycle-gradient);
+  background:var(--tx-realm-gradient);
   background-size:100% 100%;
-  text-shadow:0 0 34px rgba(215,172,88,.11);
+  text-shadow:0 0 22px rgba(255,255,255,.12),0 0 34px rgba(215,172,88,.08);
+}
+.realm-gradient-title{
+  font-size:var(--tx-display-size)!important;
+  font-weight:800!important;
+  line-height:var(--tx-display-leading)!important;
+  letter-spacing:var(--tx-title-tracking)!important;
 }
 @supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .realm-gradient-title,
   .tx-cycle-title{
     -webkit-background-clip:text;
     background-clip:text;
@@ -237,10 +299,14 @@
   text-align:center;
   text-wrap:balance;
 }
-.passport-page .passport-header h1.tx-cycle-title{
-  background:var(--tx-cycle-gradient);
+.passport-page .passport-header h1.realm-gradient-title{
+  background:var(--tx-realm-gradient);
   background-size:100% 100%;
-  text-shadow:0 0 30px rgba(232,200,121,.09);
+  font-size:var(--tx-display-size)!important;
+  font-weight:800!important;
+  line-height:.95!important;
+  letter-spacing:-.04em!important;
+  text-shadow:0 0 18px rgba(255,255,255,.14),0 0 30px rgba(232,200,121,.08);
 }
 .passport-page .passport-header .lede{
   margin:0 auto;
@@ -340,7 +406,7 @@
 .tx-generated-page .tx-generated-shell{min-height:calc(100vh - 168px);display:grid;place-items:center;padding:60px 18px 72px}
 .tx-generated-page .tx-generated-card{width:min(880px,100%);padding:clamp(32px,6vw,68px);border:1px solid rgba(255,255,255,.13);border-radius:26px;background:linear-gradient(180deg,rgba(10,12,18,.76),rgba(4,5,9,.9));box-shadow:var(--tx-shadow);backdrop-filter:blur(16px);text-align:center}
 .tx-generated-page .tx-generated-card .eyebrow{color:#d7c8ac;font-size:10px;font-weight:800;letter-spacing:.3em;text-transform:uppercase}
-.tx-generated-page .tx-generated-card h1{max-width:12ch;margin:18px auto 22px;font:400 clamp(44px,7vw,82px)/.98 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.05em;text-wrap:balance}
+.tx-generated-page .tx-generated-card h1{max-width:12ch;margin:18px auto 22px;font-family:var(--tx-font-display);font-size:var(--tx-page-title-size);font-weight:400;line-height:var(--tx-page-title-leading);letter-spacing:var(--tx-title-tracking);text-wrap:balance}
 .tx-generated-page .tx-generated-card p{max-width:650px;margin:0 auto;color:var(--tx-muted);font-size:16px;line-height:1.75}
 .tx-generated-page .tx-generated-card form{margin-top:28px}
 .tx-generated-page .tx-generated-card button,.tx-generated-page .tx-generated-card .button{min-height:50px;padding:15px 24px;border:1px solid rgba(242,226,190,.72);border-radius:10px;background:linear-gradient(180deg,#f5efe4,#ddd3c2);color:#08090c;font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
