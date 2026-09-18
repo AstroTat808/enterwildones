@@ -15,6 +15,12 @@ OUT=ROOT/"visual-regression-results"
 # One stable screenshot for every major guest, ticketing, admin and event-day state.
 CASES=[
  {"name":"home-desktop","path":"/","state":"home","viewport":(1440,1000),"dpr":1,"wait":"main"},
+ {"name":"masthead-home-phone","path":"/","state":"home","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-event-phone","path":"/events/aureva","state":"plain","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-quiz-phone","path":"/find-your-realm","state":"plain","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-passport-phone","path":"/passport","state":"passport-login","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-invite-phone","path":"/invite","state":"plain","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-apply-phone","path":"/apply/aureva","state":"apply-aureva","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
  {"name":"realm-quiz-intro-desktop","path":"/find-your-realm","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizIntro:not([hidden])"},
  {"name":"realm-quiz-result-desktop","path":"/find-your-realm?realm=nocturne","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizResult:not([hidden])"},
  {"name":"realm-quiz-intro-1366","path":"/find-your-realm","state":"plain","viewport":(1366,768),"dpr":1,"wait":"#quizIntro:not([hidden])","full_page":False},
@@ -49,6 +55,7 @@ CASES=[
 ROUTES={
  "/":"index.html",
  "/find-your-realm":"find-your-realm.html",
+ "/events/aureva":"events/aureva.html",
  "/apply/aureva":"apply.html",
  "/apply/nocturne":"apply.html",
  "/passport":"passport.html",
