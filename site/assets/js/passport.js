@@ -3,7 +3,7 @@
   const q=s=>document.querySelector(s),login=q('#login'),account=q('#account'),status=q('#status');
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const realmClass=realm=>['light','balance','fire','night'].includes(realm)?'realm-'+realm:'realm-cycle';
-  let widget=null,securityPromise=null,records=[];
+  let widget=null,securityPromise=null,records=[],activeUserId='',pendingUnlockRealms=[],pendingMasterUnlock=false;
   const api=()=>window.turnstile&&typeof window.turnstile.render==='function'?window.turnstile:null;
 
   async function security(){
@@ -50,12 +50,92 @@
     return '<div class="passport-cycle-node" data-brand-realm="'+esc(e.realm)+'" data-state="'+esc(state.kind)+'"><i>'+esc(meta?.roman||'•')+'</i><span>'+esc(e.name)+'</span></div>';
   }
 
+  function completionStorageKey(userId){return 'wildones:passport:completion:'+String(userId||'guest');}
+  function readCompletionSnapshot(userId){
+    try{const raw=localStorage.getItem(completionStorageKey(userId));return raw?JSON.parse(raw):null;}catch{return null;}
+  }
+  function writeCompletionSnapshot(userId,snapshot){
+    try{localStorage.setItem(completionStorageKey(userId),JSON.stringify(snapshot));}catch{}
+  }
+  function currentCompletionSnapshot(){
+    return Object.fromEntries(records.map(x=>[x.event.slug,Boolean(x.checkedIn)]));
+  }
+  function detectCompletionTransitions(userId){
+    const previous=readCompletionSnapshot(userId);
+    const current=currentCompletionSnapshot();
+    const hasPrevious=previous&&typeof previous==='object'&&!Array.isArray(previous);
+    pendingUnlockRealms=hasPrevious?records.filter(x=>x.checkedIn&&previous[x.event.slug]===false).map(x=>x.event.slug):[];
+    const wasCycleComplete=Boolean(hasPrevious&&records.length&&records.every(x=>previous[x.event.slug]===true));
+    const cycleComplete=Boolean(records.length>=4&&records.every(x=>x.checkedIn));
+    pendingMasterUnlock=Boolean(hasPrevious&&!wasCycleComplete&&cycleComplete);
+    writeCompletionSnapshot(userId,current);
+  }
+
+  function masterCycleCard(){
+    const completeCount=records.filter(x=>x.checkedIn).length;
+    const unlocked=records.length>=4&&records.every(x=>x.checkedIn);
+    const status=unlocked?'MASTER CYCLE UNLOCKED':'LOCKED · '+completeCount+' / '+Math.max(records.length,4)+' REALMS COMPLETED';
+    const realmMarks=records.map(x=>{
+      const meta=window.WildOnesBrand?.meta(x.event.realm);
+      return '<span data-brand-realm="'+esc(x.event.realm)+'" data-complete="'+String(Boolean(x.checkedIn))+'"><i>'+esc(meta?.roman||'•')+'</i>'+esc(x.event.name)+'</span>';
+    }).join('');
+    return '<article class="passport-card passport-master-card" data-brand-realm="cycle" data-passport-state="'+(unlocked?'complete':'locked')+'" data-master-cycle="'+(unlocked?'unlocked':'locked')+'"><div class="passport-card-topline"><span class="passport-roman">∞</span><span class="passport-credential-label">MASTER CYCLE CREDENTIAL</span><span class="realm-chip realm-cycle">REALM V · COMPLETION</span></div><img class="passport-card-logo passport-master-logo" src="'+esc(window.WildOnesBrand.asset('cycle'))+'" alt="Enter Wild Ones - The Four Realms" width="768" height="768" loading="eager" decoding="async"><h2 class="realm-key">MASTER CYCLE</h2><strong class="passport-state">'+esc(status)+'</strong><p class="passport-card-tagline">'+(unlocked?'All four realms are complete. The cycle is whole, and this credential records the full journey.':'Complete all four realm credentials to awaken the Master Cycle.')+'</p><div class="passport-master-realms" aria-label="Master Cycle realm completion">'+realmMarks+'</div><div class="passport-master-seal"><strong>∞</strong><span>'+(unlocked?'Credential earned · The cycle remembers.':'Complete every realm to unlock this prestige credential.')+'</span></div></article>';
+  }
+
+  function makeCompletionOverlay(kind){
+    const overlay=document.createElement('div');
+    overlay.className='realm-complete-overlay'+(kind==='master'?' master-cycle-overlay':'');
+    const strong=document.createElement('strong');
+    const span=document.createElement('span');
+    strong.textContent=kind==='master'?'MASTER CYCLE UNLOCKED':'REALM COMPLETED';
+    span.textContent=kind==='master'?'The Four Realms are complete.':'The cycle remembers.';
+    overlay.append(strong,span);
+    return overlay;
+  }
+
+  function playRealmUnlock(card,delay=0){
+    if(!card)return;
+    setTimeout(()=>{
+      if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+      card.querySelector('.realm-complete-overlay')?.remove();
+      card.append(makeCompletionOverlay('realm'));
+      card.classList.remove('realm-unlock');
+      void card.offsetWidth;
+      card.classList.add('realm-unlock');
+      setTimeout(()=>{card.classList.remove('realm-unlock');card.querySelector('.realm-complete-overlay')?.remove();},2200);
+    },delay);
+  }
+
+  function playMasterUnlock(card,delay=0){
+    if(!card)return;
+    setTimeout(()=>{
+      if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+      card.querySelector('.realm-complete-overlay')?.remove();
+      card.append(makeCompletionOverlay('master'));
+      card.classList.remove('master-unlock');
+      void card.offsetWidth;
+      card.classList.add('master-unlock');
+      setTimeout(()=>{card.classList.remove('master-unlock');card.querySelector('.realm-complete-overlay')?.remove();},3000);
+    },delay);
+  }
+
+  function runPendingCeremonies(){
+    const realmSlugs=pendingUnlockRealms.splice(0);
+    const master=pendingMasterUnlock;
+    pendingMasterUnlock=false;
+    realmSlugs.forEach((slug,index)=>{
+      const card=[...q('#realms').querySelectorAll('[data-event-slug]')].find(node=>node.dataset.eventSlug===slug);
+      playRealmUnlock(card,index*420);
+    });
+    if(master)playMasterUnlock(q('#realms').querySelector('[data-master-cycle="unlocked"]'),realmSlugs.length*420+350);
+  }
+
   function render(selected='cycle'){
     window.WildOnesBrand?.set({realm:selected});
     q('#realmFilter').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.realm===selected)));
     const visible=records.filter(x=>selected==='cycle'||x.event.realm===selected);
     if(!visible.length){q('#realms').innerHTML='<div class="passport-empty">No realm records are available for this view yet.</div>';return;}
-    q('#realms').innerHTML=visible.map(x=>{
+    const realmCards=visible.map(x=>{
       const e=x.event,state=stateInfo(x);
       const active=x.ticket&&['paid','checked_in'].includes(x.ticket.status);
       const link=active&&typeof x.ticket.ticketUrl==='string'&&x.ticket.ticketUrl.startsWith('/ticket?token=')?x.ticket.ticketUrl:e.routes.event;
@@ -65,9 +145,16 @@
       const activeEntitlements=(Array.isArray(x.entitlements)?x.entitlements:[]).filter(a=>a.status==='active');
       const entitlementBlock=activeEntitlements.length?'<div class="passport-entitlements"><span>ADD-ONS</span><div class="passport-entitlement-list">'+activeEntitlements.map(a=>'<em>'+esc(String(a.addonType).replaceAll('_',' '))+'</em>').join('')+'</div></div>':'';
       const action=x.purchaseAvailable?'<button class="button" type="button" data-purchase-event="'+esc(e.slug)+'">Purchase Ticket</button>':'<a class="button ghost" href="'+esc(link)+'">'+(active&&link.startsWith('/ticket?')?'Open Digital Ticket':'Explore the Realm')+'</a>';
-      return '<article class="passport-card" data-brand-realm="'+esc(e.realm)+'" data-passport-state="'+esc(state.kind)+'"><div class="passport-card-topline"><span class="passport-roman">'+esc(meta?.roman||'•')+'</span><span class="passport-credential-label">DIGITAL REALM CREDENTIAL</span><span class="realm-chip '+cls+'">'+esc(meta?.sub||e.realm)+'</span></div><img class="passport-card-logo" src="'+esc(window.WildOnesBrand.asset(e.realm))+'" alt="'+esc(window.WildOnesBrand.label(e.realm))+'" width="768" height="768" loading="eager" decoding="async"><h2 class="realm-key '+cls+'">'+esc(e.name)+'</h2><strong class="passport-state">'+esc(state.label)+'</strong><p class="passport-card-tagline">'+esc(e.copy.tagline)+'</p>'+ticketMeta+invitationMeta+entitlementBlock+'<div class="passport-card-actions">'+action+'</div></article>';
-    }).join('');
+      return '<article class="passport-card" data-event-slug="'+esc(e.slug)+'" data-brand-realm="'+esc(e.realm)+'" data-passport-state="'+esc(state.kind)+'"><div class="passport-card-topline"><span class="passport-roman">'+esc(meta?.roman||'•')+'</span><span class="passport-credential-label">DIGITAL REALM CREDENTIAL</span><span class="realm-chip '+cls+'">'+esc(meta?.sub||e.realm)+'</span></div><img class="passport-card-logo" src="'+esc(window.WildOnesBrand.asset(e.realm))+'" alt="'+esc(window.WildOnesBrand.label(e.realm))+'" width="768" height="768" loading="eager" decoding="async"><h2 class="realm-key '+cls+'">'+esc(e.name)+'</h2><strong class="passport-state">'+esc(state.label)+'</strong><p class="passport-card-tagline">'+esc(e.copy.tagline)+'</p>'+ticketMeta+invitationMeta+entitlementBlock+'<div class="passport-card-actions">'+action+'</div></article>';
+    });
+    if(selected==='cycle'){
+      const master=masterCycleCard();
+      const unlocked=records.length>=4&&records.every(x=>x.checkedIn);
+      if(unlocked)realmCards.unshift(master);else realmCards.push(master);
+    }
+    q('#realms').innerHTML=realmCards.join('');
     q('#realms').querySelectorAll('[data-purchase-event]').forEach(button=>button.addEventListener('click',()=>openPurchase(button.dataset.purchaseEvent,button)));
+    if(selected==='cycle')requestAnimationFrame(runPendingCeremonies);
   }
 
   function updateCycle(cycle){
@@ -87,6 +174,8 @@
       if(r.status===401||d.authenticated===false){login.hidden=false;account.hidden=true;await security();return;}
       if(!r.ok)throw new Error('Your Passport is temporarily unavailable. Please refresh.');
       records=Array.isArray(d.realms)?d.realms:[];
+      activeUserId=String(d.user?.userId||d.user?.email||'wild-one');
+      detectCompletionTransitions(activeUserId);
       login.hidden=true;account.hidden=false;
       const preferred=d.user.preferredName||d.user.fullName||'Wild One';
       q('#welcome').textContent='Welcome, '+preferred+'.';
