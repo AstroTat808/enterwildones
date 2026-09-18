@@ -598,3 +598,21 @@
   .passport-page .passport-header .page-brand{transition:none!important;transform:none!important}
 }
 
+
+
+/* Supporting copy for multi-realm gradient headlines.
+   Uses a softer version of the same realm spectrum to preserve hierarchy and readability. */
+:is(.realm-gradient-title,.tx-cycle-title) + p{
+  color:#d7cfc2;
+  text-shadow:0 2px 20px rgba(0,0,0,.46);
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  :is(.realm-gradient-title,.tx-cycle-title) + p{
+    background:var(--wo-support-gradient,linear-gradient(90deg,#ddd0ad 0%,#ded9ca 18%,#b8d7d8 39%,#e2c1aa 64%,#c9c0dc 86%,#ddd4c8 100%));
+    background-size:100% 100%;
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent!important;
+    -webkit-text-fill-color:transparent;
+  }
+}
