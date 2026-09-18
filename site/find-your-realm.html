@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#020307">
+<title>Find Your Realm | ENTER WILD ONES</title>
+<meta name="description" content="Take the Find Your Realm personality quiz and discover whether AUREVA, HALORA, SUNVEIL or NOCTURNE resonates with you most.">
+<link rel="canonical" href="https://enterwildones.com/find-your-realm">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ENTER WILD ONES">
+<meta property="og:title" content="Find Your Realm | ENTER WILD ONES">
+<meta property="og:description" content="Seven instinctive choices. One realm that resonates most.">
+<meta property="og:url" content="https://enterwildones.com/find-your-realm">
+<meta property="og:image" content="https://enterwildones.com/assets/images/campaign/four-realms-portals-wide.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/assets/css/app.css">
+<link rel="stylesheet" href="/assets/css/branding.css">
+<link rel="stylesheet" href="/assets/css/realm-quiz.css">
+<script src="/assets/js/branding.js" defer></script>
+</head>
+<body data-realm="cycle" class="realm-quiz-page">
+<a class="skip-link" href="#main">Skip to quiz</a>
+<div class="ambient" aria-hidden="true"></div>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Enter Wild Ones home"><span class="brand-icon"><img src="/assets/images/realms/enter-wild-ones-1200.webp" width="1200" height="1200" alt=""></span><span class="brand-label">ENTER WILD ONES<span>THE FOUR REALMS</span></span></a>
+  <nav class="desktop-nav" aria-label="Main navigation"><a href="/#realms">Realms</a><a href="/find-your-realm" aria-current="page">Find Your Realm</a><a href="/invite">Redeem Invite</a><a href="/passport">Passport</a></nav>
+  <details class="mobile-menu"><summary aria-label="Open navigation menu">MENU</summary><nav aria-label="Mobile navigation"><a href="/#realms">The Realms</a><a href="/find-your-realm" aria-current="page">Find Your Realm</a><a href="/invite">Redeem Invite</a><a href="/passport">My Passport</a></nav></details>
+</header>
+
+<main id="main" class="quiz-shell">
+  <section id="quizIntro" class="quiz-intro" aria-labelledby="quizTitle">
+    <div class="quiz-orbit" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="page-brand quiz-master-brand"><img data-brand-logo="cycle" src="/assets/images/realms/enter-wild-ones-1200.webp" alt="ENTER WILD ONES - The Four Realms" width="1200" height="1200"></div>
+    <p class="quiz-kicker">THE FOUR REALMS / PERSONALITY SIGNAL</p>
+    <h1 id="quizTitle">Which realm<br>calls to you?</h1>
+    <p class="quiz-lede">Seven instinctive choices. No right answers. Follow the energy you would actually choose and discover which Wild Ones realm resonates with you most.</p>
+    <button class="button quiz-primary" id="quizStart" type="button">Find My Realm</button>
+    <p class="quiz-fineprint">Just for fun. Your result does not affect invitations, applications, Passport access or ticket eligibility.</p>
+  </section>
+
+  <section id="quizStage" class="quiz-stage" hidden aria-labelledby="questionTitle">
+    <div class="quiz-progress-row">
+      <span id="quizStep">QUESTION 1 / 7</span>
+      <button id="quizBack" class="quiz-back" type="button" aria-label="Go back to previous question">Back</button>
+    </div>
+    <div class="quiz-progress" aria-hidden="true"><span id="quizProgressBar"></span></div>
+    <p class="quiz-kicker" id="questionKicker">TRUST YOUR FIRST INSTINCT</p>
+    <h2 id="questionTitle"></h2>
+    <div id="quizAnswers" class="quiz-answers" role="group" aria-labelledby="questionTitle"></div>
+    <p id="quizStatus" class="sr-only" aria-live="polite"></p>
+  </section>
+
+  <section id="quizResult" class="quiz-result" hidden aria-labelledby="resultName">
+    <div class="quiz-result-glow" aria-hidden="true"></div>
+    <p id="resultEyebrow" class="quiz-kicker"></p>
+    <div class="quiz-result-grid">
+      <div class="quiz-result-art">
+        <img id="resultLogo" src="/assets/images/realms/enter-wild-ones-1200.webp" alt="" width="1200" height="1200">
+      </div>
+      <div class="quiz-result-copy">
+        <p class="quiz-result-label">YOUR REALM IS</p>
+        <h2 id="resultName"></h2>
+        <p id="resultHeadline" class="quiz-result-headline"></p>
+        <p id="resultBody" class="quiz-result-body"></p>
+        <div id="resultTraits" class="quiz-traits" aria-label="Your realm traits"></div>
+        <div class="quiz-result-actions">
+          <a id="resultExplore" class="button quiz-primary" href="/#realms">Explore This Realm</a>
+          <button id="quizShare" class="button ghost" type="button">Share Result</button>
+          <button id="quizRetake" class="quiz-text-button" type="button">Retake Quiz</button>
+        </div>
+        <p id="shareStatus" class="quiz-share-status" aria-live="polite"></p>
+        <p class="quiz-fineprint">This personality result is an optional experience only. It does not change access, invitations, applications or ticket availability.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer"><a class="footer-brand" href="/" aria-label="Enter Wild Ones - The Four Realms"><img src="/assets/images/realms/enter-wild-ones-1200.webp" alt="" width="1200" height="1200" loading="lazy"></a><nav aria-label="Footer navigation"><a href="/#realms">The Realms</a><a href="/find-your-realm">Find Your Realm</a><a href="/passport">Passport</a><a href="mailto:help@enterwildones.com">Contact</a></nav><span>WILD ONES LLC / HAWAI'I / ENTERWILDONES.COM</span></footer>
+<script src="/assets/js/realm-quiz.js" defer></script>
+</body>
+</html>

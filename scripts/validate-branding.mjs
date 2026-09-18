@@ -27,7 +27,7 @@ const branding=read('site/assets/js/branding.js');
 assert(branding.includes('/assets/images/realms/${realms[valid(realm)].slug}-1200.webp'));
 for(const key of ['../secret','toString','<script>'])assert.equal(realmArtwork(key),'/assets/images/realms/enter-wild-ones-1200.webp');
 assert(realmLogo({realm:'night'}).includes('/nocturne-1200.webp'));
-for(const page of ['index','event','apply','passport','invite','ticket-access','ticket-addons','public-tickets','bar','check-in']){
+for(const page of ['index','event','apply','passport','invite','ticket-access','ticket-addons','public-tickets','bar','check-in','find-your-realm']){
   const html=read(`site/${page}.html`);assert(html.includes('/assets/css/branding.css'),page);assert(html.includes('viewport-fit=cover'),page);
   assert(html.includes('aria-label="Mobile navigation"'),page);
 }

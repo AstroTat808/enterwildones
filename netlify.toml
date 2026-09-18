@@ -51,6 +51,11 @@
   status = 200
 
 [[redirects]]
+  from = "/find-your-realm"
+  to = "/find-your-realm.html"
+  status = 200
+
+[[redirects]]
   from = "/invite"
   to = "/invite.html"
   status = 200

@@ -1,0 +1,56 @@
+/* Find Your Realm — optional personality experience. */
+.realm-quiz-page{
+  --quiz-paper:#f8f1e7;
+  --quiz-muted:#aaa095;
+  --quiz-gold:#efd18a;
+  --quiz-line:rgba(239,209,138,.17);
+  --quiz-panel:rgba(6,7,11,.78);
+  overflow-x:hidden;
+  background:#020307;
+}
+.realm-quiz-page .quiz-shell{position:relative;min-height:100svh;padding:calc(var(--bar-height) + 42px) max(20px,5vw) 100px;display:grid;place-items:center}
+.realm-quiz-page .quiz-shell::before{content:"";position:fixed;z-index:-1;inset:var(--bar-height) 0 0;background:radial-gradient(circle at 50% 18%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 28%),radial-gradient(circle at 50% 75%,color-mix(in srgb,var(--accent2) 8%,transparent),transparent 34%)}
+.quiz-intro,.quiz-stage,.quiz-result{position:relative;width:min(1040px,100%);margin:auto}
+.quiz-intro{text-align:center;padding:clamp(28px,5vw,62px) 0}
+.quiz-master-brand{width:min(390px,78vw);margin:0 auto -18px}
+.quiz-kicker{margin:0 0 14px;color:var(--accent);font-size:9px;font-weight:900;letter-spacing:.28em;text-transform:uppercase}
+.quiz-intro h1{margin:0;color:var(--quiz-paper);font:400 clamp(58px,8vw,108px)/.87 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.055em;text-wrap:balance}
+.quiz-lede{max-width:690px;margin:26px auto 30px;color:#c8beb2;font-size:clamp(15px,1.6vw,18px);line-height:1.8}
+.quiz-primary{min-height:50px;border-color:color-mix(in srgb,var(--accent) 62%,#fff);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 88%,white),var(--accent));color:#080706;box-shadow:0 14px 50px color-mix(in srgb,var(--accent) 16%,transparent)}
+.quiz-fineprint{max-width:680px;margin:20px auto 0;color:#817970;font-size:10px;line-height:1.65;letter-spacing:.05em}
+.quiz-orbit{position:absolute;left:50%;top:46%;width:min(640px,92vw);aspect-ratio:1;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.035);border-radius:50%;pointer-events:none;opacity:.5}
+.quiz-orbit::before,.quiz-orbit::after{content:"";position:absolute;border:1px solid rgba(255,255,255,.028);border-radius:50%}.quiz-orbit::before{inset:14%}.quiz-orbit::after{inset:31%}
+.quiz-orbit i{position:absolute;width:8px;height:8px;border-radius:50%;box-shadow:0 0 20px currentColor}.quiz-orbit i:nth-child(1){left:50%;top:-4px;background:#e4c382;color:#e4c382}.quiz-orbit i:nth-child(2){right:-4px;top:50%;background:#93ddd0;color:#93ddd0}.quiz-orbit i:nth-child(3){left:50%;bottom:-4px;background:#ff8f4b;color:#ff8f4b}.quiz-orbit i:nth-child(4){left:-4px;top:50%;background:#a99be8;color:#a99be8}
+.quiz-stage{max-width:900px;padding:clamp(26px,4.5vw,52px);border:1px solid var(--quiz-line);border-radius:22px;background:linear-gradient(145deg,rgba(15,16,22,.9),rgba(4,5,9,.86));box-shadow:0 34px 100px rgba(0,0,0,.35)}
+.quiz-progress-row{display:flex;justify-content:space-between;gap:20px;align-items:center;color:#92897e;font-size:9px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.quiz-back,.quiz-text-button{border:0;background:transparent;color:#b8aea1;padding:8px 0;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.quiz-back:hover,.quiz-text-button:hover{color:#fff}
+.quiz-progress{height:2px;margin:15px 0 42px;background:rgba(255,255,255,.07);overflow:hidden}.quiz-progress span{display:block;width:0;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 0 20px color-mix(in srgb,var(--accent) 50%,transparent);transition:width .35s ease}
+.quiz-stage h2{max-width:760px;margin:0 0 32px;color:var(--quiz-paper);font:400 clamp(38px,5vw,62px)/1 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.04em;text-wrap:balance}
+.quiz-answers{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.quiz-answer{position:relative;min-height:110px;padding:20px 22px;text-align:left;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(255,255,255,.018);color:#ddd4c8;line-height:1.5;transition:transform .18s ease,border-color .18s ease,background .18s ease;color .18s ease}
+.quiz-answer::before{content:attr(data-letter);display:block;margin-bottom:8px;color:var(--accent);font-size:9px;font-weight:900;letter-spacing:.18em}
+.quiz-answer:hover,.quiz-answer:focus-visible{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 42%,transparent);background:color-mix(in srgb,var(--accent) 6%,rgba(255,255,255,.018));color:#fff}
+.quiz-result{max-width:1160px;padding:clamp(28px,4vw,48px);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);border-radius:24px;background:linear-gradient(145deg,rgba(15,16,22,.92),rgba(4,5,9,.9));box-shadow:0 35px 120px rgba(0,0,0,.42);overflow:hidden}
+.quiz-result-grid{display:grid;grid-template-columns:minmax(280px,.78fr) minmax(0,1.22fr);gap:clamp(28px,5vw,70px);align-items:center}
+.quiz-result-art{position:relative;display:grid;place-items:center;min-width:0}.quiz-result-art::after{content:"";position:absolute;inset:18%;border-radius:50%;background:color-mix(in srgb,var(--accent) 12%,transparent);filter:blur(42px);z-index:0}
+.quiz-result-art img{position:relative;z-index:1;display:block;width:100%;height:auto;filter:drop-shadow(0 24px 55px color-mix(in srgb,var(--accent) 12%,transparent))}
+.quiz-result-copy{position:relative;z-index:2;min-width:0}
+.quiz-result-label{margin:0;color:#8f867a;font-size:9px;font-weight:900;letter-spacing:.25em;text-transform:uppercase}
+.quiz-result h2{margin:8px 0 6px;color:var(--quiz-paper);font:400 clamp(60px,8vw,112px)/.86 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.06em;overflow-wrap:anywhere}
+.quiz-result-headline{margin:18px 0;color:var(--accent);font:400 clamp(24px,3vw,36px)/1.15 "Iowan Old Style",Baskerville,Georgia,serif}
+.quiz-result-body{max-width:680px;color:#bbb1a5;font-size:15px;line-height:1.82}
+.quiz-traits{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 28px}.quiz-traits span{padding:8px 11px;border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);border-radius:999px;color:#d8cec1;background:color-mix(in srgb,var(--accent) 4%,transparent);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.quiz-result-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.quiz-result-actions .button{min-height:48px}.quiz-text-button{min-height:44px;padding:10px}
+.quiz-share-status{min-height:18px;margin:10px 0 0;color:#a69c90;font-size:11px}
+.quiz-result-glow{position:absolute;right:-20%;top:-28%;width:65%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 15%,transparent),transparent 65%);pointer-events:none}
+.realm-quiz-page[data-realm=light]{--bg:#080706}.realm-quiz-page[data-realm=balance]{--bg:#050908}.realm-quiz-page[data-realm=fire]{--bg:#0a0604}.realm-quiz-page[data-realm=night]{--bg:#050509}
+@media(max-width:760px){
+  .realm-quiz-page .quiz-shell{padding-left:17px;padding-right:17px;padding-top:calc(var(--bar-height) + 25px)}
+  .quiz-intro{padding-top:14px}.quiz-master-brand{width:min(310px,86vw);margin-bottom:-8px}.quiz-intro h1{font-size:clamp(52px,15vw,76px)}
+  .quiz-orbit{width:96vw}.quiz-stage{padding:24px 18px}.quiz-progress{margin-bottom:30px}.quiz-stage h2{font-size:clamp(34px,10vw,46px);margin-bottom:24px}
+  .quiz-answers{grid-template-columns:1fr}.quiz-answer{min-height:82px;padding:17px 18px}
+  .quiz-result{padding:25px 18px}.quiz-result-grid{grid-template-columns:1fr;gap:12px}.quiz-result-art{width:min(300px,76vw);margin:auto}.quiz-result-copy{text-align:center}
+  .quiz-result-body{margin-left:auto;margin-right:auto}.quiz-traits,.quiz-result-actions{justify-content:center}.quiz-result-actions{display:grid;grid-template-columns:1fr;width:100%}.quiz-result-actions .button,.quiz-result-actions button{width:100%;justify-content:center}
+}
+@media(max-width:360px){.quiz-result h2{font-size:52px}.quiz-intro h1{font-size:50px}.quiz-stage{padding-left:15px;padding-right:15px}}
+@media(prefers-reduced-motion:reduce){.quiz-progress span,.quiz-answer{transition:none}.quiz-answer:hover{transform:none}}
