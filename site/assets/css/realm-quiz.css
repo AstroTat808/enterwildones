@@ -294,3 +294,25 @@
   .quiz-answer:hover,
   .quiz-answer:focus-visible{transform:none}
 }
+
+
+/* Mobile result layout must remain a true single-column card.
+   This override intentionally lives after the premium desktop grid rules so the
+   result copy cannot be pushed outside a 320px viewport. */
+@media(max-width:760px){
+  .quiz-result-grid{
+    grid-template-columns:minmax(0,1fr);
+    width:100%;
+  }
+  .quiz-result-copy{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+  .quiz-result h1{
+    width:100%;
+    max-width:100%;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+}
