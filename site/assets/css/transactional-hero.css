@@ -158,8 +158,6 @@
   display:inline-block;
   padding-bottom:.08em;
   color:#f3d88a;
-  background:var(--tx-realm-gradient);
-  background-size:100% 100%;
   text-shadow:0 0 22px rgba(255,255,255,.12),0 0 34px rgba(215,172,88,.08);
 }
 .realm-gradient-title{
@@ -171,6 +169,8 @@
 @supports ((-webkit-background-clip:text) or (background-clip:text)){
   .realm-gradient-title,
   .tx-cycle-title{
+    background:var(--tx-realm-gradient);
+    background-size:100% 100%;
     -webkit-background-clip:text;
     background-clip:text;
     color:transparent;
@@ -262,6 +262,7 @@
 .passport-page .shell-inner{width:min(1200px,100%)}
 .passport-page .passport-header{
   position:relative;
+  isolation:isolate;
   min-height:440px;
   display:flex;
   flex-direction:column;
@@ -282,11 +283,12 @@
   content:"";
   position:absolute;
   inset:0;
-  z-index:-1;
+  z-index:0;
   background:url('/assets/images/campaign/four-realms-portals-wide-1672.webp') center/cover no-repeat;
   opacity:.17;
   filter:saturate(.9) brightness(.72);
 }
+.passport-page .passport-header>*{position:relative;z-index:2}
 .passport-page .passport-header .page-brand{width:min(280px,52vw);margin:0 auto 8px}
 .passport-page .passport-header h1{
   max-width:10ch;
@@ -300,8 +302,6 @@
   text-wrap:balance;
 }
 .passport-page .passport-header h1.realm-gradient-title{
-  background:var(--tx-realm-gradient);
-  background-size:100% 100%;
   font-size:var(--tx-display-size)!important;
   font-weight:800!important;
   line-height:.95!important;
