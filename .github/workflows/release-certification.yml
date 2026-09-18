@@ -1,0 +1,205 @@
+name: Release Certification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: read
+  actions: read
+
+concurrency:
+  group: release-certification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-check:
+    name: Release · Build Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Production build
+        run: npm run build
+
+  production-qa-gate:
+    name: Release · Production QA Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Wait for Production QA Gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Waiting for Production QA Gate on $TARGET_SHA"
+          for attempt in $(seq 1 120); do
+            payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100")"
+            status="$(jq -r '[.check_runs[] | select(.name=="Production QA Gate")] | sort_by(.started_at) | last | .status // "missing"' <<<"$payload")"
+            conclusion="$(jq -r '[.check_runs[] | select(.name=="Production QA Gate")] | sort_by(.started_at) | last | .conclusion // "pending"' <<<"$payload")"
+            echo "Production QA Gate: $status / $conclusion"
+            if [ "$status" = "completed" ]; then
+              test "$conclusion" = "success"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Production QA Gate did not complete in the certification window."
+          exit 1
+
+  payment-tests:
+    name: Release · Payment Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Admission, Stripe, add-on and ledger certification
+        run: |
+          node scripts/validate-ticketing.mjs
+          node scripts/validate-addons-public.mjs
+
+  launch-readiness:
+    name: Release · Launch Readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Full lifecycle launch rehearsal
+        run: node scripts/validate-launch-certification.mjs
+
+  security-source:
+    name: Release · Security Source Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static source, route, private-surface and regression audit
+        env:
+          VISUAL_RESULTS: release-security-results
+        run: python scripts/production_visual_qa.py --mode source
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-security-source-audit
+          path: release-security-results/source-audit.json
+          retention-days: 30
+          if-no-files-found: error
+
+  production-security-smoke:
+    name: Release · Production Security Smoke
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_SHA: ${{ github.sha }}
+    steps:
+      - name: Wait for deployed Production HTTP + security smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Waiting for hosted security smoke on $TARGET_SHA"
+          for attempt in $(seq 1 120); do
+            payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100")"
+            status="$(jq -r '[.check_runs[] | select(.name=="Production HTTP + security smoke")] | sort_by(.started_at) | last | .status // "missing"' <<<"$payload")"
+            conclusion="$(jq -r '[.check_runs[] | select(.name=="Production HTTP + security smoke")] | sort_by(.started_at) | last | .conclusion // "pending"' <<<"$payload")"
+            echo "Production security smoke: $status / $conclusion"
+            if [ "$status" = "completed" ]; then
+              test "$conclusion" = "success"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Production security smoke did not complete in the certification window."
+          exit 1
+
+  release-certification:
+    name: Release Certification
+    if: always()
+    needs:
+      - build-check
+      - production-qa-gate
+      - payment-tests
+      - launch-readiness
+      - security-source
+      - production-security-smoke
+    runs-on: ubuntu-latest
+    env:
+      BUILD_RESULT: ${{ needs.build-check.result }}
+      QA_RESULT: ${{ needs.production-qa-gate.result }}
+      PAYMENT_RESULT: ${{ needs.payment-tests.result }}
+      LAUNCH_RESULT: ${{ needs.launch-readiness.result }}
+      SECURITY_SOURCE_RESULT: ${{ needs.security-source.result }}
+      PRODUCTION_SECURITY_RESULT: ${{ needs.production-security-smoke.result }}
+      EVENT_NAME: ${{ github.event_name }}
+    steps:
+      - name: Publish GO / NO-GO certification
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## Release Certification"
+            echo
+            echo "| Gate | Result |"
+            echo "| --- | --- |"
+            echo "| Build Check | $BUILD_RESULT |"
+            echo "| Production QA Gate (expanded visual regression + Lighthouse) | $QA_RESULT |"
+            echo "| Payment tests | $PAYMENT_RESULT |"
+            echo "| Launch readiness rehearsal | $LAUNCH_RESULT |"
+            echo "| Security source audit | $SECURITY_SOURCE_RESULT |"
+            echo "| Hosted production security smoke | $PRODUCTION_SECURITY_RESULT |"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          required=("$BUILD_RESULT" "$QA_RESULT" "$PAYMENT_RESULT" "$LAUNCH_RESULT" "$SECURITY_SOURCE_RESULT")
+          for result in "${required[@]}"; do
+            if [ "$result" != "success" ]; then
+              echo "### NO-GO" >> "$GITHUB_STEP_SUMMARY"
+              echo "A required pre-release gate failed." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          done
+
+          if [ "$EVENT_NAME" = "push" ] && [ "$PRODUCTION_SECURITY_RESULT" != "success" ]; then
+            echo "### NO-GO" >> "$GITHUB_STEP_SUMMARY"
+            echo "Hosted production security smoke did not pass." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "### GO" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "All pre-merge release gates passed. Hosted production smoke will be required again after merge." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Build, Production QA, visual regression, Lighthouse, payment, launch-readiness and hosted security gates all passed." >> "$GITHUB_STEP_SUMMARY"
+          fi
