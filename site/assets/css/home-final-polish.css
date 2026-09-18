@@ -733,3 +733,26 @@ body.cinematic-home .site-footer::before{
   }
   body.cinematic-home .v2-hero{padding-top:96px}
 }
+
+
+/* Footer color correction — keep the end-credit layout, return the footer copy
+   to the restrained neutral palette used before the multicolor experiment. */
+body.cinematic-home .site-footer nav a{
+  color:#8f887e!important;
+  background:none!important;
+  -webkit-background-clip:border-box!important;
+  background-clip:border-box!important;
+  -webkit-text-fill-color:currentColor!important;
+}
+body.cinematic-home .site-footer nav a:hover,
+body.cinematic-home .site-footer nav a:focus-visible{
+  color:#efe5d7!important;
+  -webkit-text-fill-color:currentColor!important;
+}
+body.cinematic-home .site-footer>span{
+  color:#847b6d!important;
+  background:none!important;
+  -webkit-background-clip:border-box!important;
+  background-clip:border-box!important;
+  -webkit-text-fill-color:currentColor!important;
+}
