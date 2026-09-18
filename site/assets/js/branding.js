@@ -11,6 +11,17 @@
   const valid = value => Object.hasOwn(realms,value) ? value : 'cycle';
   const asset = realm => `/assets/images/realms/${realms[valid(realm)].slug}-1200.webp`;
   const canonicalHome = document.body.classList.contains('cinematic-home');
+  const guestMasthead = !!document.querySelector('.topbar .brand') && !document.body.matches('.admin-page,.staff-page,.check-in-page,.bar-page');
+  if(guestMasthead){
+    document.body.classList.add('wo-guest-masthead');
+    if(!document.querySelector('link[data-wild-ones-masthead]')){
+      const masthead=document.createElement('link');
+      masthead.rel='stylesheet';
+      masthead.href='/assets/css/masthead-lockup.css';
+      masthead.dataset.wildOnesMasthead='';
+      document.head.append(masthead);
+    }
+  }
 
   // The public homepage owns its structural worldbuilding. Shared brand layers below
   // are intentionally narrow so realm identity stays consistent without cascade drift.
@@ -102,6 +113,18 @@
       img.src=asset('cycle');
       img.alt='';
       img.decoding='sync';
+      let label=brand.querySelector('.brand-label');
+      if(!label){
+        label=document.createElement('span');
+        label.className='brand-label';
+        label.innerHTML='ENTER WILD ONES<span>THE FOUR REALMS</span>';
+        brand.append(label);
+      }else{
+        label.firstChild && (label.firstChild.nodeValue='ENTER WILD ONES');
+        let sub=label.querySelector('span');
+        if(!sub){sub=document.createElement('span');label.append(sub);}
+        sub.textContent='THE FOUR REALMS';
+      }
     });
   }
 
@@ -146,6 +169,13 @@
     }
     cosmos.append(stars);
     document.body.prepend(cosmos);
+  }
+
+  function mastheadScrollState(){
+    if(!guestMasthead)return;
+    const apply=()=>document.body.classList.toggle('masthead-scrolled',window.scrollY>72);
+    addEventListener('scroll',apply,{passive:true});
+    apply();
   }
 
   function motion(){
@@ -198,6 +228,7 @@
 
   if(!canonicalHome)addCosmos();
   sync();
+  mastheadScrollState();
   motion();
   requestAnimationFrame(()=>document.documentElement.classList.add('motion-ready'));
 
