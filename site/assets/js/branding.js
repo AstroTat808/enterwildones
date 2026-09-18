@@ -49,6 +49,14 @@
     prelaunch.dataset.wildOnesPrelaunch='';
     document.head.append(prelaunch);
   }
+  const transactionalPage=['passport-page','invite-page','public-ticket-page','ticket-access-page','ticket-addons-page'].some(cls=>document.body.classList.contains(cls));
+  if(transactionalPage && !document.querySelector('link[data-wild-ones-transactional-premium]')){
+    const premium=document.createElement('link');
+    premium.rel='stylesheet';
+    premium.href='/assets/css/transactional-premium.css';
+    premium.dataset.wildOnesTransactionalPremium='';
+    document.head.append(premium);
+  }
 
   function lockup(realm, variant='page'){
     const key=valid(realm), meta=realms[key];
