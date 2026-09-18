@@ -10,6 +10,7 @@ on:
       - 'netlify.toml'
       - 'scripts/production_visual_qa.py'
       - 'scripts/visual_regression.py'
+      - 'lighthouserc.cjs'
       - 'package.json'
       - 'package-lock.json'
       - '.nvmrc'
@@ -22,6 +23,7 @@ on:
       - 'netlify.toml'
       - 'scripts/production_visual_qa.py'
       - 'scripts/visual_regression.py'
+      - 'lighthouserc.cjs'
       - 'package.json'
       - 'package-lock.json'
       - '.nvmrc'
@@ -38,7 +40,7 @@ permissions:
   actions: read
 
 env:
-  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v1
+  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v2
 
 jobs:
   source-audit:
@@ -112,21 +114,49 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
+
+  lighthouse-ci:
+    name: Lighthouse + Core Web Vitals gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run Lighthouse performance, accessibility, SEO and lab CWV gates
+        run: npx -y @lhci/cli@0.14.0 autorun --config=./lighthouserc.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-release-results
+          path: lighthouse-results
+          retention-days: 30
+          if-no-files-found: warn
+
   production-qa-gate:
     name: Production QA Gate
     if: always()
-    needs: [source-audit, visual-regression]
+    needs: [source-audit, visual-regression, lighthouse-ci]
     runs-on: ubuntu-latest
     steps:
       - name: Enforce pre-merge critical gates
         env:
           SOURCE_RESULT: ${{ needs.source-audit.result }}
           VISUAL_RESULT: ${{ needs.visual-regression.result }}
+          LIGHTHOUSE_RESULT: ${{ needs.lighthouse-ci.result }}
         run: |
           echo "Source + build audit: $SOURCE_RESULT"
           echo "Approved visual regression: $VISUAL_RESULT"
+          echo "Lighthouse + lab Core Web Vitals: $LIGHTHOUSE_RESULT"
           test "$SOURCE_RESULT" = "success"
           test "$VISUAL_RESULT" = "success"
+          test "$LIGHTHOUSE_RESULT" = "success"
 
   deploy-sync:
     name: Confirm production deployment
@@ -213,7 +243,7 @@ jobs:
   qa-summary:
     name: Production QA summary
     if: always() && github.event_name != 'pull_request'
-    needs: [source-audit, visual-regression, production-qa-gate, deploy-sync, runtime-smoke, browser-qa]
+    needs: [source-audit, visual-regression, lighthouse-ci, production-qa-gate, deploy-sync, runtime-smoke, browser-qa]
     runs-on: ubuntu-latest
     steps:
       - name: Publish summary
@@ -225,6 +255,7 @@ jobs:
             echo '| --- | --- |'
             echo '| Source + build audit | ${{ needs.source-audit.result }} |'
             echo '| Approved screenshot regression | ${{ needs.visual-regression.result }} |'
+            echo '| Lighthouse + lab Core Web Vitals | ${{ needs.lighthouse-ci.result }} |'
             echo '| Production QA Gate | ${{ needs.production-qa-gate.result }} |'
             echo '| Production deploy sync | ${{ needs.deploy-sync.result }} |'
             echo '| HTTP + security smoke | ${{ needs.runtime-smoke.result }} |'
