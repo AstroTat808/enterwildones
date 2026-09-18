@@ -20,7 +20,7 @@ const checks={
   'create-checkout.mjs':['event_id','invitation_id','purchase_type','expected_amount','sameOrigin','maxTickets'],
   'stripe-webhook.mjs':['verifyStripeSignature','finalizePaidSession','charge.refunded','charge.dispute.created'],
   'ticket-confirmed.mjs':['verifyCheckoutReturn','finalizePaidSession'],
-  'ticket-view.mjs':['waiverIsCurrent','privateVenue','/ticket/qr','/ticket/wallet','ticket-credential','ticket-meta-grid','ticket-qr-panel','ticket-support-grid'],
+  'ticket-view.mjs':['waiverIsCurrent','privateVenue','/ticket/qr','/ticket/wallet','ticket-credential','ticket-meta-grid','ticket-qr-panel','ticket-support-grid','activeTicketEntitlements','ticket-entitlement-badge','COLLECTED WITH THIS CREDENTIAL','creditsRemaining','departureTime'],
   'ticket-waiver.mjs':['waiverHash','sameOrigin','signerName'],
   'ticket-qr.mjs':['waiverIsCurrent','verifyTicketToken'],
   'check-in.mjs':['WRONG EVENT','waiverIsCurrent','sameOrigin'],
