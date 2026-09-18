@@ -573,3 +573,30 @@
   .passport-page #realms.passport-grid>.passport-card:hover{transition:none!important;transform:none!important}
 }
 
+/* Final Passport member-card layout correction: override the legacy two-column account panel. */
+.passport-page .passport-account-panel.passport-member-card{
+  display:block;
+  width:100%;
+}
+.passport-page .passport-member-card .passport-member-main{
+  width:100%;
+}
+.passport-page .passport-member-card .passport-cycle-meter{
+  width:100%;
+}
+.passport-page .passport-member-card .passport-filter{
+  width:100%;
+}
+.passport-page .passport-member-card .passport-member-main #logout{
+  position:relative;
+  z-index:3;
+  align-self:center;
+  justify-self:end;
+  white-space:nowrap;
+}
+@media(max-width:980px){
+  .passport-page .passport-member-card .passport-member-main #logout{
+    justify-self:start;
+  }
+}
+
