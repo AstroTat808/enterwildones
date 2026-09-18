@@ -190,9 +190,11 @@ def browser_mode(suite,browser_name):
    r=page.goto(BASE+case.path,wait_until="domcontentloaded",timeout=45000)
    if case.wait:page.wait_for_selector(case.wait,state="visible",timeout=15000)
    page.wait_for_timeout(300);motion_state=page.evaluate("""() => {
- const candidates=[...document.querySelectorAll('.orbit,.reveal,.wo-stars i,.hero-logo-wrap:after,.realm-logo-frame:after')];
- const bad=candidates.filter(e=>{const s=getComputedStyle(e);return s.animationName&&s.animationName!=='none'&&s.animationPlayState!=='paused'}).length;
- return {candidateCount:candidates.length,activeAnimatedCandidates:bad,media:matchMedia('(prefers-reduced-motion: reduce)').matches};
+ const candidates=[...document.querySelectorAll('.orbit,.reveal,.wo-stars i')];
+ const badElements=candidates.filter(e=>{const s=getComputedStyle(e);return s.animationName&&s.animationName!=='none'&&s.animationPlayState!=='paused'}).length;
+ const pseudoHosts=[...document.querySelectorAll('.hero-logo-wrap,.realm-logo-frame')];
+ const badPseudo=pseudoHosts.filter(e=>{const s=getComputedStyle(e,'::after');return s.animationName&&s.animationName!=='none'&&s.animationPlayState!=='paused'}).length;
+ return {candidateCount:candidates.length+pseudoHosts.length,activeAnimatedCandidates:badElements+badPseudo,media:matchMedia('(prefers-reduced-motion: reduce)').matches};
 }""");motion.update(status=r.status if r else 0,**motion_state,failed=(not motion_state["media"] or motion_state["activeAnimatedCandidates"]>0))
   except Exception as e:motion.update(exception=str(e),failed=True)
   results.append(motion);page.close();c.close();b.close()
