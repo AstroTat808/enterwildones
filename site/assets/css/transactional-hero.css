@@ -429,3 +429,172 @@
 @media(prefers-reduced-motion:reduce){
   .tx-actions .button,.tx-hero-card .button,.passport-page #realms.passport-grid>.passport-card{transition:none!important;transform:none!important}
 }
+
+/* Passport cinematic hero — restrained Four Realms atmosphere with readable foreground copy. */
+.passport-page .passport-header{
+  min-height:560px;
+  padding:clamp(58px,7vw,88px) clamp(22px,6vw,82px) clamp(62px,7vw,88px);
+  border-color:rgba(235,220,188,.16);
+  background:
+    linear-gradient(180deg,rgba(4,5,9,.44),rgba(4,5,9,.80) 52%,rgba(3,4,8,.94)),
+    #05070b;
+  box-shadow:
+    0 42px 120px rgba(0,0,0,.54),
+    inset 0 1px rgba(255,255,255,.05),
+    inset 0 -1px rgba(232,200,121,.08);
+}
+.passport-page .passport-header::before{
+  opacity:.22;
+  filter:saturate(.95) contrast(1.08) brightness(.58);
+  transform:scale(1.025);
+}
+.passport-page .passport-header::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 18% 34%,rgba(242,214,123,.12),transparent 24%),
+    radial-gradient(circle at 38% 24%,rgba(128,226,238,.10),transparent 23%),
+    radial-gradient(circle at 66% 26%,rgba(255,149,81,.10),transparent 24%),
+    radial-gradient(circle at 84% 38%,rgba(183,142,255,.11),transparent 25%),
+    radial-gradient(ellipse at 50% 52%,rgba(7,9,15,.06),rgba(3,4,8,.42) 52%,rgba(2,3,6,.78) 100%),
+    linear-gradient(90deg,rgba(2,3,6,.72),transparent 18%,transparent 82%,rgba(2,3,6,.72));
+}
+.passport-page .passport-header .page-brand{
+  position:relative;
+  width:min(300px,54vw);
+  margin:0 auto 16px;
+  isolation:isolate;
+}
+.passport-page .passport-header .page-brand::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:50%;
+  top:49%;
+  width:78%;
+  aspect-ratio:1;
+  transform:translate(-50%,-50%);
+  border:1px solid rgba(243,224,184,.16);
+  border-radius:50%;
+  box-shadow:
+    0 0 0 22px rgba(255,255,255,.012),
+    0 0 0 45px rgba(232,200,121,.016),
+    0 0 76px rgba(232,200,121,.09);
+}
+.passport-page .passport-header .page-brand::after{
+  content:"";
+  position:absolute;
+  z-index:-2;
+  inset:12% 12% 14%;
+  border-radius:50%;
+  background:
+    conic-gradient(
+      from -24deg,
+      rgba(242,214,123,.24),
+      rgba(128,226,238,.18),
+      rgba(255,149,81,.18),
+      rgba(183,142,255,.20),
+      rgba(242,214,123,.24)
+    );
+  filter:blur(30px);
+  opacity:.48;
+}
+.passport-page .passport-header .page-brand img{
+  position:relative;
+  z-index:2;
+  filter:saturate(1.04) contrast(1.05) drop-shadow(0 20px 34px rgba(0,0,0,.42));
+}
+.passport-page .passport-header>.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:auto;
+  min-height:32px;
+  margin:4px auto 18px;
+  padding:8px 14px 8px 17px;
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:999px;
+  background:rgba(3,4,8,.44);
+  color:rgba(246,235,215,.80);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  letter-spacing:.30em!important;
+}
+.passport-page .passport-header h1.realm-gradient-title{
+  max-width:9.5ch;
+  margin:0 auto 22px;
+  font-size:clamp(3.45rem,7.6vw,7.2rem)!important;
+  line-height:.91!important;
+  letter-spacing:-.045em!important;
+  text-shadow:
+    0 2px 26px rgba(0,0,0,.62),
+    0 0 26px rgba(255,255,255,.08);
+}
+.passport-page .passport-header .tx-subheadline{
+  position:relative;
+  max-width:700px;
+  margin:0 auto;
+  padding-top:20px;
+  color:rgba(247,240,229,.88);
+  font-size:clamp(1.02rem,1.45vw,1.22rem)!important;
+  font-weight:500!important;
+  line-height:1.65!important;
+  letter-spacing:.035em!important;
+  text-shadow:0 2px 20px rgba(0,0,0,.48);
+}
+.passport-page .passport-header .tx-subheadline::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:0;
+  width:min(250px,52vw);
+  height:1px;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,rgba(242,214,123,.72),rgba(128,226,238,.54),rgba(255,149,81,.54),rgba(183,142,255,.62),transparent);
+  box-shadow:0 0 18px rgba(232,200,121,.18);
+}
+@media(hover:hover) and (pointer:fine){
+  .passport-page .passport-header .page-brand{
+    transition:transform .5s cubic-bezier(.2,.7,.2,1),filter .5s ease;
+  }
+  .passport-page .passport-header:hover .page-brand{
+    transform:translateY(-3px) scale(1.008);
+    filter:brightness(1.025);
+  }
+}
+@media(max-width:760px){
+  .passport-page .passport-header{
+    min-height:500px;
+    padding:46px 18px 54px;
+  }
+  .passport-page .passport-header .page-brand{width:min(270px,70vw);margin-bottom:14px}
+  .passport-page .passport-header>.eyebrow{
+    margin-bottom:16px;
+    padding-inline:13px 10px;
+    font-size:9px!important;
+    letter-spacing:.22em!important;
+  }
+  .passport-page .passport-header h1.realm-gradient-title{
+    max-width:10ch;
+    font-size:clamp(3rem,14vw,4.8rem)!important;
+    line-height:.93!important;
+  }
+  .passport-page .passport-header .tx-subheadline{
+    max-width:32rem;
+    padding-top:18px;
+    font-size:clamp(.98rem,4vw,1.1rem)!important;
+    line-height:1.62!important;
+  }
+}
+@media(max-width:420px){
+  .passport-page .passport-header{min-height:470px;padding:40px 16px 48px}
+  .passport-page .passport-header .page-brand{width:min(235px,72vw)}
+  .passport-page .passport-header h1.realm-gradient-title{font-size:clamp(2.65rem,13.5vw,3.65rem)!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .passport-page .passport-header .page-brand{transition:none!important;transform:none!important}
+}
+
