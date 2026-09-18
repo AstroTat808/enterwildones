@@ -107,7 +107,7 @@ def dom(page):
  return {title:document.title,h1:h1?.textContent?.trim()||'',overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,dups,unlabeled,unnamed,broken,missingAlt,tiny,text:(document.querySelector('main')?.innerText||'').trim().length};
  }""")
 
-def state_checks(page,case):
+def state_checks(page,case,width=None):
  f=[]
  if case.state=="home":
   for s in ("#aureva","#halora","#sunveil","#nocturne"):
@@ -150,6 +150,27 @@ def state_checks(page,case):
  elif case.state=="command" and page.locator("#indicatorGrid > *").count()<3:f.append("command indicators missing")
  elif case.state=="check-in" and not page.locator("#gate").is_visible():f.append("gate console missing")
  elif case.state=="bar" and not page.locator("#bar").is_visible():f.append("bar console missing")
+ if width==320:
+  if case.name=="realm-quiz-result":
+   result_name=page.locator("#resultName")
+   if not result_name.is_visible() or not result_name.inner_text().strip():f.append("320px realm result H1 regression: resultName must be visible and populated")
+  overflow=page.evaluate("document.documentElement.scrollWidth>document.documentElement.clientWidth+2")
+  if overflow:f.append("320px horizontal overflow regression")
+  if case.name.startswith("event-"):
+   header=page.locator(".topbar").first
+   brand=page.locator(".topbar .brand").first
+   menu=page.locator(".topbar .mobile-menu summary").first
+   access=page.locator(".event-access").first
+   if header.count() and brand.count() and menu.count():
+    hb=header.bounding_box();bb=brand.bounding_box();mb=menu.bounding_box()
+    if hb and bb and (bb["y"]<hb["y"]-1 or bb["y"]+bb["height"]>hb["y"]+hb["height"]+1):f.append("320px event header brand is clipped")
+    if hb and mb and abs((mb["y"]+mb["height"]/2)-(hb["y"]+hb["height"]/2))>6:f.append("320px mobile menu is not vertically centered")
+   if access.count():
+    ab=access.bounding_box()
+    if ab and (ab["x"]<-1 or ab["x"]+ab["width"]>321):f.append("320px event access card is not centered within viewport")
+ if case.state=="passport":
+  unloaded=page.locator("#realms img").evaluate_all("els=>els.filter(i=>!i.complete||i.naturalWidth===0).map(i=>i.src)")
+  if unloaded:f.append("Passport realm images must be fully decoded before audit")
  return f
 
 def mobile_menu(page,width):
@@ -180,7 +201,16 @@ def browser_mode(suite,browser_name):
      height=page.evaluate("document.documentElement.scrollHeight")
      for y in range(0,int(height),700):page.evaluate("y=>window.scrollTo(0,y)",y);page.wait_for_timeout(25)
      page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(100)
-     checks=state_checks(page,case);audit=dom(page);menu=mobile_menu(page,w)
+     images_ready=True
+     try:
+      page.wait_for_function("""() => {
+ const vis=e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&+s.opacity!==0&&r.width>0&&r.height>0};
+ return [...document.images].filter(vis).every(i=>i.complete&&i.naturalWidth>0);
+}""",timeout=10000)
+     except Exception:images_ready=False
+     checks=state_checks(page,case,w)
+     if not images_ready:checks.append("visible images did not finish decoding within 10 seconds")
+     audit=dom(page);menu=mobile_menu(page,w)
      rep.update(audit);rep.update({"pageErrors":errors,"consoleErrors":console,"requestFailures":reqfail,"assetFailures":assetfail,"stateFailures":checks,"mobileMenuOk":menu})
      rep["failed"]=any([rep["status"]>=400,errors,console,reqfail,assetfail,audit["overflow"],audit["dups"],audit["unlabeled"],audit["unnamed"],audit["broken"],audit["missingAlt"],not audit["title"],not audit["h1"],audit["text"]<20,checks,menu is False])
     except Exception as e:

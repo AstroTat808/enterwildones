@@ -122,9 +122,7 @@
   function showResult(realm,updateUrl=false){
     const data=realmData[realm];
     if(!data)return;
-    hide(intro);hide(stage);show(result);
-    document.body.dataset.realm=realm;
-    if(window.WildOnesBrand) window.WildOnesBrand.sync();
+    hide(intro);hide(stage);hide(result);
     document.querySelector('#resultEyebrow').textContent=`REALM ${data.roman} / ${data.element}`;
     document.querySelector('#resultName').textContent=data.name;
     document.querySelector('#resultHeadline').textContent=data.headline;
@@ -132,6 +130,9 @@
     const logo=document.querySelector('#resultLogo'); logo.src=data.logo; logo.alt=`${data.name} - Realm ${data.roman} - ${data.element}`;
     document.querySelector('#resultExplore').href=data.route;
     const traits=document.querySelector('#resultTraits'); traits.replaceChildren(...data.traits.map(t=>{const s=document.createElement('span');s.textContent=t;return s}));
+    document.body.dataset.realm=realm;
+    if(window.WildOnesBrand) window.WildOnesBrand.sync();
+    show(result);
     if(updateUrl){
       const url=new URL(location.href);url.searchParams.set('realm',data.slug);history.replaceState({},'',url);
     }
