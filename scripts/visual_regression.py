@@ -11,7 +11,6 @@ import production_visual_qa as qa
 ROOT=Path(__file__).resolve().parents[1]
 SITE=ROOT/"site"
 OUT=ROOT/"visual-regression-results"
-ONE_RELEASE_APPROVAL={"realm-quiz-intro-desktop"}
 
 # One stable screenshot for every major guest, ticketing, admin and event-day state.
 CASES=[
@@ -132,8 +131,7 @@ def compare(current_dir:Path,baseline_dir:Path):
       diff_path=OUT/(name+"-diff.png")
       diff.save(diff_path)
       failed=aspect_delta>0.02 or mean>10.0 or (changed>0.02 and mean>4.0)
-      approved=name in ONE_RELEASE_APPROVAL and failed
-      results.append({"name":name,"changedPixelRatio":round(changed,6),"meanDifference":round(mean,3),"aspectRatioDelta":round(aspect_delta,6),"approvedIntentionalChange":approved,"failed":failed and not approved,"diff":str(diff_path)})
+      results.append({"name":name,"changedPixelRatio":round(changed,6),"meanDifference":round(mean,3),"aspectRatioDelta":round(aspect_delta,6),"failed":failed,"diff":str(diff_path)})
     (OUT/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
     return results
 
