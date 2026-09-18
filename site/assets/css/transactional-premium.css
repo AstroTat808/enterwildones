@@ -600,3 +600,204 @@
   }
 }
 
+/* Four Realms seal, ceremonial realm completion, and Master Cycle prestige credential. */
+.passport-page .passport-member-mark::before{
+  inset:-10px;
+  border:1px solid rgba(242,218,166,.10);
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 2px,#f2d67b 0 3px,transparent 3.5px),
+    radial-gradient(circle at calc(100% - 2px) 50%,#80e2ee 0 3px,transparent 3.5px),
+    radial-gradient(circle at 50% calc(100% - 2px),#b78eff 0 3px,transparent 3.5px),
+    radial-gradient(circle at 2px 50%,#ff9551 0 3px,transparent 3.5px);
+  filter:
+    drop-shadow(0 -1px 7px rgba(242,214,123,.42))
+    drop-shadow(1px 0 7px rgba(128,226,238,.30))
+    drop-shadow(0 1px 7px rgba(183,142,255,.34))
+    drop-shadow(-1px 0 7px rgba(255,149,81,.30));
+}
+.passport-page .passport-member-mark::after{display:none}
+
+.passport-page #realms.passport-grid>.passport-master-card{
+  --realm-fallback:#ead39a;
+  --realm-chip-border:rgba(232,200,121,.34);
+  --realm-chip-fill:rgba(232,200,121,.055);
+  --realm-glow:rgba(232,200,121,.14);
+  --credential-scene:
+    radial-gradient(circle at 14% 8%,rgba(242,214,123,.15),transparent 24%),
+    radial-gradient(circle at 86% 12%,rgba(128,226,238,.11),transparent 25%),
+    radial-gradient(circle at 82% 88%,rgba(183,142,255,.12),transparent 27%),
+    radial-gradient(circle at 12% 84%,rgba(255,149,81,.11),transparent 26%),
+    radial-gradient(circle at 50% 38%,rgba(255,255,255,.035),transparent 32%),
+    linear-gradient(155deg,rgba(9,11,17,.99),rgba(2,3,7,.998));
+  grid-column:1/-1;
+  min-height:570px;
+  border-color:rgba(239,215,164,.28)!important;
+}
+.passport-page #realms.passport-grid>.passport-master-card::after{border-color:rgba(239,215,164,.15)}
+.passport-page #realms.passport-grid>.passport-master-card[data-master-cycle="unlocked"]{
+  border-color:rgba(239,215,164,.48)!important;
+  box-shadow:0 38px 110px rgba(0,0,0,.48),0 0 44px rgba(232,200,121,.10),0 0 58px rgba(128,226,238,.055),inset 0 1px rgba(255,255,255,.065)!important;
+}
+.passport-page #realms.passport-grid>.passport-master-card[data-master-cycle="locked"]{opacity:.76}
+.passport-page #realms.passport-grid>.passport-master-card>.passport-master-logo{
+  width:min(44%,340px);
+  filter:saturate(.96) contrast(1.05) drop-shadow(0 20px 38px rgba(0,0,0,.48)) drop-shadow(0 0 26px rgba(232,200,121,.10));
+}
+.passport-page #realms.passport-grid>.passport-master-card>h2.realm-key{
+  color:#f5e8c8;
+  font-size:clamp(46px,5.2vw,66px);
+}
+.passport-page .passport-master-realms{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+  width:100%;
+  margin:2px 0 18px;
+}
+.passport-page .passport-master-realms>span{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:8px;
+  align-items:center;
+  min-width:0;
+  min-height:52px;
+  padding:10px 11px;
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:12px;
+  background:rgba(255,255,255,.014);
+  color:rgba(213,205,194,.58);
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.passport-page .passport-master-realms i{
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  border:1px solid var(--realm-chip-border);
+  border-radius:50%;
+  color:var(--realm-fallback);
+  background:var(--realm-chip-fill);
+  font:12px/1 var(--tx-font-display);
+  font-style:normal;
+}
+.passport-page .passport-master-realms>span[data-complete="true"]{
+  border-color:var(--realm-chip-border);
+  color:color-mix(in srgb,var(--realm-fallback) 70%,white);
+  box-shadow:0 0 18px var(--realm-glow);
+}
+.passport-page .passport-master-realms>span[data-complete="true"] i{
+  color:#08090b;
+  background:var(--realm-fallback);
+}
+.passport-page .passport-master-seal{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  width:100%;
+  margin-top:auto;
+  padding:15px 16px;
+  border:1px solid rgba(239,215,164,.13);
+  border-radius:14px;
+  background:linear-gradient(90deg,rgba(242,214,123,.045),rgba(128,226,238,.025),rgba(255,149,81,.025),rgba(183,142,255,.035));
+  color:rgba(228,218,204,.70);
+  font-size:11px;
+  line-height:1.5;
+}
+.passport-page .passport-master-seal>strong{
+  display:grid;
+  place-items:center;
+  flex:0 0 38px;
+  width:38px;
+  height:38px;
+  border:1px solid rgba(239,215,164,.25);
+  border-radius:50%;
+  color:#efd99e;
+  font:22px/1 var(--tx-font-display);
+}
+.passport-page .realm-complete-overlay{
+  position:absolute!important;
+  z-index:12!important;
+  inset:0;
+  display:grid;
+  place-content:center;
+  gap:8px;
+  padding:24px;
+  border-radius:inherit;
+  background:radial-gradient(circle at center,color-mix(in srgb,var(--realm-fallback) 22%,rgba(4,5,9,.72)),rgba(3,4,8,.92) 62%);
+  color:#fff8e9;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+}
+.passport-page .realm-complete-overlay::before{
+  content:"";
+  position:absolute;
+  inset:18px;
+  border:1px solid color-mix(in srgb,var(--realm-fallback) 58%,transparent);
+  border-radius:22px;
+  box-shadow:0 0 36px var(--realm-glow),inset 0 0 36px color-mix(in srgb,var(--realm-fallback) 6%,transparent);
+}
+.passport-page .realm-complete-overlay strong{
+  font:400 clamp(34px,5vw,58px)/1 var(--tx-font-display);
+  letter-spacing:-.035em;
+}
+.passport-page .realm-complete-overlay span{
+  color:color-mix(in srgb,var(--realm-fallback) 64%,#f2e9dc);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.20em;
+  text-transform:uppercase;
+}
+.passport-page .passport-card.realm-unlock{animation:passportRealmUnlock 2.15s cubic-bezier(.18,.78,.2,1)}
+.passport-page .passport-card.realm-unlock>.passport-card-logo{animation:passportRealmLogoUnlock 2.05s ease}
+.passport-page .passport-card.realm-unlock>.realm-complete-overlay{animation:passportRealmOverlay 2.05s ease forwards}
+.passport-page .passport-master-card.master-unlock{animation:passportMasterUnlock 2.9s cubic-bezier(.18,.78,.2,1)}
+.passport-page .passport-master-card.master-unlock>.realm-complete-overlay{animation:passportMasterOverlay 2.8s ease forwards}
+.passport-page .master-cycle-overlay{
+  background:
+    radial-gradient(circle at 20% 18%,rgba(242,214,123,.16),transparent 28%),
+    radial-gradient(circle at 80% 18%,rgba(128,226,238,.13),transparent 28%),
+    radial-gradient(circle at 20% 82%,rgba(255,149,81,.12),transparent 28%),
+    radial-gradient(circle at 80% 82%,rgba(183,142,255,.15),transparent 28%),
+    rgba(3,4,8,.94);
+}
+@keyframes passportRealmUnlock{
+  0%,100%{transform:translateY(0) scale(1)}
+  24%{transform:translateY(-4px) scale(1.012)}
+  48%{box-shadow:0 34px 96px rgba(0,0,0,.44),0 0 72px var(--realm-glow),inset 0 1px rgba(255,255,255,.08)}
+}
+@keyframes passportRealmLogoUnlock{
+  0%,100%{transform:scale(1)}
+  28%{transform:scale(1.045);filter:saturate(1.12) brightness(1.12) drop-shadow(0 0 34px var(--realm-glow))}
+}
+@keyframes passportRealmOverlay{
+  0%,8%,100%{opacity:0}
+  24%,68%{opacity:1}
+}
+@keyframes passportMasterUnlock{
+  0%,100%{transform:translateY(0) scale(1)}
+  18%{transform:translateY(-5px) scale(1.01)}
+  42%{box-shadow:0 40px 118px rgba(0,0,0,.48),0 0 72px rgba(232,200,121,.14),0 0 90px rgba(128,226,238,.08),inset 0 1px rgba(255,255,255,.08)}
+}
+@keyframes passportMasterOverlay{
+  0%,7%,100%{opacity:0}
+  22%,76%{opacity:1}
+}
+@media(max-width:760px){
+  .passport-page #realms.passport-grid>.passport-master-card{min-height:0}
+  .passport-page .passport-master-realms{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .passport-page #realms.passport-grid>.passport-master-card>.passport-master-logo{width:min(66%,290px)}
+}
+@media(max-width:460px){.passport-page .passport-master-realms{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){
+  .passport-page .passport-card.realm-unlock,
+  .passport-page .passport-card.realm-unlock>.passport-card-logo,
+  .passport-page .passport-card.realm-unlock>.realm-complete-overlay,
+  .passport-page .passport-master-card.master-unlock,
+  .passport-page .passport-master-card.master-unlock>.realm-complete-overlay{animation:none!important}
+}
+
