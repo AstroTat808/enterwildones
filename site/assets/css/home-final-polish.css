@@ -216,3 +216,164 @@ body.cinematic-home .v2-realm:hover .realm-logo{
     width:min(90vw,390px);
   }
 }
+
+
+/* Homepage closeout polish — carry the shared Four Realms gradient language
+   through the Passport finale without sacrificing supporting-copy readability. */
+body.cinematic-home main .v2-passport .v2-kicker,
+body.cinematic-home main .v2-passport h2{
+  color:#f2d67b;
+  background-image:var(--wo-realm-gradient);
+  background-size:100% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  text-shadow:none;
+}
+body.cinematic-home main .v2-passport .v2-passport-copy{
+  color:#d1c7bb;
+  background-image:var(--wo-support-gradient);
+  background-size:100% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+body.cinematic-home main .v2-passport .v2-passport-features,
+body.cinematic-home main .v2-passport .v2-passport-note{
+  color:#bfb4a5;
+  background-image:var(--wo-support-gradient);
+  background-size:100% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+body.cinematic-home main .v2-passport .v2-passport-note{
+  filter:saturate(.92) brightness(.82);
+}
+
+/* Homepage masthead — increase the optical size of the supplied master mark while
+   keeping the header compact enough that the hero still owns the first viewport. */
+@media(min-width:861px){
+  body.cinematic-home{--bar-height:88px}
+  body.cinematic-home .topbar{min-height:88px}
+  body.cinematic-home.scrolled .topbar{min-height:76px}
+  body.cinematic-home .brand-icon{
+    width:96px;
+    height:74px;
+    flex:0 0 96px;
+    overflow:visible;
+  }
+  body.cinematic-home .brand-icon img{
+    width:88px!important;
+    height:88px!important;
+    max-width:none!important;
+    object-fit:contain!important;
+    transform:none!important;
+    transform-origin:left center!important;
+  }
+  body.cinematic-home .v2-progress{top:88px}
+  body.cinematic-home.scrolled .v2-progress{top:76px}
+}
+
+/* Homepage footer — remove the oversized square lockup and dead vertical space.
+   The footer should read as a compact closing signature, not another hero. */
+body.cinematic-home .site-footer{
+  grid-template-columns:92px minmax(220px,1fr) minmax(250px,auto);
+  gap:clamp(14px,2.5vw,36px);
+  padding:16px max(5vw,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(5vw,env(safe-area-inset-left));
+  box-shadow:inset 0 18px 48px rgba(0,0,0,.18);
+}
+body.cinematic-home .site-footer .footer-brand{
+  width:92px;
+  margin:0;
+}
+body.cinematic-home .site-footer .footer-brand .footer-lockup,
+body.cinematic-home .site-footer .footer-brand .web-lockup{
+  --lockup-width:92px;
+  width:92px;
+  max-width:92px;
+}
+body.cinematic-home .site-footer nav{
+  font-size:9px;
+  letter-spacing:.12em;
+}
+body.cinematic-home .site-footer nav a{
+  min-height:36px;
+  padding:5px 12px;
+}
+body.cinematic-home .site-footer>span{
+  max-width:320px;
+  font-size:7.5px;
+  line-height:1.55;
+  letter-spacing:.17em;
+}
+
+/* Mobile: larger masthead emblem + tighter closing footer. */
+@media(max-width:860px){
+  body.cinematic-home{--bar-height:72px}
+  body.cinematic-home .topbar,
+  body.cinematic-home.scrolled .topbar{
+    min-height:72px;
+    padding-top:6px;
+    padding-bottom:6px;
+  }
+  body.cinematic-home .brand{min-height:58px}
+  body.cinematic-home .brand-icon{
+    width:58px;
+    height:58px;
+    flex:0 0 58px;
+  }
+  body.cinematic-home .brand-icon img{
+    width:100px!important;
+    height:100px!important;
+    left:-21px!important;
+    top:-2px!important;
+  }
+  body.cinematic-home .v2-hero{padding-top:72px}
+  body.cinematic-home .site-footer{
+    grid-template-columns:1fr;
+    justify-items:center;
+    gap:5px;
+    padding:14px max(18px,env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+    text-align:center;
+  }
+  body.cinematic-home .site-footer .footer-brand{
+    justify-self:center;
+    width:76px;
+  }
+  body.cinematic-home .site-footer .footer-brand .footer-lockup,
+  body.cinematic-home .site-footer .footer-brand .web-lockup{
+    --lockup-width:76px;
+    width:76px;
+    max-width:76px;
+  }
+  body.cinematic-home .site-footer nav{
+    width:100%;
+    max-width:330px;
+    justify-content:center;
+  }
+  body.cinematic-home .site-footer nav a{
+    min-height:34px;
+    padding:4px 10px;
+  }
+  body.cinematic-home .site-footer>span{
+    justify-self:center;
+    width:100%;
+    max-width:320px;
+    margin-top:0;
+    padding-top:8px;
+    border-top:1px solid rgba(255,255,255,.07);
+    text-align:center;
+  }
+}
+
+@media(max-width:420px){
+  body.cinematic-home .brand-label{font-size:8.5px}
+  body.cinematic-home .site-footer .footer-brand{width:70px}
+  body.cinematic-home .site-footer .footer-brand .footer-lockup,
+  body.cinematic-home .site-footer .footer-brand .web-lockup{
+    --lockup-width:70px;
+    width:70px;
+    max-width:70px;
+  }
+}
