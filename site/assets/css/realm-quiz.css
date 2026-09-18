@@ -36,7 +36,7 @@
 .quiz-result-art img{position:relative;z-index:1;display:block;width:100%;height:auto;filter:drop-shadow(0 24px 55px color-mix(in srgb,var(--accent) 12%,transparent))}
 .quiz-result-copy{position:relative;z-index:2;min-width:0}
 .quiz-result-label{margin:0;color:#8f867a;font-size:9px;font-weight:900;letter-spacing:.25em;text-transform:uppercase}
-.quiz-result h2{margin:8px 0 6px;color:var(--quiz-paper);font:400 clamp(60px,8vw,112px)/.86 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.06em;overflow-wrap:anywhere}
+.quiz-result h1{margin:8px 0 6px;color:var(--quiz-paper);font:400 clamp(60px,8vw,112px)/.86 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.06em;overflow-wrap:anywhere}
 .quiz-result-headline{margin:18px 0;color:var(--accent);font:400 clamp(24px,3vw,36px)/1.15 "Iowan Old Style",Baskerville,Georgia,serif}
 .quiz-result-body{max-width:680px;color:#bbb1a5;font-size:15px;line-height:1.82}
 .quiz-traits{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 28px}.quiz-traits span{padding:8px 11px;border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);border-radius:999px;color:#d8cec1;background:color-mix(in srgb,var(--accent) 4%,transparent);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
@@ -52,5 +52,5 @@
   .quiz-result{padding:25px 18px}.quiz-result-grid{grid-template-columns:1fr;gap:12px}.quiz-result-art{width:min(300px,76vw);margin:auto}.quiz-result-copy{text-align:center}
   .quiz-result-body{margin-left:auto;margin-right:auto}.quiz-traits,.quiz-result-actions{justify-content:center}.quiz-result-actions{display:grid;grid-template-columns:1fr;width:100%}.quiz-result-actions .button,.quiz-result-actions button{width:100%;justify-content:center}
 }
-@media(max-width:360px){.quiz-result h2{font-size:52px}.quiz-intro h1{font-size:50px}.quiz-stage{padding-left:15px;padding-right:15px}}
+@media(max-width:360px){.quiz-result h1{font-size:52px}.quiz-intro h1{font-size:50px}.quiz-stage{padding-left:15px;padding-right:15px}}
 @media(prefers-reduced-motion:reduce){.quiz-progress span,.quiz-answer{transition:none}.quiz-answer:hover{transform:none}}
