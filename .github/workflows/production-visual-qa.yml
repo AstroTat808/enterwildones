@@ -40,7 +40,7 @@ permissions:
   actions: read
 
 env:
-  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v2
+  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v3
 
 jobs:
   source-audit:
