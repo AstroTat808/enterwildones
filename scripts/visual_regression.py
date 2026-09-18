@@ -15,6 +15,8 @@ OUT=ROOT/"visual-regression-results"
 # One stable screenshot for every major guest, ticketing, admin and event-day state.
 CASES=[
  {"name":"home-desktop","path":"/","state":"home","viewport":(1440,1000),"dpr":1,"wait":"main"},
+ {"name":"realm-quiz-intro-desktop","path":"/find-your-realm","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizIntro:not([hidden])"},
+ {"name":"realm-quiz-result-desktop","path":"/find-your-realm?realm=nocturne","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizResult:not([hidden])"},
  {"name":"application-open-desktop","path":"/apply/aureva","state":"apply-aureva","viewport":(1440,1000),"dpr":1,"wait":"#applyForm"},
  {"name":"application-gated-desktop","path":"/apply/nocturne","state":"apply-nocturne","viewport":(1440,1000),"dpr":1,"wait":"#gateNotice"},
 
@@ -40,6 +42,7 @@ CASES=[
 
 ROUTES={
  "/":"index.html",
+ "/find-your-realm":"find-your-realm.html",
  "/apply/aureva":"apply.html",
  "/apply/nocturne":"apply.html",
  "/passport":"passport.html",
