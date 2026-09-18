@@ -151,6 +151,53 @@ jobs:
           echo "Production security smoke did not complete in the certification window."
           exit 1
 
+  production-browser-matrix:
+    name: Release · Hosted Browser Matrix
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_SHA: ${{ github.sha }}
+    steps:
+      - name: Require all deployed Chromium and WebKit suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=(
+            "public · chromium"
+            "transactional · chromium"
+            "admin · chromium"
+            "staff · chromium"
+            "public · webkit"
+            "transactional · webkit"
+            "admin · webkit"
+            "staff · webkit"
+          )
+          for attempt in $(seq 1 180); do
+            payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100")"
+            all_complete=true
+            any_failed=false
+            echo "Hosted browser matrix status:"
+            for name in "${expected[@]}"; do
+              status="$(jq -r --arg name "$name" '[.check_runs[] | select(.name==$name)] | sort_by(.started_at) | last | .status // "missing"' <<<"$payload")"
+              conclusion="$(jq -r --arg name "$name" '[.check_runs[] | select(.name==$name)] | sort_by(.started_at) | last | .conclusion // "pending"' <<<"$payload")"
+              echo "  $name: $status / $conclusion"
+              if [ "$status" != "completed" ]; then all_complete=false; fi
+              if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then any_failed=true; fi
+            done
+            if [ "$any_failed" = "true" ]; then
+              echo "At least one deployed browser suite failed."
+              exit 1
+            fi
+            if [ "$all_complete" = "true" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Hosted browser matrix did not complete in the certification window."
+          exit 1
+
   release-certification:
     name: Release Certification
     if: always()
@@ -161,6 +208,7 @@ jobs:
       - launch-readiness
       - security-source
       - production-security-smoke
+      - production-browser-matrix
     runs-on: ubuntu-latest
     env:
       BUILD_RESULT: ${{ needs.build-check.result }}
@@ -169,6 +217,7 @@ jobs:
       LAUNCH_RESULT: ${{ needs.launch-readiness.result }}
       SECURITY_SOURCE_RESULT: ${{ needs.security-source.result }}
       PRODUCTION_SECURITY_RESULT: ${{ needs.production-security-smoke.result }}
+      BROWSER_MATRIX_RESULT: ${{ needs.production-browser-matrix.result }}
       EVENT_NAME: ${{ github.event_name }}
     steps:
       - name: Publish GO / NO-GO certification
@@ -186,6 +235,7 @@ jobs:
             echo "| Launch readiness rehearsal | $LAUNCH_RESULT |"
             echo "| Security source audit | $SECURITY_SOURCE_RESULT |"
             echo "| Hosted production security smoke | $PRODUCTION_SECURITY_RESULT |"
+            echo "| Hosted Chromium/WebKit browser matrix | $BROWSER_MATRIX_RESULT |"
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -198,15 +248,22 @@ jobs:
             fi
           done
 
-          if [ "$EVENT_NAME" = "push" ] && [ "$PRODUCTION_SECURITY_RESULT" != "success" ]; then
-            echo "### NO-GO" >> "$GITHUB_STEP_SUMMARY"
-            echo "Hosted production security smoke did not pass." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+          if [ "$EVENT_NAME" = "push" ]; then
+            if [ "$PRODUCTION_SECURITY_RESULT" != "success" ]; then
+              echo "### NO-GO" >> "$GITHUB_STEP_SUMMARY"
+              echo "Hosted production security smoke did not pass." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            if [ "$BROWSER_MATRIX_RESULT" != "success" ]; then
+              echo "### NO-GO" >> "$GITHUB_STEP_SUMMARY"
+              echo "The deployed Chromium/WebKit browser matrix did not pass." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
           fi
 
           echo "### GO" >> "$GITHUB_STEP_SUMMARY"
           if [ "$EVENT_NAME" = "pull_request" ]; then
             echo "All pre-merge release gates passed. Hosted production smoke will be required again after merge." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Build, Production QA, visual regression, Lighthouse, payment, launch-readiness and hosted security gates all passed." >> "$GITHUB_STEP_SUMMARY"
+            echo "Build, Production QA, visual regression, Lighthouse, payment, launch-readiness, hosted security, and all deployed Chromium/WebKit browser suites passed." >> "$GITHUB_STEP_SUMMARY"
           fi
