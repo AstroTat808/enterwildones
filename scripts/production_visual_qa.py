@@ -54,7 +54,7 @@ class Case:
  wait:str|None="h1"
 
 SUITES={
- "public":[Case("home","/","home","main"),*[Case("event-"+r["slug"],"/events/"+r["slug"]) for r in REALMS],*[Case("apply-"+r["slug"],"/apply/"+r["slug"],"apply","#gateNotice") for r in REALMS]],
+ "public":[Case("home","/","home","main"),*[Case("event-"+r["slug"],"/events/"+r["slug"]) for r in REALMS],*[Case("apply-"+r["slug"],"/apply/"+r["slug"],"apply-"+r["slug"],"#gateNotice") for r in REALMS]],
  "transactional":[Case("passport-auth","/passport","passport","#account:not([hidden])"),Case("passport-login","/passport","passport-login","#login:not([hidden])"),Case("invite","/invite","plain","#inviteForm"),Case("ticket-access","/ticket-access?event=aureva","ticket-access","#buy:not([hidden])"),Case("public-tickets","/public-tickets/sunveil","public-tickets","#public-ticket-form"),Case("ticket-addons","/ticket/addons?token=qa-token","ticket-addons","#addons .card")],
  "admin":[Case("admin-applications","/admin","admin-apps","#adminPanel:not(.hidden)"),Case("admin-overview","/admin/overview","overview","#events .event"),Case("admin-packages","/admin/packages","packages","#report .metric"),Case("admin-operations","/admin/operations","operations","#opsPanel:not(.hidden)"),Case("admin-event-day","/admin/event-day","command","#indicatorGrid > *"),Case("admin-live","/admin/live","command","#indicatorGrid > *"),Case("admin-launch","/admin/launch","command","#indicatorGrid > *"),Case("admin-rehearsal","/admin/rehearsal","command","#indicatorGrid > *")],
  "staff":[Case("check-in","/check-in","check-in","#gate:not([hidden])"),Case("bar","/bar","bar","#bar:not([hidden])")]
@@ -68,8 +68,8 @@ def fulfill(route,payload,status=200):
 def fixtures(page,state):
  page.add_init_script("window.turnstile={render:()=>1,getResponse:()=>'qa',reset:()=>{},remove:()=>{}}")
  page.route("https://challenges.cloudflare.com/**",lambda r:r.fulfill(status=200,content_type="application/javascript",body=""))
- if state=="apply":
-  slug=page.url.split("/apply/")[-1].split("?")[0] if "/apply/" in page.url else ""
+ if state.startswith("apply-"):
+  slug=state.removeprefix("apply-")
   event=next((x for x in REALMS if x["slug"]==slug),REALMS[0])
   cfg={"event":dict(event,applicationOpen=(slug=="aureva"),routes":{"event":event["routes"]["event"],"apply":"/apply/"+slug}),"applicationsReady":True,"turnstileSiteKey":"qa"}
   page.route("**/api/app-config?*",lambda r:fulfill(r,cfg))
@@ -112,7 +112,7 @@ def state_checks(page,case):
  if case.state=="home":
   for s in ("#aureva","#halora","#sunveil","#nocturne"):
    if page.locator(s).count()!=1:f.append("missing "+s)
- elif case.state=="apply":
+ elif case.state.startswith("apply-"):
   slug=case.path.rsplit("/",1)[-1]
   form_visible=page.locator("#applyForm").is_visible()
   if slug=="aureva" and not form_visible:f.append("AUREVA application form should be open in QA fixture")
