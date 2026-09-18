@@ -30,6 +30,17 @@ jobs:
           event_ind=[{'id':'gate','label':'Gate readiness','state':'green','detail':'Scanner credentials + ticket signatures ready'},{'id':'waivers','label':'Unsigned waivers','state':'yellow','detail':'4 active tickets still need signatures'},{'id':'bar','label':'Bartender console','state':'green','detail':'Bar credentials configured'},{'id':'stripe','label':'Stripe','state':'yellow','detail':'TEST mode — rehearsal only'},{'id':'wallet','label':'Apple Wallet','state':'yellow','detail':'Physical Wallet setup pending'},{'id':'fallback','label':'Fallback drill','state':'yellow','detail':'Manual/offline recovery drill pending'}]
           launch_ind=[{'id':'core','label':'Core platform','state':'green','detail':'Core production dependencies configured'},{'id':'stripe','label':'Stripe live mode','state':'red','detail':'TEST mode — launch blocked'},{'id':'wallet','label':'Apple Wallet','state':'red','detail':'Wallet signing credentials missing'},{'id':'venue','label':'Private venue','state':'green','detail':'Server-side venue configured'},{'id':'rehearsal','label':'Full rehearsal','state':'yellow','detail':'6 passed · 0 failed · 4 pending'},{'id':'physical','label':'Physical device certification','state':'yellow','detail':'4 physical checks remain'}]
           rehearsal_ind=[{'id':'wallet-install','label':'Apple Wallet','state':'yellow','detail':'Pending physical verification'},{'id':'gate-scan','label':'Gate scan','state':'yellow','detail':'Pending physical verification'},{'id':'bartender-redemption','label':'Bartender redemption','state':'yellow','detail':'Pending physical verification'},{'id':'refund','label':'Refund test','state':'yellow','detail':'Pending physical verification'},{'id':'failed-payment','label':'Payment failure drill','state':'green','detail':'Passed'},{'id':'offline-fallback','label':'Fallback drill','state':'yellow','detail':'Pending physical verification'}]
+          passport_fixture={
+            'authenticated':True,
+            'user':{'preferredName':'Christopher','fullName':'Christopher Sibel'},
+            'cycle':{'completed':2,'total':4},
+            'realms':[
+              {'event':{'slug':'aureva','eventId':'aureva-2026','name':'AUREVA','realm':'light','routes':{'event':'/events/aureva'},'copy':{'tagline':'Where the cycle begins in light.'}},'checkedIn':True,'ticket':{'status':'checked_in','ticketId':'WLD-AUR-TKT-0001','ticketUrl':'/ticket?token=qa-aureva'},'waiverSigned':True,'entitlements':[{'status':'active','addonType':'drink_package'}],'purchaseAvailable':False},
+              {'event':{'slug':'halora','eventId':'halora-2027','name':'HALORA','realm':'balance','routes':{'event':'/events/halora'},'copy':{'tagline':'The equilibrium of opposites.'}},'checkedIn':False,'ticket':{'status':'paid','ticketId':'WLD-HAL-TKT-0002','ticketUrl':'/ticket?token=qa-halora'},'waiverSigned':True,'entitlements':[{'status':'active','addonType':'late_checkout'}],'purchaseAvailable':False},
+              {'event':{'slug':'sunveil','eventId':'sunveil-2027','name':'SUNVEIL','realm':'fire','routes':{'event':'/events/sunveil'},'copy':{'tagline':'The realm where fire becomes becoming.'}},'checkedIn':False,'application':{'status':'approved'},'waiverSigned':False,'entitlements':[],'purchaseAvailable':True},
+              {'event':{'slug':'nocturne','eventId':'nocturne-2027','name':'NOCTURNE','realm':'night','routes':{'event':'/events/nocturne'},'copy':{'tagline':'The realm that begins after dark.'}},'checkedIn':False,'waiverSigned':False,'entitlements':[],'purchaseAvailable':False}
+            ]
+          }
           fixture={
             'event':{'eventId':'aureva-2026','name':'AUREVA','realm':'light'},
             'events':[{'eventId':'aureva-2026','name':'AUREVA','realm':'light'},{'eventId':'halora-2027','name':'HALORA','realm':'balance'},{'eventId':'sunveil-2027','name':'SUNVEIL','realm':'fire'},{'eventId':'nocturne-2027','name':'NOCTURNE','realm':'night'}],
@@ -56,6 +67,8 @@ jobs:
                   page.on('pageerror',lambda error: errors.append(str(error)) if not benign(error) else None)
                   if path in command_routes:
                     page.route('**/api/admin/readiness*',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps(fixture)))
+                  if path=='/passport':
+                    page.route('**/api/passport',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps(passport_fixture)))
                   try:
                     response=page.goto('https://enterwildones.com'+path,wait_until='domcontentloaded',timeout=45000)
                     page.wait_for_timeout(1500)
@@ -66,6 +79,10 @@ jobs:
                     page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(500)
                     report=page.evaluate('''() => ({overflow:document.documentElement.scrollWidth>innerWidth+1, brokenImages:[...document.images].filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.getAttribute('src')), tinyTargets:[...document.querySelectorAll('button,a,input,select,summary')].filter(x=>{const r=x.getBoundingClientRect();return r.width>0&&r.height>0&&(r.height<40||r.width<32)}).slice(0,20).map(x=>({tag:x.tagName,text:(x.innerText||x.getAttribute('aria-label')||x.name||'').trim().slice(0,60),w:Math.round(x.getBoundingClientRect().width),h:Math.round(x.getBoundingClientRect().height)})), heading:document.querySelector('h1')?.textContent||'', title:document.title})''')
                     report.update(engine=engine,width=width,path=path,status=response.status,errors=errors)
+                    if path=='/passport':
+                      report['passportAuthenticatedVisible']=page.locator('#account').is_visible()
+                      report['passportRealmCards']=page.locator('#realms .passport-card').count()
+                      report['passportMemberWidth']=round(page.locator('.passport-member-card').bounding_box()['width']) if page.locator('.passport-member-card').count() else 0
                     screenshot_paths={'/','/apply/aureva','/events/nocturne','/passport','/admin','/admin/operations','/admin/event-day','/admin/live','/admin/launch','/admin/rehearsal'}
                     if path in screenshot_paths:
                       page.screenshot(path=str(root/(engine+'-'+str(width)+'-'+(path.strip('/').replace('/','-') or 'home')+'.png')),full_page=True)
@@ -78,7 +95,7 @@ jobs:
                 context.close()
               browser.close()
           (root/'report.json').write_text(json.dumps(results,indent=2))
-          failures=[r for r in results if r.get('exception') or r.get('status',500)>=400 or r.get('overflow') or r.get('brokenImages') or r.get('errors') or r.get('mobileMenuOpened') is False]
+          failures=[r for r in results if r.get('exception') or r.get('status',500)>=400 or r.get('overflow') or r.get('brokenImages') or r.get('errors') or r.get('mobileMenuOpened') is False or (r.get('path')=='/passport' and (r.get('passportAuthenticatedVisible') is not True or r.get('passportRealmCards')!=4))]
           print(json.dumps({'checks':len(results),'failures':failures,'tinyTargetWarnings':sum(len(r.get('tinyTargets',[])) for r in results)},indent=2))
           assert not failures,'Production visual issues found; inspect artifact'
       - uses: actions/upload-artifact@v4
