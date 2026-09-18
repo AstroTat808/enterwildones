@@ -1,58 +1,80 @@
 /* ENTER WILD ONES — canonical guest masthead lockup.
-   One logo/text treatment for event, Passport, Find Your Realm, invite,
-   application and guest ticketing surfaces. Homepage keeps its own cinematic
-   sizing in home-final-polish.css. */
-.wo-guest-masthead:not(.cinematic-home){
-  --wo-masthead-height:104px;
+   This is the single source of truth for the emblem + ENTER WILD ONES /
+   THE FOUR REALMS wordmark on every guest-facing surface, including home. */
+body.wo-guest-masthead{
+  --wo-masthead-height:120px;
   --bar-height:var(--wo-masthead-height);
+  --wo-masthead-ease:cubic-bezier(.2,.72,.18,1);
 }
-.wo-guest-masthead:not(.cinematic-home) .topbar{
+body.wo-guest-masthead .topbar{
   min-height:var(--wo-masthead-height);
-  padding-top:7px;
-  padding-bottom:9px;
+  padding-top:6px;
+  padding-bottom:8px;
   align-items:center;
-  transition:min-height .24s ease,padding .24s ease,background .24s ease,box-shadow .24s ease;
+  background:rgba(4,5,8,.925);
+  border-bottom-color:rgba(255,255,255,.075);
+  -webkit-backdrop-filter:blur(15px) saturate(112%);
+  backdrop-filter:blur(15px) saturate(112%);
+  box-shadow:0 8px 28px rgba(0,0,0,.16);
+  transition:
+    min-height .34s var(--wo-masthead-ease),
+    padding .34s var(--wo-masthead-ease),
+    background-color .34s ease,
+    border-color .34s ease,
+    box-shadow .34s ease,
+    -webkit-backdrop-filter .34s ease,
+    backdrop-filter .34s ease;
 }
-.wo-guest-masthead:not(.cinematic-home) .brand{
-  display:flex;
-  align-items:center;
-  gap:12px;
+body.wo-guest-masthead .topbar .brand{
+  display:flex!important;
+  align-items:center!important;
+  gap:14px!important;
   min-width:0;
-  min-height:88px;
-  overflow:visible;
+  min-height:106px;
+  overflow:visible!important;
+  transition:min-height .34s var(--wo-masthead-ease),gap .34s var(--wo-masthead-ease);
 }
-.wo-guest-masthead:not(.cinematic-home) .brand-icon{
+body.wo-guest-masthead .topbar .brand-icon{
   position:relative!important;
-  display:block;
-  width:88px!important;
-  height:88px!important;
-  flex:0 0 88px!important;
+  display:block!important;
+  width:126px!important;
+  height:110px!important;
+  flex:0 0 126px!important;
   overflow:hidden!important;
   border-radius:0!important;
-  filter:drop-shadow(0 0 16px color-mix(in srgb,var(--accent) 16%,transparent));
-  transition:width .24s ease,height .24s ease,flex-basis .24s ease;
+  filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 17%,transparent))!important;
+  transition:
+    width .34s var(--wo-masthead-ease),
+    height .34s var(--wo-masthead-ease),
+    flex-basis .34s var(--wo-masthead-ease),
+    filter .34s ease;
 }
-.wo-guest-masthead:not(.cinematic-home) .brand-icon img{
+body.wo-guest-masthead .topbar .brand-icon img{
   position:absolute!important;
   display:block!important;
-  width:132px!important;
-  height:132px!important;
+  width:164px!important;
+  height:164px!important;
   max-width:none!important;
-  left:-22px!important;
+  left:-19px!important;
   top:0!important;
   object-fit:cover!important;
   object-position:center top!important;
   mix-blend-mode:normal!important;
   transform:none!important;
-  filter:saturate(1.06) contrast(1.04) brightness(1.04)!important;
-  transition:width .24s ease,height .24s ease,left .24s ease,top .24s ease;
+  filter:saturate(1.08) contrast(1.06) brightness(1.05)!important;
+  transition:
+    width .34s var(--wo-masthead-ease),
+    height .34s var(--wo-masthead-ease),
+    left .34s var(--wo-masthead-ease),
+    top .34s var(--wo-masthead-ease),
+    filter .34s ease;
 }
-.wo-guest-masthead:not(.cinematic-home) .brand-label{
+body.wo-guest-masthead .topbar .brand-label{
   display:flex!important;
-  flex-direction:column;
-  justify-content:center;
+  flex-direction:column!important;
+  justify-content:center!important;
   min-width:0;
-  margin:0;
+  margin:0!important;
   color:#f8f0e3!important;
   font-size:11px!important;
   font-weight:750!important;
@@ -60,8 +82,13 @@
   letter-spacing:.22em!important;
   white-space:nowrap!important;
   text-transform:uppercase;
+  opacity:1!important;
+  transition:
+    font-size .34s var(--wo-masthead-ease),
+    letter-spacing .34s var(--wo-masthead-ease),
+    opacity .2s ease;
 }
-.wo-guest-masthead:not(.cinematic-home) .brand-label>span{
+body.wo-guest-masthead .topbar .brand-label>span{
   display:block!important;
   margin-top:7px!important;
   color:#aa9d88!important;
@@ -69,110 +96,145 @@
   font-weight:550!important;
   letter-spacing:.30em!important;
   line-height:1.1!important;
+  opacity:1!important;
+  transition:
+    margin .34s var(--wo-masthead-ease),
+    font-size .34s var(--wo-masthead-ease),
+    letter-spacing .34s var(--wo-masthead-ease);
 }
 
-/* Compact after scroll, but never collapse the emblem or wordmark. */
-.wo-guest-masthead.masthead-scrolled:not(.cinematic-home){
-  --wo-masthead-height:90px;
+/* Homepage geometry follows the same masthead dimensions as every other guest page. */
+body.wo-guest-masthead.cinematic-home .v2-progress{top:var(--wo-masthead-height)!important}
+body.wo-guest-masthead.cinematic-home .v2-hero{padding-top:var(--wo-masthead-height)!important}
+
+/* Premium compact state after scroll: smaller, never tiny, never wordmark-less. */
+body.wo-guest-masthead.masthead-scrolled{
+  --wo-masthead-height:100px;
 }
-.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .topbar{
+body.wo-guest-masthead.masthead-scrolled .topbar{
   padding-top:5px;
   padding-bottom:7px;
-  background:rgba(3,4,7,.965);
-  box-shadow:0 14px 42px rgba(0,0,0,.32);
+  background:rgba(2,3,6,.965);
+  border-bottom-color:rgba(240,207,122,.12);
+  -webkit-backdrop-filter:blur(22px) saturate(126%);
+  backdrop-filter:blur(22px) saturate(126%);
+  box-shadow:0 16px 46px rgba(0,0,0,.34),inset 0 -1px rgba(255,255,255,.018);
 }
-.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand{
-  min-height:76px;
+body.wo-guest-masthead.masthead-scrolled .topbar .brand{
+  min-height:88px;
+  gap:12px!important;
 }
-.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-icon{
-  width:76px!important;
-  height:76px!important;
-  flex-basis:76px!important;
+body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon{
+  width:106px!important;
+  height:90px!important;
+  flex-basis:106px!important;
+  filter:drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 14%,transparent))!important;
 }
-.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-icon img{
-  width:116px!important;
-  height:116px!important;
-  left:-20px!important;
+body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon img{
+  width:142px!important;
+  height:142px!important;
+  left:-18px!important;
 }
-.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-label{
-  font-size:10px!important;
+body.wo-guest-masthead.masthead-scrolled .topbar .brand-label{
+  font-size:10.25px!important;
+  letter-spacing:.205em!important;
 }
-.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-label>span{
+body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
   margin-top:5px!important;
   font-size:6.5px!important;
+  letter-spacing:.275em!important;
 }
 
 @media(max-width:850px){
-  .wo-guest-masthead:not(.cinematic-home){
-    --wo-masthead-height:96px;
+  body.wo-guest-masthead{
+    --wo-masthead-height:102px;
   }
-  .wo-guest-masthead:not(.cinematic-home) .topbar{
+  body.wo-guest-masthead .topbar{
     padding-top:6px;
     padding-bottom:8px;
     gap:10px;
   }
-  .wo-guest-masthead:not(.cinematic-home) .brand{
-    min-height:80px;
-    gap:9px;
+  body.wo-guest-masthead .topbar .brand{
+    min-height:88px;
+    gap:9px!important;
     flex:1 1 auto;
   }
-  .wo-guest-masthead:not(.cinematic-home) .brand-icon{
-    width:74px!important;
-    height:80px!important;
-    flex-basis:74px!important;
+  body.wo-guest-masthead .topbar .brand-icon{
+    width:78px!important;
+    height:92px!important;
+    flex-basis:78px!important;
   }
-  .wo-guest-masthead:not(.cinematic-home) .brand-icon img{
-    width:122px!important;
-    height:122px!important;
-    left:-24px!important;
+  body.wo-guest-masthead .topbar .brand-icon img{
+    width:140px!important;
+    height:140px!important;
+    left:-31px!important;
     top:0!important;
   }
-  .wo-guest-masthead:not(.cinematic-home) .brand-label{
+  body.wo-guest-masthead .topbar .brand-label{
     max-width:156px;
-    font-size:9px!important;
+    font-size:9.2px!important;
     letter-spacing:.16em!important;
   }
-  .wo-guest-masthead:not(.cinematic-home) .brand-label>span{
+  body.wo-guest-masthead .topbar .brand-label>span{
     margin-top:5px!important;
-    font-size:6.1px!important;
+    font-size:6.15px!important;
     letter-spacing:.21em!important;
   }
-  .wo-guest-masthead.masthead-scrolled:not(.cinematic-home){
-    --wo-masthead-height:86px;
+  body.wo-guest-masthead.masthead-scrolled{
+    --wo-masthead-height:90px;
   }
-  .wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand{
-    min-height:72px;
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand{
+    min-height:76px;
+    gap:8px!important;
   }
-  .wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-icon{
-    width:66px!important;
-    height:72px!important;
-    flex-basis:66px!important;
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon{
+    width:68px!important;
+    height:78px!important;
+    flex-basis:68px!important;
   }
-  .wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-icon img{
-    width:110px!important;
-    height:110px!important;
-    left:-22px!important;
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon img{
+    width:120px!important;
+    height:120px!important;
+    left:-26px!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand-label{
+    font-size:8.6px!important;
+    letter-spacing:.145em!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
+    font-size:5.9px!important;
+    letter-spacing:.19em!important;
   }
 }
 
 @media(max-width:390px){
-  .wo-guest-masthead:not(.cinematic-home) .brand{gap:7px}
-  .wo-guest-masthead:not(.cinematic-home) .brand-icon{
-    width:68px!important;
-    flex-basis:68px!important;
+  body.wo-guest-masthead{
+    --wo-masthead-height:98px;
   }
-  .wo-guest-masthead:not(.cinematic-home) .brand-icon img{
-    width:116px!important;
-    height:116px!important;
-    left:-24px!important;
+  body.wo-guest-masthead .topbar .brand{
+    min-height:84px;
+    gap:7px!important;
   }
-  .wo-guest-masthead:not(.cinematic-home) .brand-label{
-    max-width:126px;
+  body.wo-guest-masthead .topbar .brand-icon{
+    width:72px!important;
+    height:88px!important;
+    flex-basis:72px!important;
+  }
+  body.wo-guest-masthead .topbar .brand-icon img{
+    width:132px!important;
+    height:132px!important;
+    left:-30px!important;
+  }
+  body.wo-guest-masthead .topbar .brand-label{
+    max-width:124px;
     font-size:8px!important;
     letter-spacing:.12em!important;
   }
-  .wo-guest-masthead:not(.cinematic-home) .brand-label>span{
+  body.wo-guest-masthead .topbar .brand-label>span{
     font-size:5.7px!important;
     letter-spacing:.16em!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled{
+    --wo-masthead-height:88px;
   }
 }
