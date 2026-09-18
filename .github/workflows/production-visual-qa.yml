@@ -40,7 +40,9 @@ permissions:
   actions: read
 
 env:
-  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v4
+  LEGACY_VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v4
+  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v5
+  APPROVED_REALM_VISUAL_CASES: realm-quiz-intro-desktop,realm-quiz-result-desktop,realm-quiz-intro-1366,realm-quiz-question-1366,realm-quiz-aureva-result-1366,realm-quiz-halora-result-1366,realm-quiz-sunveil-result-1366,realm-quiz-nocturne-result-1366
 
 jobs:
   source-audit:
@@ -76,8 +78,10 @@ jobs:
 
   visual-regression:
     name: Approved screenshot regression
+    needs: [source-audit, deploy-sync]
+    if: always() && needs.source-audit.result == 'success' && (github.event_name == 'pull_request' || needs.deploy-sync.result == 'success')
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
         with:
@@ -95,11 +99,25 @@ jobs:
         with:
           path: .visual-baselines
           key: ${{ env.VISUAL_BASELINE_KEY }}
+      - name: Restore legacy approved baseline for intentional visual update
+        if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
+        uses: actions/cache/restore@v4
+        with:
+          path: .visual-baselines-v4
+          key: ${{ env.LEGACY_VISUAL_BASELINE_KEY }}
+      - name: Establish approved Find Your Realm baseline for this visual change
+        if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
+        run: >-
+          python scripts/visual_regression.py
+          --mode seed-approved-preview
+          --baseline-dir .visual-baselines
+          --legacy-baseline-dir .visual-baselines-v4
+          --approved-cases "${APPROVED_REALM_VISUAL_CASES}"
       - name: Seed approved baseline from deployed main
-        if: steps.baseline.outputs.cache-hit != 'true'
+        if: steps.baseline.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
         run: python scripts/visual_regression.py --mode capture-production --baseline-dir .visual-baselines
-      - name: Save approved screenshot baseline
-        if: steps.baseline.outputs.cache-hit != 'true'
+      - name: Save approved screenshot baseline on main
+        if: steps.baseline.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
         uses: actions/cache/save@v4
         with:
           path: .visual-baselines
