@@ -1,5 +1,5 @@
 /* Exact supplied Four Realms artwork, shared guest and operations design. */
-:root{color-scheme:dark;--bg:#050505;--text:#f5eee1;--muted:#b4aca2;--accent:#e0bd79;--accent2:#aaa2df;--line:#ffffff21;--bar-height:84px;--wo-realm-gradient:linear-gradient(90deg,#f2d67b 0%,#fff0bd 18%,#80e2ee 39%,#ff9551 64%,#b78eff 86%,#efe2c8 100%);--wo-font-display:"Iowan Old Style",Baskerville,Georgia,serif}
+:root{color-scheme:dark;--bg:#050505;--text:#f5eee1;--muted:#b4aca2;--accent:#e0bd79;--accent2:#aaa2df;--line:#ffffff21;--bar-height:84px;--wo-realm-gradient:linear-gradient(90deg,#f2d67b 0%,#fff0bd 18%,#80e2ee 39%,#ff9551 64%,#b78eff 86%,#efe2c8 100%);--wo-support-gradient:linear-gradient(90deg,#ddd0ad 0%,#ded9ca 18%,#b8d7d8 39%,#e2c1aa 64%,#c9c0dc 86%,#ddd4c8 100%);--wo-font-display:"Iowan Old Style",Baskerville,Georgia,serif}
 body[data-realm=light],[data-brand-realm=light]{--accent:#e4c382;--accent2:#fbe8b5;--bg:#080706}
 body[data-realm=balance],[data-brand-realm=balance]{--accent:#93ddd0;--accent2:#e5c583;--bg:#050908}
 body[data-realm=fire],[data-brand-realm=fire]{--accent:#ffb15e;--accent2:#ff7038;--bg:#0a0604}

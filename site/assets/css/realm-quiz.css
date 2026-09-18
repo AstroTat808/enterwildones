@@ -73,7 +73,7 @@
 /* Find Your Realm — premium Option B polish */
 .realm-quiz-page{
   --quiz-realm-gradient:var(--wo-realm-gradient,linear-gradient(90deg,#f2d67b 0%,#fff0bd 18%,#80e2ee 39%,#ff9551 64%,#b78eff 86%,#efe2c8 100%));
-  --quiz-lede-gradient:linear-gradient(90deg,#ddd0ad 0%,#ded9ca 18%,#b8d7d8 39%,#e2c1aa 64%,#c9c0dc 86%,#ddd4c8 100%);
+  --quiz-lede-gradient:var(--wo-support-gradient,linear-gradient(90deg,#ddd0ad 0%,#ded9ca 18%,#b8d7d8 39%,#e2c1aa 64%,#c9c0dc 86%,#ddd4c8 100%));
 }
 
 .quiz-intro h1{
