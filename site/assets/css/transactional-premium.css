@@ -1118,3 +1118,326 @@
   .ticket-page.tx-page .ticket-roman{width:36px;height:36px}
 }
 
+/* Full-screen cinematic Master Cycle unlock ceremony. */
+body.master-cycle-ceremony-open{overflow:hidden}
+.master-cycle-ceremony{
+  position:fixed;
+  z-index:100000;
+  inset:0;
+  display:grid;
+  place-items:center;
+  overflow:auto;
+  padding:max(24px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at 50% 46%,rgba(242,214,123,.075),transparent 22%),
+    radial-gradient(circle at 30% 20%,rgba(128,226,238,.055),transparent 28%),
+    radial-gradient(circle at 72% 22%,rgba(183,142,255,.065),transparent 28%),
+    linear-gradient(180deg,rgba(1,2,5,.985),rgba(2,3,7,.995));
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .48s ease,visibility .48s ease;
+}
+.master-cycle-ceremony::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent 49.8%,rgba(255,255,255,.018) 50%,transparent 50.2%),
+    linear-gradient(0deg,transparent 49.8%,rgba(255,255,255,.012) 50%,transparent 50.2%);
+  mask-image:radial-gradient(circle at 50% 50%,black,transparent 72%);
+}
+.master-cycle-ceremony.is-visible{opacity:1;visibility:visible}
+.master-cycle-ceremony.is-closing{opacity:0;visibility:hidden}
+.master-cycle-cosmos{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+.master-cycle-cosmos::before,
+.master-cycle-cosmos::after{
+  content:"";
+  position:absolute;
+  inset:-18%;
+  background:
+    radial-gradient(circle at 24% 30%,rgba(242,214,123,.10) 0 1px,transparent 1.8px),
+    radial-gradient(circle at 71% 18%,rgba(128,226,238,.10) 0 1px,transparent 1.8px),
+    radial-gradient(circle at 80% 68%,rgba(183,142,255,.11) 0 1px,transparent 1.8px),
+    radial-gradient(circle at 18% 76%,rgba(255,149,81,.09) 0 1px,transparent 1.8px);
+  background-size:180px 180px,230px 230px,260px 260px,210px 210px;
+  opacity:.48;
+  animation:masterCycleStarField 20s linear infinite;
+}
+.master-cycle-cosmos::after{
+  transform:rotate(19deg) scale(1.12);
+  opacity:.23;
+  animation-duration:30s;
+  animation-direction:reverse;
+}
+.master-cycle-cosmos>span{
+  position:absolute;
+  width:3px;
+  height:3px;
+  border-radius:50%;
+  background:#fff4d8;
+  box-shadow:0 0 14px currentColor;
+  opacity:.55;
+  animation:masterCycleStarPulse 3.6s ease-in-out infinite;
+}
+.master-cycle-cosmos>span:nth-child(1){left:12%;top:18%;color:#f2d67b;animation-delay:.2s}
+.master-cycle-cosmos>span:nth-child(2){left:84%;top:22%;color:#80e2ee;animation-delay:1.1s}
+.master-cycle-cosmos>span:nth-child(3){left:91%;top:71%;color:#b78eff;animation-delay:1.8s}
+.master-cycle-cosmos>span:nth-child(4){left:17%;top:78%;color:#ff9551;animation-delay:2.4s}
+.master-cycle-cosmos>span:nth-child(5){left:31%;top:9%;color:#fff;animation-delay:3s}
+.master-cycle-cosmos>span:nth-child(6){left:68%;top:89%;color:#fff;animation-delay:3.3s}
+.master-cycle-stage{
+  position:relative;
+  z-index:2;
+  display:grid;
+  justify-items:center;
+  width:min(1040px,100%);
+  margin:auto;
+  text-align:center;
+}
+.master-cycle-kicker{
+  margin:0 0 clamp(18px,3vh,30px);
+  color:rgba(239,224,193,.72);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.34em;
+  text-transform:uppercase;
+}
+.master-cycle-orbit{
+  position:relative;
+  width:min(58vh,560px,78vw);
+  aspect-ratio:1;
+  margin:0 auto;
+}
+.master-cycle-ring{
+  position:absolute;
+  inset:8%;
+  border:1px solid rgba(255,255,255,.085);
+  border-radius:50%;
+  box-shadow:inset 0 0 80px rgba(255,255,255,.012),0 0 80px rgba(232,200,121,.025);
+}
+.master-cycle-ring::before,
+.master-cycle-ring::after{
+  content:"";
+  position:absolute;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  box-shadow:0 0 18px currentColor;
+}
+.master-cycle-ring::before{left:50%;top:-4px;transform:translateX(-50%);color:#f2d67b;background:currentColor}
+.master-cycle-ring::after{left:50%;bottom:-4px;transform:translateX(-50%);color:#b78eff;background:currentColor}
+.master-cycle-ring.ring-one{animation:masterCycleRingSpin 18s linear infinite}
+.master-cycle-ring.ring-two{
+  inset:18%;
+  border-color:rgba(255,255,255,.055);
+  transform:rotate(45deg);
+  animation:masterCycleRingSpinReverse 13s linear infinite;
+}
+.master-cycle-ring.ring-two::before{color:#80e2ee}
+.master-cycle-ring.ring-two::after{color:#ff9551}
+.master-cycle-realm{
+  --mc-color:#f2d67b;
+  position:absolute;
+  z-index:3;
+  display:grid;
+  justify-items:center;
+  gap:3px;
+  min-width:116px;
+  color:rgba(238,230,218,.52);
+  opacity:.34;
+  filter:saturate(.6);
+  animation:masterCycleRealmIgnite .9s cubic-bezier(.18,.78,.2,1) forwards;
+}
+.master-cycle-realm i{
+  display:grid;
+  place-items:center;
+  width:48px;
+  height:48px;
+  margin-bottom:5px;
+  border:1px solid color-mix(in srgb,var(--mc-color) 38%,transparent);
+  border-radius:50%;
+  background:color-mix(in srgb,var(--mc-color) 6%,rgba(2,3,7,.72));
+  color:var(--mc-color);
+  font:18px/1 var(--tx-font-display);
+  font-style:normal;
+  box-shadow:0 0 0 7px rgba(255,255,255,.012),0 0 28px color-mix(in srgb,var(--mc-color) 12%,transparent);
+}
+.master-cycle-realm strong{
+  color:color-mix(in srgb,var(--mc-color) 64%,#f5ecdf);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.18em;
+}
+.master-cycle-realm span{
+  color:rgba(219,211,201,.48);
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.22em;
+}
+.master-cycle-realm--light{--mc-color:#f2d67b;left:50%;top:-2%;transform:translateX(-50%);animation-delay:.55s}
+.master-cycle-realm--balance{--mc-color:#80e2ee;right:-3%;top:50%;transform:translateY(-50%);animation-delay:1.1s}
+.master-cycle-realm--night{--mc-color:#b78eff;left:50%;bottom:-2%;transform:translateX(-50%);animation-delay:2.2s}
+.master-cycle-realm--fire{--mc-color:#ff9551;left:-3%;top:50%;transform:translateY(-50%);animation-delay:1.65s}
+.master-cycle-core{
+  position:absolute;
+  z-index:4;
+  left:50%;
+  top:50%;
+  display:grid;
+  place-items:center;
+  width:43%;
+  aspect-ratio:1;
+  transform:translate(-50%,-50%) scale(.72);
+  border:1px solid rgba(239,215,164,.18);
+  border-radius:50%;
+  background:
+    radial-gradient(circle,rgba(244,224,174,.11),rgba(255,255,255,.018) 45%,rgba(2,3,7,.70) 72%),
+    rgba(2,3,7,.62);
+  box-shadow:
+    0 0 0 10px rgba(255,255,255,.012),
+    0 0 68px rgba(232,200,121,.08),
+    inset 0 0 50px rgba(232,200,121,.025);
+  opacity:.22;
+  animation:masterCycleCoreAwaken 1.35s 2.6s cubic-bezier(.16,.82,.2,1) forwards;
+}
+.master-cycle-core::before{
+  content:"";
+  position:absolute;
+  inset:-12%;
+  border:1px solid rgba(239,215,164,.10);
+  border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(242,214,123,.14),rgba(128,226,238,.10),rgba(183,142,255,.12),rgba(255,149,81,.10),rgba(242,214,123,.14));
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  -webkit-mask-composite:xor;
+  padding:1px;
+  animation:masterCycleHaloSpin 10s linear infinite;
+}
+.master-cycle-core img{
+  width:82%;
+  height:82%;
+  object-fit:contain;
+  mix-blend-mode:screen;
+  filter:contrast(1.05) saturate(1.02) drop-shadow(0 0 28px rgba(232,200,121,.13));
+}
+.master-cycle-core b{
+  position:absolute;
+  inset:auto 0 9%;
+  color:#efd99e;
+  font:26px/1 var(--tx-font-display);
+  text-shadow:0 0 18px rgba(242,214,123,.24);
+}
+.master-cycle-copy{
+  display:grid;
+  justify-items:center;
+  max-width:760px;
+  margin:clamp(22px,3vh,34px) auto 0;
+}
+.master-cycle-copy h2{
+  margin:0;
+  color:#f8edcf;
+  font-family:var(--tx-font-display);
+  font-size:clamp(40px,7vw,78px);
+  font-weight:400;
+  line-height:.96;
+  letter-spacing:-.045em;
+  text-wrap:balance;
+  text-shadow:0 0 42px rgba(232,200,121,.08);
+  animation:masterCycleCopyReveal 1.1s 3.45s both;
+}
+.master-cycle-copy p{
+  max-width:650px;
+  margin:18px auto 0;
+  color:rgba(225,216,203,.70);
+  font-size:clamp(13px,1.6vw,16px);
+  line-height:1.75;
+  animation:masterCycleCopyReveal .9s 3.85s both;
+}
+.master-cycle-motto{
+  display:block;
+  margin-top:16px;
+  color:#e5cd92;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.28em;
+  animation:masterCycleCopyReveal .8s 4.1s both;
+}
+.master-cycle-continue{
+  width:auto!important;
+  min-width:230px;
+  margin-top:24px;
+  animation:masterCycleButtonPulse 2.6s 4.3s ease-in-out infinite;
+}
+.master-cycle-continue:focus-visible{
+  outline:2px solid #fff0bd;
+  outline-offset:5px;
+}
+@keyframes masterCycleRealmIgnite{
+  0%{opacity:.34;filter:saturate(.6);text-shadow:none}
+  62%{opacity:1;filter:saturate(1.18);text-shadow:0 0 22px var(--mc-color)}
+  100%{opacity:.9;filter:saturate(1)}
+}
+@keyframes masterCycleCoreAwaken{
+  0%{opacity:.22;transform:translate(-50%,-50%) scale(.72);filter:brightness(.7)}
+  58%{opacity:1;transform:translate(-50%,-50%) scale(1.045);filter:brightness(1.22)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:brightness(1)}
+}
+@keyframes masterCycleRingSpin{to{transform:rotate(360deg)}}
+@keyframes masterCycleRingSpinReverse{from{transform:rotate(45deg)}to{transform:rotate(-315deg)}}
+@keyframes masterCycleHaloSpin{to{transform:rotate(360deg)}}
+@keyframes masterCycleStarField{to{transform:translate3d(3%,2%,0) rotate(1deg)}}
+@keyframes masterCycleStarPulse{0%,100%{opacity:.24;transform:scale(.8)}50%{opacity:.9;transform:scale(1.35)}}
+@keyframes masterCycleCopyReveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes masterCycleButtonPulse{0%,100%{box-shadow:0 14px 36px rgba(232,200,121,.13)}50%{box-shadow:0 16px 52px rgba(232,200,121,.24),0 0 22px rgba(128,226,238,.06)}}
+@media(max-width:720px){
+  .master-cycle-ceremony{align-items:start}
+  .master-cycle-stage{padding-top:8px}
+  .master-cycle-kicker{letter-spacing:.24em}
+  .master-cycle-orbit{width:min(72vw,410px)}
+  .master-cycle-realm{min-width:84px}
+  .master-cycle-realm i{width:40px;height:40px;font-size:15px}
+  .master-cycle-realm strong{font-size:7px;letter-spacing:.13em}
+  .master-cycle-realm span{font-size:6px;letter-spacing:.16em}
+  .master-cycle-realm--balance{right:-8%}
+  .master-cycle-realm--fire{left:-8%}
+  .master-cycle-core{width:46%}
+  .master-cycle-copy{margin-top:26px}
+}
+@media(max-width:430px){
+  .master-cycle-ceremony{padding-inline:12px}
+  .master-cycle-orbit{width:min(74vw,330px)}
+  .master-cycle-realm--balance{right:-12%}
+  .master-cycle-realm--fire{left:-12%}
+  .master-cycle-realm strong{max-width:72px;overflow:hidden;text-overflow:ellipsis}
+  .master-cycle-copy h2{font-size:clamp(36px,12vw,52px)}
+  .master-cycle-copy p{font-size:12.5px;line-height:1.65}
+  .master-cycle-continue{min-width:210px}
+}
+@media(prefers-reduced-motion:reduce){
+  .master-cycle-ceremony,
+  .master-cycle-cosmos::before,
+  .master-cycle-cosmos::after,
+  .master-cycle-cosmos>span,
+  .master-cycle-ring,
+  .master-cycle-core::before,
+  .master-cycle-realm,
+  .master-cycle-core,
+  .master-cycle-copy h2,
+  .master-cycle-copy p,
+  .master-cycle-motto,
+  .master-cycle-continue{
+    animation:none!important;
+    transition:none!important;
+  }
+  .master-cycle-ceremony{opacity:1;visibility:visible}
+  .master-cycle-realm,.master-cycle-core{opacity:1;filter:none}
+  .master-cycle-core{transform:translate(-50%,-50%) scale(1)}
+}
+
