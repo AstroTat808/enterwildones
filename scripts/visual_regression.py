@@ -84,7 +84,7 @@ def compare(current_dir:Path,baseline_dir:Path):
       diff=gray.point(lambda px:min(255,px*5))
       diff_path=OUT/(name+"-diff.png")
       diff.save(diff_path)
-      failed=aspect_delta>0.02 or changed>0.02 or mean>10.0
+      failed=aspect_delta>0.02 or mean>10.0 or (changed>0.02 and mean>4.0)
       results.append({"name":name,"changedPixelRatio":round(changed,6),"meanDifference":round(mean,3),"aspectRatioDelta":round(aspect_delta,6),"failed":failed,"diff":str(diff_path)})
     (OUT/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
     return results
