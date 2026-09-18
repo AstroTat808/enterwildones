@@ -54,7 +54,7 @@ class Case:
  wait:str|None="h1"
 
 SUITES={
- "public":[Case("home","/","home","main"),*[Case("event-"+r["slug"],"/events/"+r["slug"]) for r in REALMS],*[Case("apply-"+r["slug"],"/apply/"+r["slug"],"apply-"+r["slug"],"#gateNotice") for r in REALMS]],
+ "public":[Case("home","/","home","main"),Case("realm-quiz","/find-your-realm","plain","#quizIntro:not([hidden])"),Case("realm-quiz-result","/find-your-realm?realm=nocturne","plain","#quizResult:not([hidden])"),*[Case("event-"+r["slug"],"/events/"+r["slug"]) for r in REALMS],*[Case("apply-"+r["slug"],"/apply/"+r["slug"],"apply-"+r["slug"],"#gateNotice") for r in REALMS]],
  "transactional":[Case("passport-auth","/passport","passport","#account:not([hidden])"),Case("passport-login","/passport","passport-login","#login:not([hidden])"),Case("invite","/invite","plain","#inviteForm"),Case("ticket-access","/ticket-access?event=aureva","ticket-access","#buy:not([hidden])"),Case("public-tickets","/public-tickets/sunveil","public-tickets","#public-ticket-form"),Case("ticket-addons","/ticket/addons?token=qa-token","ticket-addons","#addons .card")],
  "admin":[Case("admin-applications","/admin","admin-apps","#adminPanel:not(.hidden)"),Case("admin-overview","/admin/overview","overview","#events .event"),Case("admin-packages","/admin/packages","packages","#report .metric"),Case("admin-operations","/admin/operations","operations","#opsPanel:not(.hidden)"),Case("admin-event-day","/admin/event-day","command","#indicatorGrid > *"),Case("admin-live","/admin/live","command","#indicatorGrid > *"),Case("admin-launch","/admin/launch","command","#indicatorGrid > *"),Case("admin-rehearsal","/admin/rehearsal","command","#indicatorGrid > *")],
  "staff":[Case("check-in","/check-in","check-in","#gate:not([hidden])"),Case("bar","/bar","bar","#bar:not([hidden])")]
@@ -250,7 +250,7 @@ def get(path,timeout=25):
 
 def smoke_mode():
  OUT.mkdir(parents=True,exist_ok=True);checks=[];fail=[]
- routes=["/"]+[f"/events/{r['slug']}" for r in REALMS]+[f"/apply/{r['slug']}" for r in REALMS]+["/passport","/invite","/ticket-access","/public-tickets/sunveil","/ticket/addons","/admin","/admin/overview","/admin/packages","/admin/operations","/admin/event-day","/admin/live","/admin/launch","/admin/rehearsal","/check-in","/bar"]
+ routes=["/","/find-your-realm"]+[f"/events/{r['slug']}" for r in REALMS]+[f"/apply/{r['slug']}" for r in REALMS]+["/passport","/invite","/ticket-access","/public-tickets/sunveil","/ticket/addons","/admin","/admin/overview","/admin/packages","/admin/operations","/admin/event-day","/admin/live","/admin/launch","/admin/rehearsal","/check-in","/bar"]
  for path in routes:
   s,h,b=get(path);ok=s<400 and len(b)>100;checks.append({"path":path,"status":s,"bytes":len(b),"ok":ok})
   if not ok:fail.append(path+" unhealthy")
