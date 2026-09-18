@@ -599,3 +599,137 @@ body.cinematic-home .site-footer::before{
     letter-spacing:.08em;
   }
 }
+
+
+/* Masthead lockup correction: preserve the entire circular Four Realms emblem
+   and always show the companion wordmark beside it. The previous crop was too
+   shallow, which visually cut the emblem at its lower edge. */
+@media(min-width:861px){
+  body.cinematic-home{--bar-height:116px}
+  body.cinematic-home .topbar{
+    min-height:116px;
+    padding-top:6px;
+    padding-bottom:10px;
+  }
+  body.cinematic-home.scrolled .topbar{min-height:100px}
+  body.cinematic-home .brand{
+    min-height:100px;
+    gap:14px;
+    overflow:visible;
+  }
+  body.cinematic-home .brand-icon{
+    width:126px;
+    height:104px;
+    flex:0 0 126px;
+    overflow:hidden!important;
+  }
+  body.cinematic-home .brand-icon img{
+    width:164px!important;
+    height:164px!important;
+    left:-19px!important;
+    top:-1px!important;
+  }
+  body.cinematic-home .brand-label{
+    display:flex!important;
+    flex-direction:column;
+    justify-content:center;
+    min-width:0;
+    margin:0;
+    color:#f8f0e3;
+    font-size:11px;
+    font-weight:750;
+    line-height:1.15;
+    letter-spacing:.22em;
+    white-space:nowrap;
+    text-transform:uppercase;
+  }
+  body.cinematic-home .brand-label span{
+    display:block;
+    margin-top:7px;
+    color:#a99a82;
+    font-size:7px;
+    font-weight:550;
+    letter-spacing:.31em;
+  }
+  body.cinematic-home .v2-progress{top:116px}
+  body.cinematic-home.scrolled .v2-progress{top:100px}
+}
+
+@media(max-width:860px){
+  body.cinematic-home{--bar-height:100px}
+  body.cinematic-home .topbar,
+  body.cinematic-home.scrolled .topbar{
+    min-height:100px;
+    padding-top:6px;
+    padding-bottom:10px;
+  }
+  body.cinematic-home .brand{
+    min-height:84px;
+    gap:10px;
+    overflow:visible;
+  }
+  body.cinematic-home .brand-icon{
+    width:78px;
+    height:88px;
+    flex:0 0 78px;
+    overflow:hidden!important;
+  }
+  body.cinematic-home .brand-icon img{
+    width:140px!important;
+    height:140px!important;
+    left:-31px!important;
+    top:-1px!important;
+  }
+  body.cinematic-home .brand-label{
+    display:flex!important;
+    flex-direction:column;
+    justify-content:center;
+    min-width:0;
+    max-width:160px;
+    margin:0;
+    color:#f8f0e3;
+    font-size:9.5px!important;
+    font-weight:750;
+    line-height:1.15;
+    letter-spacing:.17em!important;
+    white-space:nowrap;
+    text-transform:uppercase;
+  }
+  body.cinematic-home .brand-label span{
+    display:block;
+    margin-top:5px;
+    color:#a99a82;
+    font-size:6.4px!important;
+    font-weight:550;
+    letter-spacing:.22em!important;
+  }
+  body.cinematic-home .v2-hero{padding-top:100px}
+}
+
+@media(max-width:390px){
+  body.cinematic-home{--bar-height:96px}
+  body.cinematic-home .topbar,
+  body.cinematic-home.scrolled .topbar{min-height:96px}
+  body.cinematic-home .brand{min-height:80px;gap:8px}
+  body.cinematic-home .brand-icon{
+    width:72px;
+    height:84px;
+    flex-basis:72px;
+  }
+  body.cinematic-home .brand-icon img{
+    width:134px!important;
+    height:134px!important;
+    left:-31px!important;
+    top:-1px!important;
+  }
+  body.cinematic-home .brand-label{
+    max-width:130px;
+    font-size:8.4px!important;
+    letter-spacing:.13em!important;
+  }
+  body.cinematic-home .brand-label span{
+    font-size:5.8px!important;
+    letter-spacing:.17em!important;
+  }
+  body.cinematic-home .v2-hero{padding-top:96px}
+}
