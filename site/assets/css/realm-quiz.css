@@ -14,7 +14,7 @@
 .quiz-intro{align-self:start;margin:0 auto;text-align:center;padding:0 0 24px}
 .quiz-master-brand{width:min(340px,72vw);margin:-8px auto -26px}
 .quiz-kicker{margin:0 0 14px;color:var(--accent);font-size:9px;font-weight:900;letter-spacing:.28em;text-transform:uppercase}
-.quiz-intro h1{margin:0;color:var(--quiz-paper);font:400 clamp(58px,8vw,108px)/.87 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.055em;text-wrap:balance}
+.quiz-intro h1{margin:0;color:var(--quiz-paper);font:400 clamp(58px,8vw,108px)/.87 var(--wo-font-display,"Iowan Old Style",Baskerville,Georgia,serif);letter-spacing:-.055em;text-wrap:balance}
 .quiz-lede{max-width:690px;margin:18px auto 22px;color:#c8beb2;font-size:clamp(15px,1.6vw,18px);line-height:1.72}
 .quiz-primary{min-height:50px;border-color:color-mix(in srgb,var(--accent) 62%,#fff);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 88%,white),var(--accent));color:#080706;box-shadow:0 14px 50px color-mix(in srgb,var(--accent) 16%,transparent)}
 .quiz-fineprint{max-width:680px;margin:14px auto 0;color:#817970;font-size:10px;line-height:1.6;letter-spacing:.05em}
@@ -25,7 +25,7 @@
 .quiz-progress-row{display:flex;justify-content:space-between;gap:20px;align-items:center;color:#92897e;font-size:9px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
 .quiz-back,.quiz-text-button{border:0;background:transparent;color:#b8aea1;padding:8px 0;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.quiz-back:hover,.quiz-text-button:hover{color:#fff}
 .quiz-progress{height:2px;margin:15px 0 42px;background:rgba(255,255,255,.07);overflow:hidden}.quiz-progress span{display:block;width:0;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 0 20px color-mix(in srgb,var(--accent) 50%,transparent);transition:width .35s ease}
-.quiz-stage h2{max-width:760px;margin:0 0 32px;color:var(--quiz-paper);font:400 clamp(38px,5vw,62px)/1 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.04em;text-wrap:balance}
+.quiz-stage h2{max-width:760px;margin:0 0 32px;color:var(--quiz-paper);font:400 clamp(38px,5vw,62px)/1 var(--wo-font-display,"Iowan Old Style",Baskerville,Georgia,serif);letter-spacing:-.04em;text-wrap:balance}
 .quiz-answers{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .quiz-answer{position:relative;min-height:110px;padding:20px 22px;text-align:left;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(255,255,255,.018);color:#ddd4c8;line-height:1.5;transition:transform .18s ease,border-color .18s ease,background .18s ease;color .18s ease}
 .quiz-answer::before{content:attr(data-letter);display:block;margin-bottom:8px;color:var(--accent);font-size:9px;font-weight:900;letter-spacing:.18em}
@@ -36,8 +36,8 @@
 .quiz-result-art img{position:relative;z-index:1;display:block;width:100%;height:auto;filter:drop-shadow(0 24px 55px color-mix(in srgb,var(--accent) 12%,transparent))}
 .quiz-result-copy{position:relative;z-index:2;min-width:0}
 .quiz-result-label{margin:0;color:#8f867a;font-size:9px;font-weight:900;letter-spacing:.25em;text-transform:uppercase}
-.quiz-result h1{margin:8px 0 6px;color:var(--quiz-paper);font:400 clamp(60px,8vw,112px)/.86 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.06em;overflow-wrap:anywhere}
-.quiz-result-headline{margin:18px 0;color:var(--accent);font:400 clamp(24px,3vw,36px)/1.15 "Iowan Old Style",Baskerville,Georgia,serif}
+.quiz-result h1{margin:8px 0 6px;color:var(--quiz-paper);font:400 clamp(60px,8vw,112px)/.86 var(--wo-font-display,"Iowan Old Style",Baskerville,Georgia,serif);letter-spacing:-.06em;overflow-wrap:anywhere}
+.quiz-result-headline{margin:18px 0;color:var(--accent);font:400 clamp(24px,3vw,36px)/1.15 var(--wo-font-display,"Iowan Old Style",Baskerville,Georgia,serif)}
 .quiz-result-body{max-width:680px;color:#bbb1a5;font-size:15px;line-height:1.82}
 .quiz-traits{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 28px}.quiz-traits span{padding:8px 11px;border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);border-radius:999px;color:#d8cec1;background:color-mix(in srgb,var(--accent) 4%,transparent);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 .quiz-result-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.quiz-result-actions .button{min-height:48px}.quiz-text-button{min-height:44px;padding:10px}
@@ -72,7 +72,7 @@
 
 /* Find Your Realm — premium Option B polish */
 .realm-quiz-page{
-  --quiz-realm-gradient:linear-gradient(90deg,#f2d67b 0%,#fff0bd 18%,#80e2ee 39%,#ff9551 64%,#b78eff 86%,#efe2c8 100%);
+  --quiz-realm-gradient:var(--wo-realm-gradient,linear-gradient(90deg,#f2d67b 0%,#fff0bd 18%,#80e2ee 39%,#ff9551 64%,#b78eff 86%,#efe2c8 100%));
   --quiz-lede-gradient:linear-gradient(90deg,#ddd0ad 0%,#ded9ca 18%,#b8d7d8 39%,#e2c1aa 64%,#c9c0dc 86%,#ddd4c8 100%);
 }
 
