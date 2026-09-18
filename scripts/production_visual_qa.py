@@ -71,7 +71,7 @@ def fixtures(page,state):
  if state.startswith("apply-"):
   slug=state.removeprefix("apply-")
   event=next((x for x in REALMS if x["slug"]==slug),REALMS[0])
-  cfg={"event":dict(event,applicationOpen=(slug=="aureva"),routes":{"event":event["routes"]["event"],"apply":"/apply/"+slug}),"applicationsReady":True,"turnstileSiteKey":"qa"}
+  cfg={"event":dict(event,applicationOpen=(slug=="aureva"),routes={"event":event["routes"]["event"],"apply":"/apply/"+slug}),"applicationsReady":True,"turnstileSiteKey":"qa"}
   page.route("**/api/app-config?*",lambda r:fulfill(r,cfg))
  elif state=="passport": page.route("**/api/passport",lambda r:fulfill(r,PASSPORT))
  elif state=="passport-login":
