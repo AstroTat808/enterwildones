@@ -151,6 +151,42 @@ jobs:
           echo "Production security smoke did not complete in the certification window."
           exit 1
 
+  production-browser-matrix:
+    name: Release · Production Browser Matrix
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_SHA: ${{ github.sha }}
+    steps:
+      - name: Require all deployed Chromium and WebKit suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=("public · chromium" "public · webkit" "transactional · chromium" "transactional · webkit" "admin · chromium" "admin · webkit" "staff · chromium" "staff · webkit")
+          echo "Waiting for the full production browser matrix on $TARGET_SHA"
+          for attempt in $(seq 1 180); do
+            payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100")"
+            complete=1
+            failed=0
+            for check in "${expected[@]}"; do
+              status="$(jq -r --arg n "$check" '[.check_runs[] | select(.name==$n)] | sort_by(.started_at) | last | .status // "missing"' <<<"$payload")"
+              conclusion="$(jq -r --arg n "$check" '[.check_runs[] | select(.name==$n)] | sort_by(.started_at) | last | .conclusion // "pending"' <<<"$payload")"
+              echo "$check: $status / $conclusion"
+              if [ "$status" != "completed" ]; then complete=0; fi
+              if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then failed=1; fi
+            done
+            if [ "$failed" = "1" ]; then
+              echo "At least one deployed browser suite failed."
+              exit 1
+            fi
+            if [ "$complete" = "1" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "Production browser matrix did not complete in the certification window."
+          exit 1
+
   release-certification:
     name: Release Certification
     if: always()
@@ -161,6 +197,7 @@ jobs:
       - launch-readiness
       - security-source
       - production-security-smoke
+      - production-browser-matrix
     runs-on: ubuntu-latest
     env:
       BUILD_RESULT: ${{ needs.build-check.result }}
@@ -169,6 +206,7 @@ jobs:
       LAUNCH_RESULT: ${{ needs.launch-readiness.result }}
       SECURITY_SOURCE_RESULT: ${{ needs.security-source.result }}
       PRODUCTION_SECURITY_RESULT: ${{ needs.production-security-smoke.result }}
+      BROWSER_MATRIX_RESULT: ${{ needs.production-browser-matrix.result }}
       EVENT_NAME: ${{ github.event_name }}
     steps:
       - name: Publish GO / NO-GO certification
@@ -186,6 +224,7 @@ jobs:
             echo "| Launch readiness rehearsal | $LAUNCH_RESULT |"
             echo "| Security source audit | $SECURITY_SOURCE_RESULT |"
             echo "| Hosted production security smoke | $PRODUCTION_SECURITY_RESULT |"
+            echo "| Full deployed browser matrix | $BROWSER_MATRIX_RESULT |"
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -198,10 +237,17 @@ jobs:
             fi
           done
 
-          if [ "$EVENT_NAME" = "push" ] && [ "$PRODUCTION_SECURITY_RESULT" != "success" ]; then
-            echo "### NO-GO" >> "$GITHUB_STEP_SUMMARY"
-            echo "Hosted production security smoke did not pass." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+          if [ "$EVENT_NAME" = "push" ]; then
+            if [ "$PRODUCTION_SECURITY_RESULT" != "success" ]; then
+              echo "### NO-GO" >> "$GITHUB_STEP_SUMMARY"
+              echo "Hosted production security smoke did not pass." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            if [ "$BROWSER_MATRIX_RESULT" != "success" ]; then
+              echo "### NO-GO" >> "$GITHUB_STEP_SUMMARY"
+              echo "The full deployed Chromium/WebKit matrix did not pass." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
           fi
 
           echo "### GO" >> "$GITHUB_STEP_SUMMARY"
