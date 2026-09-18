@@ -16,3 +16,21 @@ html{scroll-padding-top:100px}body{overflow-x:clip;font-family:Inter,ui-sans-ser
 .brand-icon img,.hero-master-logo,.realm-logo,.page-brand img,.footer-brand img,.passport-card img,.ticket-logo{height:auto}
 
 .staff-page .wrap{padding-top:calc(var(--bar-height) + 25px);min-height:80svh}.staff-page input,.staff-page select{font-size:16px}.staff-page .topbar a{width:auto}.staff-page .page-brand{max-width:200px}
+
+
+/* Keep the mobile navigation control optically centered in its pill. */
+.mobile-menu summary{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+}
+@media(max-width:700px){
+  .mobile-menu{
+    align-self:center;
+  }
+  .mobile-menu summary{
+    min-height:46px;
+    padding:0 15px;
+  }
+}

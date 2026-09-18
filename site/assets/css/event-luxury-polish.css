@@ -222,7 +222,7 @@
   .cinematic-event .topbar{min-height:72px}
   .cinematic-event .brand-icon{width:clamp(175px,54vw,230px);height:54px}
   .cinematic-event .event-heading-copy .eyebrow{font-size:8px;letter-spacing:.16em}
-  .cinematic-event .event-heading-copy h1{font-size:clamp(50px,16vw,78px);line-height:.90}
+  .cinematic-event .event-heading-copy h1{width:100%;max-width:100%;font-size:clamp(44px,14vw,72px);line-height:.90;white-space:nowrap}
   .cinematic-event .event-mini{
     grid-template-columns:1fr;
     width:min(100%,420px);
@@ -238,4 +238,144 @@
 
 @media(prefers-reduced-motion:reduce){
   .cinematic-event .event-mini .event-badge{transition:none}
+}
+
+
+/* Header lockup + mobile access-card alignment hardening.
+   Keep the event header consistent with the homepage brand treatment instead of
+   fitting the full square master inside a shallow wide box. */
+.cinematic-event .brand{
+  gap:12px;
+  min-width:0;
+}
+.cinematic-event .brand-icon{
+  position:relative;
+  width:64px;
+  height:64px;
+  flex:0 0 64px;
+  overflow:hidden;
+  border-radius:50%;
+}
+.cinematic-event .brand-icon img{
+  position:absolute!important;
+  width:112px!important;
+  height:112px!important;
+  max-width:none!important;
+  left:-24px!important;
+  top:-3px!important;
+  object-fit:cover!important;
+  object-position:center top!important;
+  mix-blend-mode:screen!important;
+}
+.cinematic-event .brand-label{
+  display:block;
+  color:#f8f0e3;
+  white-space:nowrap;
+  font-size:11px;
+  font-weight:650;
+  letter-spacing:.235em;
+  line-height:1.15;
+}
+.cinematic-event .brand-label span{
+  display:block;
+  margin-top:7px;
+  color:#a99a82;
+  font-size:7px;
+  font-weight:500;
+  letter-spacing:.34em;
+}
+.cinematic-event .mobile-menu summary{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:112px;
+  min-height:48px;
+  padding:0 18px;
+  line-height:1;
+}
+
+@media(max-width:760px){
+  .cinematic-event .topbar{
+    min-height:82px;
+    align-items:center;
+  }
+  .cinematic-event .brand{gap:10px}
+  .cinematic-event .brand-icon{
+    width:58px;
+    height:58px;
+    flex-basis:58px;
+  }
+  .cinematic-event .brand-icon img{
+    width:102px!important;
+    height:102px!important;
+    left:-22px!important;
+    top:-3px!important;
+  }
+  .cinematic-event .brand-label{
+    font-size:9px;
+    letter-spacing:.19em;
+  }
+  .cinematic-event .brand-label span{
+    margin-top:6px;
+    font-size:6.3px;
+    letter-spacing:.28em;
+  }
+  .cinematic-event .event-access{
+    width:100%;
+    max-width:100%;
+    margin-inline:auto;
+  }
+  .cinematic-event .event-access-copy{
+    width:100%;
+    max-width:100%;
+    justify-self:stretch;
+    text-align:center;
+  }
+  .cinematic-event .event-access .eyebrow{
+    justify-content:center;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .cinematic-event .event-access h2{
+    width:100%;
+    max-width:100%;
+    margin-left:auto;
+    margin-right:auto;
+    font-size:clamp(38px,12vw,54px);
+    line-height:.96;
+    text-align:center;
+    white-space:normal;
+    overflow-wrap:normal;
+    word-break:normal;
+    text-wrap:balance;
+  }
+  .cinematic-event .event-access .intro{
+    width:100%;
+    max-width:36rem;
+    margin-left:auto;
+    margin-right:auto;
+    text-align:center;
+  }
+  .cinematic-event .event-access .form-actions{
+    width:100%;
+    max-width:420px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+}
+@media(max-width:390px){
+  .cinematic-event .brand-label{
+    max-width:148px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .cinematic-event .mobile-menu summary{
+    min-width:104px;
+    min-height:46px;
+    padding-inline:15px;
+  }
+  .cinematic-event .event-access{
+    padding-left:18px;
+    padding-right:18px;
+  }
 }
