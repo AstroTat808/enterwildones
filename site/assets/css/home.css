@@ -206,20 +206,33 @@ body.cinematic-home .v2-kicker{
 }
 body.cinematic-home .v2-hero .v2-kicker{margin-bottom:10px;font-size:8px;letter-spacing:.42em}
 body.cinematic-home .v2-hero h1{
+  display:inline-block;
   margin:0;
-  color:var(--home-paper);
-  font:400 clamp(46px,5.1vw,76px)/.95 "Iowan Old Style",Baskerville,Georgia,serif;
+  padding-bottom:.04em;
+  color:#f3d88a;
+  background:var(--wo-realm-gradient,linear-gradient(90deg,#f2d67b 0%,#fff0bd 18%,#80e2ee 39%,#ff9551 64%,#b78eff 86%,#efe2c8 100%));
+  background-size:100% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  font:400 clamp(46px,5.1vw,76px)/.95 var(--wo-font-display,"Iowan Old Style",Baskerville,Georgia,serif);
   letter-spacing:-.045em;
   text-wrap:balance;
-  text-shadow:0 15px 50px rgba(0,0,0,.46);
+  text-shadow:0 15px 50px rgba(0,0,0,.46),0 0 26px rgba(255,255,255,.05);
 }
 body.cinematic-home .v2-hero-copy>p:not(.v2-kicker){
   max-width:680px;
   margin:15px auto 0;
-  color:#d0c6ba;
+  color:#d7cfc2;
+  background:var(--wo-support-gradient,linear-gradient(90deg,#ddd0ad 0%,#ded9ca 18%,#b8d7d8 39%,#e2c1aa 64%,#c9c0dc 86%,#ddd4c8 100%));
+  background-size:100% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
   font-size:14px;
   line-height:1.78;
   letter-spacing:.014em;
+  text-shadow:0 2px 20px rgba(0,0,0,.46);
 }
 body.cinematic-home .v2-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:23px}
 body.cinematic-home .v2-actions .button{
