@@ -1,15 +1,84 @@
 name: Production visual QA
+
 on:
   push:
-    branches: [feature/multi-realm-admin-ops, main]
-    paths: ['.github/workflows/production-visual-qa.yml', 'site/**', 'netlify/functions/**', 'netlify.toml']
+    branches: [main]
+    paths:
+      - '.github/workflows/production-visual-qa.yml'
+      - 'site/**'
+      - 'netlify/functions/**'
+      - 'netlify.toml'
+      - 'scripts/production_visual_qa.py'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+  schedule:
+    - cron: '17 14 * * *'
   workflow_dispatch:
+
+concurrency:
+  group: production-visual-qa-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+
 jobs:
-  visual:
+  source-audit:
+    name: Source + build audit
     runs-on: ubuntu-latest
-    timeout-minutes: 22
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Full production build and validation suite
+        run: npm run build
+      - name: Static source, asset, route, and regression audit
+        env:
+          VISUAL_RESULTS: visual-results
+        run: python scripts/production_visual_qa.py --mode source
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-visual-source-audit
+          path: visual-results/source-audit.json
+          retention-days: 14
+          if-no-files-found: error
+
+  deploy-sync:
+    name: Confirm production deployment
+    needs: source-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Wait for production to match the pushed static payload
+        env:
+          PRODUCTION_BASE_URL: https://enterwildones.com
+          BEFORE_SHA: ${{ github.event.before || '' }}
+        run: python scripts/production_visual_qa.py --mode wait --before "$BEFORE_SHA"
+
+  runtime-smoke:
+    name: Production HTTP + security smoke
+    needs: deploy-sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,90 +86,71 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install playwright==1.55.0
-      - run: python -m playwright install --with-deps chromium webkit
-      - name: Read-only production checks and screenshots
-        shell: python
-        run: |
-          import json,pathlib
-          from playwright.sync_api import sync_playwright
-          root=pathlib.Path('visual-results');root.mkdir(exist_ok=True)
-          routes=['/','/events/aureva','/events/halora','/events/sunveil','/events/nocturne','/apply/aureva','/apply/halora','/apply/nocturne','/passport','/invite','/ticket-access','/public-tickets/sunveil','/ticket/addons','/bar','/check-in','/admin','/admin/overview','/admin/packages','/admin/operations','/admin/event-day','/admin/live','/admin/launch','/admin/rehearsal']
-          command_routes={'/admin/event-day','/admin/live','/admin/launch','/admin/rehearsal'}
-          event_ind=[{'id':'gate','label':'Gate readiness','state':'green','detail':'Scanner credentials + ticket signatures ready'},{'id':'waivers','label':'Unsigned waivers','state':'yellow','detail':'4 active tickets still need signatures'},{'id':'bar','label':'Bartender console','state':'green','detail':'Bar credentials configured'},{'id':'stripe','label':'Stripe','state':'yellow','detail':'TEST mode — rehearsal only'},{'id':'wallet','label':'Apple Wallet','state':'yellow','detail':'Physical Wallet setup pending'},{'id':'fallback','label':'Fallback drill','state':'yellow','detail':'Manual/offline recovery drill pending'}]
-          launch_ind=[{'id':'core','label':'Core platform','state':'green','detail':'Core production dependencies configured'},{'id':'stripe','label':'Stripe live mode','state':'red','detail':'TEST mode — launch blocked'},{'id':'wallet','label':'Apple Wallet','state':'red','detail':'Wallet signing credentials missing'},{'id':'venue','label':'Private venue','state':'green','detail':'Server-side venue configured'},{'id':'rehearsal','label':'Full rehearsal','state':'yellow','detail':'6 passed · 0 failed · 4 pending'},{'id':'physical','label':'Physical device certification','state':'yellow','detail':'4 physical checks remain'}]
-          rehearsal_ind=[{'id':'wallet-install','label':'Apple Wallet','state':'yellow','detail':'Pending physical verification'},{'id':'gate-scan','label':'Gate scan','state':'yellow','detail':'Pending physical verification'},{'id':'bartender-redemption','label':'Bartender redemption','state':'yellow','detail':'Pending physical verification'},{'id':'refund','label':'Refund test','state':'yellow','detail':'Pending physical verification'},{'id':'failed-payment','label':'Payment failure drill','state':'green','detail':'Passed'},{'id':'offline-fallback','label':'Fallback drill','state':'yellow','detail':'Pending physical verification'}]
-          passport_fixture={
-            'authenticated':True,
-            'user':{'preferredName':'Christopher','fullName':'Christopher Sibel'},
-            'cycle':{'completed':2,'total':4},
-            'realms':[
-              {'event':{'slug':'aureva','eventId':'aureva-2026','name':'AUREVA','realm':'light','routes':{'event':'/events/aureva'},'copy':{'tagline':'Where the cycle begins in light.'}},'checkedIn':True,'ticket':{'status':'checked_in','ticketId':'WLD-AUR-TKT-0001','ticketUrl':'/ticket?token=qa-aureva'},'waiverSigned':True,'entitlements':[{'status':'active','addonType':'drink_package'}],'purchaseAvailable':False},
-              {'event':{'slug':'halora','eventId':'halora-2027','name':'HALORA','realm':'balance','routes':{'event':'/events/halora'},'copy':{'tagline':'The equilibrium of opposites.'}},'checkedIn':False,'ticket':{'status':'paid','ticketId':'WLD-HAL-TKT-0002','ticketUrl':'/ticket?token=qa-halora'},'waiverSigned':True,'entitlements':[{'status':'active','addonType':'late_checkout'}],'purchaseAvailable':False},
-              {'event':{'slug':'sunveil','eventId':'sunveil-2027','name':'SUNVEIL','realm':'fire','routes':{'event':'/events/sunveil'},'copy':{'tagline':'The realm where fire becomes becoming.'}},'checkedIn':False,'application':{'status':'approved'},'waiverSigned':False,'entitlements':[],'purchaseAvailable':True},
-              {'event':{'slug':'nocturne','eventId':'nocturne-2027','name':'NOCTURNE','realm':'night','routes':{'event':'/events/nocturne'},'copy':{'tagline':'The realm that begins after dark.'}},'checkedIn':False,'waiverSigned':False,'entitlements':[],'purchaseAvailable':False}
-            ]
-          }
-          fixture={
-            'event':{'eventId':'aureva-2026','name':'AUREVA','realm':'light'},
-            'events':[{'eventId':'aureva-2026','name':'AUREVA','realm':'light'},{'eventId':'halora-2027','name':'HALORA','realm':'balance'},{'eventId':'sunveil-2027','name':'SUNVEIL','realm':'fire'},{'eventId':'nocturne-2027','name':'NOCTURNE','realm':'night'}],
-            'config':{'database':True,'admin':True,'stripe':True,'stripeMode':'test','turnstile':True,'email':True,'ticketSigning':True,'gate':True,'bar':True,'passport':True,'venue':True,'wallet':False},
-            'coreReady':True,'coreBlockers':[],'launchReady':False,'launchBlockers':['Stripe live mode','Apple Wallet signing'],'blockers':[],
-            'decisions':{'eventDay':{'go':False,'label':'NO-GO','summary':'One or more event-day gates require action before doors open.'},'live':{'go':False,'label':'NO-GO','summary':'A critical live-operations dependency is not ready.'},'launch':{'go':False,'label':'NO-GO','summary':'Launch remains blocked until every red/yellow launch gate is cleared.'},'rehearsal':{'go':False,'label':'NO-GO','summary':'0 failed and 4 pending rehearsal checks remain.'}},
-            'indicators':{'eventDay':event_ind,'live':event_ind,'launch':launch_ind,'rehearsal':rehearsal_ind},
-            'live':{'counts':{'applications':88,'approved':62,'invitations':54,'activeTickets':47,'checkedIn':31,'unsignedWaivers':4,'signedWaivers':43,'refundedTickets':2,'activeAddons':29,'activeDrinkPackages':21,'activeWristbands':18,'creditsRedeemed':47,'creditsRemaining':79,'checkinRecords':31},'revenue':{'admissionCents':164500,'addonCents':63800,'totalCents':228300},'recentCheckins':[{'guestName':'Rehearsal Guest','ticketId':'WLD-AUR-TKT-1234567890ABCDEF','checkedInAt':'2026-09-13T18:30:00-10:00'}],'recentWristbands':[{'ticketId':'WLD-AUR-TKT-1234567890ABCDEF','wristbandCode':'A042','creditsRedeemed':2,'creditsRemaining':4,'updatedAt':'2026-09-13T18:35:00-10:00'}]},
-            'rehearsal':{'tester':'QA','passed':6,'failed':0,'pending':4,'percent':60,'ready':False,'items':[{'id':'invitation-approval','label':'Invitation → approval → invite','detail':'Approve and redeem a controlled invitation.','status':'passed','note':'Verified'},{'id':'stripe-checkout','label':'Stripe checkout','detail':'Complete a sandbox checkout.','status':'passed','note':''},{'id':'waiver-qr','label':'Waiver → QR unlock','detail':'Verify waiver gate.','status':'passed','note':''},{'id':'wallet-install','label':'Apple Wallet','detail':'Install on a physical iPhone.','status':'pending','note':''},{'id':'gate-scan','label':'Gate scan','detail':'Scan on a physical device.','status':'pending','note':''},{'id':'drink-package','label':'Drink package purchase','detail':'Verify entitlement.','status':'passed','note':''},{'id':'bartender-redemption','label':'Bartender redemption','detail':'Redeem on bartender device.','status':'pending','note':''},{'id':'refund','label':'Admission + add-on refund','detail':'Refund controlled unused purchase.','status':'pending','note':''},{'id':'failed-payment','label':'Failure drill','detail':'Cancelled payment creates no admission.','status':'passed','note':''},{'id':'offline-fallback','label':'Event-day fallback','detail':'Verify manual recovery path.','status':'passed','note':''}]},
-            'generatedAt':'2026-09-14T05:10:00Z'
-          }
-          results=[]
-          def benign(msg):
-            text=str(msg)
-            return 'challenges.cloudflare.com' in text and ('accessing a frame' in text or 'cross-origin' in text.lower())
-          with sync_playwright() as p:
-            for engine in ['chromium','webkit']:
-              browser=getattr(p,engine).launch()
-              for width in [375,390,393,430,1440]:
-                height=844 if width<900 else 1000
-                context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,is_mobile=width<900,has_touch=width<900)
-                for path in routes:
-                  page=context.new_page();errors=[]
-                  page.on('pageerror',lambda error: errors.append(str(error)) if not benign(error) else None)
-                  if path in command_routes:
-                    page.route('**/api/admin/readiness*',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps(fixture)))
-                  if path=='/passport':
-                    page.route('**/api/passport',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps(passport_fixture)))
-                  try:
-                    response=page.goto('https://enterwildones.com'+path,wait_until='domcontentloaded',timeout=45000)
-                    page.wait_for_timeout(1500)
-                    page.evaluate("document.documentElement.style.scrollBehavior='auto'")
-                    doc_height=page.evaluate('document.documentElement.scrollHeight')
-                    for y in range(0,doc_height,650):
-                      page.evaluate('(y)=>window.scrollTo(0,y)',y);page.wait_for_timeout(120)
-                    page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(500)
-                    report=page.evaluate('''() => ({overflow:document.documentElement.scrollWidth>innerWidth+1, brokenImages:[...document.images].filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.getAttribute('src')), tinyTargets:[...document.querySelectorAll('button,a,input,select,summary')].filter(x=>{const r=x.getBoundingClientRect();return r.width>0&&r.height>0&&(r.height<40||r.width<32)}).slice(0,20).map(x=>({tag:x.tagName,text:(x.innerText||x.getAttribute('aria-label')||x.name||'').trim().slice(0,60),w:Math.round(x.getBoundingClientRect().width),h:Math.round(x.getBoundingClientRect().height)})), heading:document.querySelector('h1')?.textContent||'', title:document.title})''')
-                    report.update(engine=engine,width=width,path=path,status=response.status,errors=errors)
-                    if path=='/passport':
-                      report['passportAuthenticatedVisible']=page.locator('#account').is_visible()
-                      report['passportRealmCards']=page.locator('#realms .passport-card').count()
-                      report['passportMemberWidth']=round(page.locator('.passport-member-card').bounding_box()['width']) if page.locator('.passport-member-card').count() else 0
-                    screenshot_paths={'/','/apply/aureva','/events/nocturne','/passport','/admin','/admin/operations','/admin/event-day','/admin/live','/admin/launch','/admin/rehearsal'}
-                    if path in screenshot_paths:
-                      page.screenshot(path=str(root/(engine+'-'+str(width)+'-'+(path.strip('/').replace('/','-') or 'home')+'.png')),full_page=True)
-                    if path=='/' and width<900:
-                      menu=page.locator('.mobile-menu summary');menu.click();report['mobileMenuOpened']=page.locator('.mobile-menu').get_attribute('open') is not None
-                    results.append(report)
-                  except Exception as e:
-                    results.append({'engine':engine,'width':width,'path':path,'exception':str(e)})
-                  finally: page.close()
-                context.close()
-              browser.close()
-          (root/'report.json').write_text(json.dumps(results,indent=2))
-          failures=[r for r in results if r.get('exception') or r.get('status',500)>=400 or r.get('overflow') or r.get('brokenImages') or r.get('errors') or r.get('mobileMenuOpened') is False or (r.get('path')=='/passport' and (r.get('passportAuthenticatedVisible') is not True or r.get('passportRealmCards')!=4))]
-          print(json.dumps({'checks':len(results),'failures':failures,'tinyTargetWarnings':sum(len(r.get('tinyTargets',[])) for r in results)},indent=2))
-          assert not failures,'Production visual issues found; inspect artifact'
+      - name: Read-only route, API, fail-closed auth, and header checks
+        env:
+          PRODUCTION_BASE_URL: https://enterwildones.com
+          VISUAL_RESULTS: visual-results
+        run: python scripts/production_visual_qa.py --mode smoke
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: production-visual-qa
-          path: visual-results
-          retention-days: 7
+          name: production-runtime-smoke
+          path: visual-results/production-smoke.json
+          retention-days: 14
+          if-no-files-found: error
+
+  browser-qa:
+    name: ${{ matrix.suite }} · ${{ matrix.browser }}
+    needs: deploy-sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        suite: [public, transactional, admin, staff]
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Playwright
+        run: |
+          pip install playwright==1.55.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Full responsive production browser audit
+        env:
+          PRODUCTION_BASE_URL: https://enterwildones.com
+          VISUAL_RESULTS: visual-results
+        run: python scripts/production_visual_qa.py --mode browser --suite ${{ matrix.suite }} --browser ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-visual-${{ matrix.suite }}-${{ matrix.browser }}
+          path: visual-results/${{ matrix.suite }}-${{ matrix.browser }}
+          retention-days: 14
+          if-no-files-found: error
+
+  qa-summary:
+    name: Production QA summary
+    if: always()
+    needs: [source-audit, deploy-sync, runtime-smoke, browser-qa]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish summary
+        run: |
+          {
+            echo '## Production visual QA'
+            echo
+            echo '| Gate | Result |'
+            echo '| --- | --- |'
+            echo '| Source + build audit | ${{ needs.source-audit.result }} |'
+            echo '| Production deploy sync | ${{ needs.deploy-sync.result }} |'
+            echo '| HTTP + security smoke | ${{ needs.runtime-smoke.result }} |'
+            echo '| Responsive browser matrix | ${{ needs.browser-qa.result }} |'
+            echo
+            echo 'Coverage: Chromium + WebKit; public, transactional, admin, and staff surfaces; 320px through 1920px; HiDPI; reduced motion; authenticated fixture states; Master Cycle Passport; add-on state matrix; admin tabs; DOM integrity; missing assets; console/network failures; mobile navigation; security headers; fail-closed protected APIs; production deployment synchronization; screenshots and JSON artifacts.'
+          } >> "$GITHUB_STEP_SUMMARY"
