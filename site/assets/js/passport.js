@@ -106,16 +106,43 @@
     },delay);
   }
 
+  function buildMasterCycleCeremony(){
+    q('.master-cycle-ceremony')?.remove();
+    const ceremony=document.createElement('div');
+    ceremony.className='master-cycle-ceremony';
+    ceremony.setAttribute('role','dialog');
+    ceremony.setAttribute('aria-modal','true');
+    ceremony.setAttribute('aria-labelledby','masterCycleCeremonyTitle');
+    ceremony.setAttribute('aria-describedby','masterCycleCeremonyCopy');
+    ceremony.innerHTML='<div class="master-cycle-cosmos" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="master-cycle-stage"><p class="master-cycle-kicker">THE FOUR REALMS ARE COMPLETE</p><div class="master-cycle-orbit" aria-hidden="true"><div class="master-cycle-ring ring-one"></div><div class="master-cycle-ring ring-two"></div><div class="master-cycle-realm master-cycle-realm--light" data-brand-realm="light"><i>I</i><strong>AUREVA</strong><span>LIGHT</span></div><div class="master-cycle-realm master-cycle-realm--balance" data-brand-realm="balance"><i>II</i><strong>HALORA</strong><span>BALANCE</span></div><div class="master-cycle-realm master-cycle-realm--fire" data-brand-realm="fire"><i>III</i><strong>SUNVEIL</strong><span>FIRE</span></div><div class="master-cycle-realm master-cycle-realm--night" data-brand-realm="night"><i>IV</i><strong>NOCTURNE</strong><span>NIGHT</span></div><div class="master-cycle-core"><img src="'+esc(window.WildOnesBrand.asset('cycle'))+'" alt="" width="768" height="768" decoding="sync"><b>∞</b></div></div><div class="master-cycle-copy"><h2 id="masterCycleCeremonyTitle">MASTER CYCLE UNLOCKED</h2><p id="masterCycleCeremonyCopy">Light. Balance. Fire. Night. Every realm is now part of your story. The cycle is whole, and your Master Cycle credential has been awakened.</p><span class="master-cycle-motto">THE CYCLE REMEMBERS.</span><button type="button" class="button master-cycle-continue">Continue to Passport</button></div></div>';
+    const close=()=>{
+      if(ceremony.classList.contains('is-closing'))return;
+      ceremony.classList.add('is-closing');
+      document.body.classList.remove('master-cycle-ceremony-open');
+      document.removeEventListener('keydown',onKey);
+      setTimeout(()=>ceremony.remove(),520);
+    };
+    const onKey=e=>{if(e.key==='Escape')close();};
+    ceremony.querySelector('.master-cycle-continue').addEventListener('click',close);
+    document.addEventListener('keydown',onKey);
+    document.body.append(ceremony);
+    document.body.classList.add('master-cycle-ceremony-open');
+    requestAnimationFrame(()=>ceremony.classList.add('is-visible'));
+    ceremony.querySelector('.master-cycle-continue').focus({preventScroll:true});
+    return ceremony;
+  }
+
   function playMasterUnlock(card,delay=0){
     if(!card)return;
     setTimeout(()=>{
-      if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-      card.querySelector('.realm-complete-overlay')?.remove();
-      card.append(makeCompletionOverlay('master'));
-      card.classList.remove('master-unlock');
-      void card.offsetWidth;
-      card.classList.add('master-unlock');
-      setTimeout(()=>{card.classList.remove('master-unlock');card.querySelector('.realm-complete-overlay')?.remove();},3000);
+      const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(!reduce){
+        card.classList.remove('master-unlock');
+        void card.offsetWidth;
+        card.classList.add('master-unlock');
+        setTimeout(()=>card.classList.remove('master-unlock'),3000);
+      }
+      buildMasterCycleCeremony();
     },delay);
   }
 
