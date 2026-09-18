@@ -110,7 +110,7 @@
       }
       let img=icon.querySelector('img');
       if(!img){img=document.createElement('img');icon.append(img);}
-      img.src=asset('cycle');
+      img.src='/assets/images/realms/enter-wild-ones-emblem.svg';
       img.alt='';
       img.decoding='sync';
       let label=brand.querySelector('.brand-label');
