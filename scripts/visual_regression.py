@@ -114,7 +114,7 @@ def capture(base_url:str,dest:Path):
       browser.close()
     return results
 
-def seed_approved_preview(base_url:str,baseline_dir:Path,legacy_dir:Path,approved:set[str]):
+def seed_approved_preview(base_url:str,baseline_dir:Path,production_dir:Path,approved:set[str]):
     unknown=approved-{case["name"] for case in CASES}
     if unknown:
       raise ValueError("unknown approved cases: "+", ".join(sorted(unknown)))
@@ -127,13 +127,13 @@ def seed_approved_preview(base_url:str,baseline_dir:Path,legacy_dir:Path,approve
     manifest=[]
     for case in CASES:
       name=case["name"]
-      source=(current if name in approved else legacy_dir)/(name+".png")
+      source=(current if name in approved else production_dir)/(name+".png")
       if not source.exists():
         missing.append(name)
         continue
       target=baseline_dir/(name+".png")
       shutil.copy2(source,target)
-      manifest.append({"name":name,"source":"approved-preview" if name in approved else "legacy-v4"})
+      manifest.append({"name":name,"source":"approved-preview" if name in approved else "deployed-production"})
     (baseline_dir/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     if missing:
       print(json.dumps({"missingBaselineCases":missing},indent=2))
@@ -175,7 +175,7 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--mode",choices=("capture-production","seed-approved-preview","compare-preview"),required=True)
     ap.add_argument("--baseline-dir",default=".visual-baselines")
-    ap.add_argument("--legacy-baseline-dir",default=".visual-baselines-v4")
+    ap.add_argument("--production-baseline-dir",default=".visual-baselines-production")
     ap.add_argument("--approved-cases",default="")
     ap.add_argument("--production-base",default="https://enterwildones.com")
     args=ap.parse_args()
@@ -194,7 +194,7 @@ def main():
         server.shutdown();server.server_close()
         raise ValueError("--approved-cases is required for seed-approved-preview")
       try:
-        return seed_approved_preview(base_url,baseline,Path(args.legacy_baseline_dir),approved)
+        return seed_approved_preview(base_url,baseline,Path(args.production_baseline_dir),approved)
       finally:
         server.shutdown();server.server_close()
 
