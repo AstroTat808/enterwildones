@@ -112,6 +112,14 @@ def state_checks(page,case):
  if case.state=="home":
   for s in ("#aureva","#halora","#sunveil","#nocturne"):
    if page.locator(s).count()!=1:f.append("missing "+s)
+ elif case.name=="realm-quiz":
+  vp=page.viewport_size or {}
+  if vp.get("height",0)>=768:
+   cta=page.locator("#quizStart")
+   if not cta.is_visible():f.append("Find My Realm CTA missing")
+   else:
+    box=cta.bounding_box()
+    if not box or box["y"]+box["height"]>vp["height"]:f.append("Find My Realm CTA must be visible above the fold")
  elif case.state.startswith("apply-"):
   slug=case.path.rsplit("/",1)[-1]
   form_visible=page.locator("#applyForm").is_visible()
