@@ -109,6 +109,28 @@ def dom(page):
 
 def state_checks(page,case,width=None):
  f=[]
+ guest_header=page.locator(".topbar .brand").count()>0 and not (case.name.startswith("admin-") or case.name in ("check-in","bar"))
+ if guest_header:
+  header=page.locator(".topbar").first
+  brand=page.locator(".topbar .brand").first
+  icon=page.locator(".topbar .brand-icon").first
+  label=page.locator(".topbar .brand-label").first
+  sub=page.locator(".topbar .brand-label span").first
+  if not (header.is_visible() and brand.is_visible() and icon.is_visible()):f.append("guest masthead emblem must be visible")
+  if not label.is_visible() or "ENTER WILD ONES" not in label.inner_text():f.append("guest masthead ENTER WILD ONES label missing")
+  if not sub.is_visible() or "THE FOUR REALMS" not in sub.inner_text():f.append("guest masthead THE FOUR REALMS label missing")
+  hb=header.bounding_box();ib=icon.bounding_box();bb=brand.bounding_box()
+  if hb and ib and (ib["y"]<hb["y"]-1 or ib["y"]+ib["height"]>hb["y"]+hb["height"]+1):f.append("guest masthead emblem is clipped by header")
+  if hb and bb and (bb["y"]<hb["y"]-1 or bb["y"]+bb["height"]>hb["y"]+hb["height"]+1):f.append("guest masthead lockup is clipped by header")
+  initial_h=hb["height"] if hb else None
+  page.evaluate("window.scrollTo(0,140)");page.wait_for_timeout(90)
+  compact_h=header.bounding_box()["height"] if header.bounding_box() else None
+  if initial_h and compact_h and compact_h>initial_h+1:f.append("guest masthead grows after scroll")
+  if not label.is_visible() or not sub.is_visible():f.append("guest masthead wordmark disappears after scroll")
+  hb2=header.bounding_box();ib2=icon.bounding_box();bb2=brand.bounding_box()
+  if hb2 and ib2 and (ib2["y"]<hb2["y"]-1 or ib2["y"]+ib2["height"]>hb2["y"]+hb2["height"]+1):f.append("compact guest masthead emblem is clipped")
+  if hb2 and bb2 and (bb2["y"]<hb2["y"]-1 or bb2["y"]+bb2["height"]>hb2["y"]+hb2["height"]+1):f.append("compact guest masthead lockup is clipped")
+  page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(70)
  if case.state=="home":
   for s in ("#aureva","#halora","#sunveil","#nocturne"):
    if page.locator(s).count()!=1:f.append("missing "+s)
@@ -275,6 +297,12 @@ def source_mode():
  passport=(SITE/"assets/js/passport.js").read_text(encoding="utf-8");ph=(SITE/"passport.html").read_text(encoding="utf-8");css=(SITE/"assets/css/transactional-hero.css").read_text(encoding="utf-8");tv=Path("netlify/functions/ticket-view.mjs").read_text(encoding="utf-8")
  for s in ("MASTER CYCLE","passport-master-card"):
   if s not in passport:fail.append("passport regression guard missing "+s)
+ masthead=(SITE/"assets/css/masthead-lockup.css").read_text(encoding="utf-8") if (SITE/"assets/css/masthead-lockup.css").exists() else ""
+ branding=(SITE/"assets/js/branding.js").read_text(encoding="utf-8")
+ for s in (".wo-guest-masthead",".brand-icon",".brand-label","masthead-scrolled"):
+  if s not in masthead:fail.append("shared masthead regression guard missing "+s)
+ for s in ("wo-guest-masthead","ENTER WILD ONES","THE FOUR REALMS","mastheadScrollState"):
+  if s not in branding:fail.append("branding masthead contract missing "+s)
  if "realm-gradient-title tx-display-title" not in ph:fail.append("premium Passport title markup missing")
  for s in (".tx-display-title",".tx-page-title",".tx-section-title",".tx-label",".tx-subheadline"):
   if s not in css:fail.append("shared typography missing "+s)
