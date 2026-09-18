@@ -1,0 +1,178 @@
+/* ENTER WILD ONES — canonical guest masthead lockup.
+   One logo/text treatment for event, Passport, Find Your Realm, invite,
+   application and guest ticketing surfaces. Homepage keeps its own cinematic
+   sizing in home-final-polish.css. */
+.wo-guest-masthead:not(.cinematic-home){
+  --wo-masthead-height:104px;
+  --bar-height:var(--wo-masthead-height);
+}
+.wo-guest-masthead:not(.cinematic-home) .topbar{
+  min-height:var(--wo-masthead-height);
+  padding-top:7px;
+  padding-bottom:9px;
+  align-items:center;
+  transition:min-height .24s ease,padding .24s ease,background .24s ease,box-shadow .24s ease;
+}
+.wo-guest-masthead:not(.cinematic-home) .brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+  min-height:88px;
+  overflow:visible;
+}
+.wo-guest-masthead:not(.cinematic-home) .brand-icon{
+  position:relative!important;
+  display:block;
+  width:88px!important;
+  height:88px!important;
+  flex:0 0 88px!important;
+  overflow:hidden!important;
+  border-radius:0!important;
+  filter:drop-shadow(0 0 16px color-mix(in srgb,var(--accent) 16%,transparent));
+  transition:width .24s ease,height .24s ease,flex-basis .24s ease;
+}
+.wo-guest-masthead:not(.cinematic-home) .brand-icon img{
+  position:absolute!important;
+  display:block!important;
+  width:132px!important;
+  height:132px!important;
+  max-width:none!important;
+  left:-22px!important;
+  top:0!important;
+  object-fit:cover!important;
+  object-position:center top!important;
+  mix-blend-mode:normal!important;
+  transform:none!important;
+  filter:saturate(1.06) contrast(1.04) brightness(1.04)!important;
+  transition:width .24s ease,height .24s ease,left .24s ease,top .24s ease;
+}
+.wo-guest-masthead:not(.cinematic-home) .brand-label{
+  display:flex!important;
+  flex-direction:column;
+  justify-content:center;
+  min-width:0;
+  margin:0;
+  color:#f8f0e3!important;
+  font-size:11px!important;
+  font-weight:750!important;
+  line-height:1.15!important;
+  letter-spacing:.22em!important;
+  white-space:nowrap!important;
+  text-transform:uppercase;
+}
+.wo-guest-masthead:not(.cinematic-home) .brand-label>span{
+  display:block!important;
+  margin-top:7px!important;
+  color:#aa9d88!important;
+  font-size:7px!important;
+  font-weight:550!important;
+  letter-spacing:.30em!important;
+  line-height:1.1!important;
+}
+
+/* Compact after scroll, but never collapse the emblem or wordmark. */
+.wo-guest-masthead.masthead-scrolled:not(.cinematic-home){
+  --wo-masthead-height:90px;
+}
+.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .topbar{
+  padding-top:5px;
+  padding-bottom:7px;
+  background:rgba(3,4,7,.965);
+  box-shadow:0 14px 42px rgba(0,0,0,.32);
+}
+.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand{
+  min-height:76px;
+}
+.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-icon{
+  width:76px!important;
+  height:76px!important;
+  flex-basis:76px!important;
+}
+.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-icon img{
+  width:116px!important;
+  height:116px!important;
+  left:-20px!important;
+}
+.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-label{
+  font-size:10px!important;
+}
+.wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-label>span{
+  margin-top:5px!important;
+  font-size:6.5px!important;
+}
+
+@media(max-width:850px){
+  .wo-guest-masthead:not(.cinematic-home){
+    --wo-masthead-height:96px;
+  }
+  .wo-guest-masthead:not(.cinematic-home) .topbar{
+    padding-top:6px;
+    padding-bottom:8px;
+    gap:10px;
+  }
+  .wo-guest-masthead:not(.cinematic-home) .brand{
+    min-height:80px;
+    gap:9px;
+    flex:1 1 auto;
+  }
+  .wo-guest-masthead:not(.cinematic-home) .brand-icon{
+    width:74px!important;
+    height:80px!important;
+    flex-basis:74px!important;
+  }
+  .wo-guest-masthead:not(.cinematic-home) .brand-icon img{
+    width:122px!important;
+    height:122px!important;
+    left:-24px!important;
+    top:0!important;
+  }
+  .wo-guest-masthead:not(.cinematic-home) .brand-label{
+    max-width:156px;
+    font-size:9px!important;
+    letter-spacing:.16em!important;
+  }
+  .wo-guest-masthead:not(.cinematic-home) .brand-label>span{
+    margin-top:5px!important;
+    font-size:6.1px!important;
+    letter-spacing:.21em!important;
+  }
+  .wo-guest-masthead.masthead-scrolled:not(.cinematic-home){
+    --wo-masthead-height:86px;
+  }
+  .wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand{
+    min-height:72px;
+  }
+  .wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-icon{
+    width:66px!important;
+    height:72px!important;
+    flex-basis:66px!important;
+  }
+  .wo-guest-masthead.masthead-scrolled:not(.cinematic-home) .brand-icon img{
+    width:110px!important;
+    height:110px!important;
+    left:-22px!important;
+  }
+}
+
+@media(max-width:390px){
+  .wo-guest-masthead:not(.cinematic-home) .brand{gap:7px}
+  .wo-guest-masthead:not(.cinematic-home) .brand-icon{
+    width:68px!important;
+    flex-basis:68px!important;
+  }
+  .wo-guest-masthead:not(.cinematic-home) .brand-icon img{
+    width:116px!important;
+    height:116px!important;
+    left:-24px!important;
+  }
+  .wo-guest-masthead:not(.cinematic-home) .brand-label{
+    max-width:126px;
+    font-size:8px!important;
+    letter-spacing:.12em!important;
+  }
+  .wo-guest-masthead:not(.cinematic-home) .brand-label>span{
+    font-size:5.7px!important;
+    letter-spacing:.16em!important;
+  }
+}
