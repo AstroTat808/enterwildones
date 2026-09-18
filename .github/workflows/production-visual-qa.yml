@@ -1,6 +1,18 @@
 name: Production visual QA
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/production-visual-qa.yml'
+      - 'site/**'
+      - 'netlify/functions/**'
+      - 'netlify.toml'
+      - 'scripts/production_visual_qa.py'
+      - 'scripts/visual_regression.py'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
   push:
     branches: [main]
     paths:
@@ -9,6 +21,7 @@ on:
       - 'netlify/functions/**'
       - 'netlify.toml'
       - 'scripts/production_visual_qa.py'
+      - 'scripts/visual_regression.py'
       - 'package.json'
       - 'package-lock.json'
       - '.nvmrc'
@@ -17,11 +30,15 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: production-visual-qa-${{ github.ref }}
+  group: production-visual-qa-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
+  actions: read
+
+env:
+  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v1
 
 jobs:
   source-audit:
@@ -55,8 +72,65 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
+  visual-regression:
+    name: Approved screenshot regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install visual regression dependencies
+        run: |
+          pip install playwright==1.55.0 pillow==11.3.0
+          python -m playwright install --with-deps chromium
+      - name: Restore approved screenshot baseline
+        id: baseline
+        uses: actions/cache/restore@v4
+        with:
+          path: .visual-baselines
+          key: ${{ env.VISUAL_BASELINE_KEY }}
+      - name: Seed approved baseline from deployed main
+        if: steps.baseline.outputs.cache-hit != 'true'
+        run: python scripts/visual_regression.py --mode capture-production --baseline-dir .visual-baselines
+      - name: Save approved screenshot baseline
+        if: steps.baseline.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .visual-baselines
+          key: ${{ env.VISUAL_BASELINE_KEY }}
+      - name: Compare proposed UI to approved baseline
+        run: python scripts/visual_regression.py --mode compare-preview --baseline-dir .visual-baselines
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: approved-visual-regression-${{ github.run_id }}
+          path: visual-regression-results
+          retention-days: 30
+          if-no-files-found: error
+
+  production-qa-gate:
+    name: Production QA Gate
+    if: always()
+    needs: [source-audit, visual-regression]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce pre-merge critical gates
+        env:
+          SOURCE_RESULT: ${{ needs.source-audit.result }}
+          VISUAL_RESULT: ${{ needs.visual-regression.result }}
+        run: |
+          echo "Source + build audit: $SOURCE_RESULT"
+          echo "Approved visual regression: $VISUAL_RESULT"
+          test "$SOURCE_RESULT" = "success"
+          test "$VISUAL_RESULT" = "success"
+
   deploy-sync:
     name: Confirm production deployment
+    if: github.event_name != 'pull_request'
     needs: source-audit
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -76,6 +150,7 @@ jobs:
 
   runtime-smoke:
     name: Production HTTP + security smoke
+    if: github.event_name != 'pull_request'
     needs: deploy-sync
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -101,6 +176,7 @@ jobs:
 
   browser-qa:
     name: ${{ matrix.suite }} · ${{ matrix.browser }}
+    if: github.event_name != 'pull_request'
     needs: deploy-sync
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -136,8 +212,8 @@ jobs:
 
   qa-summary:
     name: Production QA summary
-    if: always()
-    needs: [source-audit, deploy-sync, runtime-smoke, browser-qa]
+    if: always() && github.event_name != 'pull_request'
+    needs: [source-audit, visual-regression, production-qa-gate, deploy-sync, runtime-smoke, browser-qa]
     runs-on: ubuntu-latest
     steps:
       - name: Publish summary
@@ -148,9 +224,9 @@ jobs:
             echo '| Gate | Result |'
             echo '| --- | --- |'
             echo '| Source + build audit | ${{ needs.source-audit.result }} |'
+            echo '| Approved screenshot regression | ${{ needs.visual-regression.result }} |'
+            echo '| Production QA Gate | ${{ needs.production-qa-gate.result }} |'
             echo '| Production deploy sync | ${{ needs.deploy-sync.result }} |'
             echo '| HTTP + security smoke | ${{ needs.runtime-smoke.result }} |'
             echo '| Responsive browser matrix | ${{ needs.browser-qa.result }} |'
-            echo
-            echo 'Coverage: Chromium + WebKit; public, transactional, admin, and staff surfaces; 320px through 1920px; HiDPI; reduced motion; authenticated fixture states; Master Cycle Passport; add-on state matrix; admin tabs; DOM integrity; missing assets; console/network failures; mobile navigation; security headers; fail-closed protected APIs; production deployment synchronization; screenshots and JSON artifacts.'
           } >> "$GITHUB_STEP_SUMMARY"
