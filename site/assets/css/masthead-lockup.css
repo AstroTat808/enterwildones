@@ -52,13 +52,13 @@ body.wo-guest-masthead .topbar .brand-icon{
 body.wo-guest-masthead .topbar .brand-icon img{
   position:absolute!important;
   display:block!important;
-  width:164px!important;
-  height:164px!important;
-  max-width:none!important;
-  left:-19px!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  left:0!important;
   top:0!important;
-  object-fit:cover!important;
-  object-position:center top!important;
+  object-fit:contain!important;
+  object-position:center center!important;
   mix-blend-mode:normal!important;
   transform:none!important;
   filter:saturate(1.08) contrast(1.06) brightness(1.05)!important;
@@ -131,9 +131,9 @@ body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon{
   filter:drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 14%,transparent))!important;
 }
 body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon img{
-  width:142px!important;
-  height:142px!important;
-  left:-18px!important;
+  width:100%!important;
+  height:100%!important;
+  left:0!important;
 }
 body.wo-guest-masthead.masthead-scrolled .topbar .brand-label{
   font-size:10.25px!important;
@@ -165,9 +165,9 @@ body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
     flex-basis:78px!important;
   }
   body.wo-guest-masthead .topbar .brand-icon img{
-    width:140px!important;
-    height:140px!important;
-    left:-31px!important;
+    width:100%!important;
+    height:100%!important;
+    left:0!important;
     top:0!important;
   }
   body.wo-guest-masthead .topbar .brand-label{
@@ -193,9 +193,9 @@ body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
     flex-basis:68px!important;
   }
   body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon img{
-    width:120px!important;
-    height:120px!important;
-    left:-26px!important;
+    width:100%!important;
+    height:100%!important;
+    left:0!important;
   }
   body.wo-guest-masthead.masthead-scrolled .topbar .brand-label{
     font-size:8.6px!important;
@@ -221,9 +221,9 @@ body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
     flex-basis:72px!important;
   }
   body.wo-guest-masthead .topbar .brand-icon img{
-    width:132px!important;
-    height:132px!important;
-    left:-30px!important;
+    width:100%!important;
+    height:100%!important;
+    left:0!important;
   }
   body.wo-guest-masthead .topbar .brand-label{
     max-width:124px;
