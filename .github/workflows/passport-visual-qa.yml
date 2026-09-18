@@ -1,0 +1,84 @@
+name: Passport visual QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/passport-visual-qa.yml'
+      - 'site/passport.html'
+      - 'site/assets/js/passport.js'
+      - 'site/assets/css/passport-card-polish.css'
+      - 'site/assets/css/transactional-hero.css'
+      - 'site/assets/css/transactional-premium.css'
+      - 'site/assets/css/realm-luxury-polish.css'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  passport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.55.0
+      - run: python -m playwright install --with-deps chromium webkit
+      - name: Authenticated Passport screenshots and assertions
+        shell: python
+        run: |
+          import json,pathlib
+          from playwright.sync_api import sync_playwright
+          root=pathlib.Path('passport-visual-results');root.mkdir(exist_ok=True)
+          fixture={
+            'authenticated':True,
+            'user':{'preferredName':'Christopher','fullName':'Christopher Sibel'},
+            'cycle':{'completed':2,'total':4},
+            'realms':[
+              {'event':{'slug':'aureva','eventId':'aureva-2026','name':'AUREVA','realm':'light','routes':{'event':'/events/aureva'},'copy':{'tagline':'Where the cycle begins in light.'}},'checkedIn':True,'ticket':{'status':'checked_in','ticketId':'WLD-AUR-TKT-0001','ticketUrl':'/ticket?token=qa-aureva'},'waiverSigned':True,'entitlements':[{'status':'active','addonType':'drink_package'}],'purchaseAvailable':False},
+              {'event':{'slug':'halora','eventId':'halora-2027','name':'HALORA','realm':'balance','routes':{'event':'/events/halora'},'copy':{'tagline':'The equilibrium of opposites.'}},'checkedIn':False,'ticket':{'status':'paid','ticketId':'WLD-HAL-TKT-0002','ticketUrl':'/ticket?token=qa-halora'},'waiverSigned':True,'entitlements':[{'status':'active','addonType':'late_checkout'}],'purchaseAvailable':False},
+              {'event':{'slug':'sunveil','eventId':'sunveil-2027','name':'SUNVEIL','realm':'fire','routes':{'event':'/events/sunveil'},'copy':{'tagline':'The realm where fire becomes becoming.'}},'checkedIn':False,'application':{'status':'approved'},'waiverSigned':False,'entitlements':[],'purchaseAvailable':True},
+              {'event':{'slug':'nocturne','eventId':'nocturne-2027','name':'NOCTURNE','realm':'night','routes':{'event':'/events/nocturne'},'copy':{'tagline':'The realm that begins after dark.'}},'checkedIn':False,'waiverSigned':False,'entitlements':[],'purchaseAvailable':False}
+            ]
+          }
+          results=[]
+          with sync_playwright() as p:
+            for engine in ['chromium','webkit']:
+              browser=getattr(p,engine).launch()
+              for width in [375,390,430,1440]:
+                height=844 if width<900 else 1000
+                context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,is_mobile=width<900,has_touch=width<900)
+                page=context.new_page();errors=[]
+                page.on('pageerror',lambda error:errors.append(str(error)))
+                page.route('**/api/passport',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps(fixture)))
+                response=page.goto('https://enterwildones.com/passport',wait_until='domcontentloaded',timeout=45000)
+                page.wait_for_selector('#account:not([hidden])',timeout=15000)
+                page.wait_for_selector('#realms .passport-card:nth-child(4)',timeout=15000)
+                page.locator('#realms .passport-card').last.scroll_into_view_if_needed()
+                page.wait_for_timeout(1200)
+                page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(400)
+                report=page.evaluate('''() => ({
+                  overflow:document.documentElement.scrollWidth>innerWidth+1,
+                  cards:document.querySelectorAll('#realms .passport-card').length,
+                  accountVisible:!!document.querySelector('#account:not([hidden])'),
+                  brokenImages:[...document.querySelectorAll('#realms .passport-card-logo')].filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.getAttribute('src')),
+                  memberWidth:Math.round(document.querySelector('.passport-member-card')?.getBoundingClientRect().width||0),
+                  cardWidths:[...document.querySelectorAll('#realms .passport-card')].map(x=>Math.round(x.getBoundingClientRect().width))
+                })''')
+                report.update(engine=engine,width=width,status=response.status,errors=errors)
+                page.screenshot(path=str(root/(engine+'-'+str(width)+'-passport.png')),full_page=True)
+                results.append(report)
+                context.close()
+              browser.close()
+          (root/'report.json').write_text(json.dumps(results,indent=2))
+          failures=[r for r in results if r['status']>=400 or r['overflow'] or r['cards']!=4 or not r['accountVisible'] or r['brokenImages'] or r['errors']]
+          print(json.dumps({'checks':len(results),'failures':failures},indent=2))
+          assert not failures,'Passport visual QA failed'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: passport-visual-qa
+          path: passport-visual-results
+          retention-days: 7
