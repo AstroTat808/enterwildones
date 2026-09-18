@@ -238,3 +238,41 @@ body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
     --wo-masthead-height:88px;
   }
 }
+
+
+/* Navbar brand hover is intentionally static.
+   The masthead brand is a home link, not an animated card: no lift, scale,
+   brightness pulse, opacity change, or glow jump should occur on hover. */
+@media (hover:hover) and (pointer:fine){
+  body.wo-guest-masthead .topbar .brand:hover{
+    color:inherit!important;
+    opacity:1!important;
+    transform:none!important;
+    filter:none!important;
+    text-decoration:none!important;
+  }
+  body.wo-guest-masthead .topbar .brand:hover .brand-icon{
+    transform:none!important;
+    filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 17%,transparent))!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand:hover .brand-icon{
+    filter:drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 14%,transparent))!important;
+  }
+  body.wo-guest-masthead .topbar .brand:hover .brand-icon img{
+    transform:none!important;
+    filter:saturate(1.08) contrast(1.06) brightness(1.05)!important;
+    opacity:1!important;
+  }
+  body.wo-guest-masthead .topbar .brand:hover .brand-label{
+    color:#f8f0e3!important;
+    opacity:1!important;
+    transform:none!important;
+    filter:none!important;
+  }
+  body.wo-guest-masthead .topbar .brand:hover .brand-label>span{
+    color:#aa9d88!important;
+    opacity:1!important;
+    transform:none!important;
+    filter:none!important;
+  }
+}
