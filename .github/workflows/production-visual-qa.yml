@@ -40,8 +40,8 @@ permissions:
   actions: read
 
 env:
-  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v6
-  APPROVED_REALM_VISUAL_CASES: home-desktop,masthead-home-phone,masthead-event-phone,masthead-quiz-phone,masthead-passport-phone,masthead-invite-phone,masthead-apply-phone,realm-quiz-intro-desktop,realm-quiz-result-desktop,realm-quiz-intro-1366,realm-quiz-question-1366,realm-quiz-aureva-result-1366,realm-quiz-halora-result-1366,realm-quiz-sunveil-result-1366,realm-quiz-nocturne-result-1366,application-open-desktop,application-gated-desktop,passport-auth-desktop,passport-login-phone,invite-desktop,ticket-access-desktop,public-ticket-desktop,ticket-addons-desktop
+  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v7
+  APPROVED_REALM_VISUAL_CASES: home-desktop,home-passport-close-desktop,home-footer-desktop,home-footer-phone,home-footer-wide,masthead-home-phone,masthead-event-phone,masthead-quiz-phone,masthead-passport-phone,masthead-invite-phone,masthead-apply-phone,realm-quiz-intro-desktop,realm-quiz-result-desktop,realm-quiz-intro-1366,realm-quiz-question-1366,realm-quiz-aureva-result-1366,realm-quiz-halora-result-1366,realm-quiz-sunveil-result-1366,realm-quiz-nocturne-result-1366,application-open-desktop,application-gated-desktop,passport-auth-desktop,passport-login-phone,invite-desktop,ticket-access-desktop,public-ticket-desktop,ticket-addons-desktop
 
 jobs:
   source-audit:
