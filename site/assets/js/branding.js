@@ -12,16 +12,7 @@
   const asset = realm => `/assets/images/realms/${realms[valid(realm)].slug}-1200.webp`;
   const canonicalHome = document.body.classList.contains('cinematic-home');
   const guestMasthead = !!document.querySelector('.topbar .brand') && !document.body.matches('.admin-page,.admin-cinematic,.operations-page,.staff-page,.check-in-page,.bar-page');
-  if(guestMasthead){
-    document.body.classList.add('wo-guest-masthead');
-    if(!document.querySelector('link[data-wild-ones-masthead]')){
-      const masthead=document.createElement('link');
-      masthead.rel='stylesheet';
-      masthead.href='/assets/css/masthead-lockup.css';
-      masthead.dataset.wildOnesMasthead='';
-      document.head.append(masthead);
-    }
-  }
+  if(guestMasthead)document.body.classList.add('wo-guest-masthead');
 
   // The public homepage owns its structural worldbuilding. Shared brand layers below
   // are intentionally narrow so realm identity stays consistent without cascade drift.
@@ -67,6 +58,15 @@
     premium.href='/assets/css/transactional-premium.css';
     premium.dataset.wildOnesTransactionalPremium='';
     document.head.append(premium);
+  }
+  // Guest chrome owns the final masthead/footer geometry. Load it last so shared
+  // retina/optics layers cannot silently shrink the header or re-expand the footer.
+  if(guestMasthead && !document.querySelector('link[data-wild-ones-masthead]')){
+    const masthead=document.createElement('link');
+    masthead.rel='stylesheet';
+    masthead.href='/assets/css/masthead-lockup.css';
+    masthead.dataset.wildOnesMasthead='';
+    document.head.append(masthead);
   }
 
   function lockup(realm, variant='page'){

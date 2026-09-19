@@ -15,6 +15,10 @@ OUT=ROOT/"visual-regression-results"
 # One stable screenshot for every major guest, ticketing, admin and event-day state.
 CASES=[
  {"name":"home-desktop","path":"/","state":"home","viewport":(1440,1000),"dpr":1,"wait":"main"},
+ {"name":"home-passport-close-desktop","path":"/","state":"home","viewport":(1440,1000),"dpr":1,"wait":".v2-passport","action":"scroll-passport","full_page":False},
+ {"name":"home-footer-desktop","path":"/","state":"home","viewport":(1440,1000),"dpr":1,"wait":".site-footer","action":"scroll-footer","full_page":False},
+ {"name":"home-footer-phone","path":"/","state":"home","viewport":(390,844),"dpr":2,"wait":".site-footer","action":"scroll-footer","full_page":False},
+ {"name":"home-footer-wide","path":"/","state":"home","viewport":(1920,1080),"dpr":1,"wait":".site-footer","action":"scroll-footer","full_page":False},
  {"name":"masthead-home-phone","path":"/","state":"home","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
  {"name":"masthead-event-phone","path":"/events/aureva","state":"plain","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
  {"name":"masthead-quiz-phone","path":"/find-your-realm","state":"plain","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
@@ -156,6 +160,61 @@ def verify_mastheads(base_url:str):
     (OUT/"masthead-geometry.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
     return report
 
+def verify_home_chrome(base_url:str):
+    failures=[];rows=[]
+    viewports=[("320",320,568,2),("390",390,844,2),("768",768,1024,2),("1024",1024,768,1),("1440",1440,1000,1),("1920",1920,1080,1)]
+    with sync_playwright() as p:
+      browser=p.chromium.launch()
+      for label,w,h,dpr in viewports:
+        context=browser.new_context(viewport={"width":w,"height":h},device_scale_factor=dpr,is_mobile=w<900,has_touch=w<900,color_scheme="dark",reduced_motion="reduce")
+        page=context.new_page();qa.fixtures(page,"home")
+        row={"viewport":label,"issues":[]}
+        try:
+          page.goto(base_url+"/",wait_until="domcontentloaded",timeout=30000)
+          page.wait_for_selector(".topbar .brand-label",state="visible",timeout=15000)
+          page.wait_for_selector(".site-footer",state="attached",timeout=15000)
+          page.wait_for_timeout(350)
+          metrics=page.evaluate("""() => {
+ const box=s=>{const e=document.querySelector(s),r=e?.getBoundingClientRect();return r?{w:r.width,h:r.height,x:r.x,y:r.y}:null};
+ const style=s=>{const x=getComputedStyle(document.querySelector(s));return {bg:x.backgroundImage,fill:x.webkitTextFillColor,color:x.color}};
+ return {
+  header:box('.topbar'), icon:box('.topbar .brand-icon'), label:box('.topbar .brand-label'),
+  footer:box('.site-footer'), footerLogo:box('.site-footer .footer-brand'),
+  footerNav:box('.site-footer nav'),
+  kicker:style('.v2-passport .v2-kicker'), title:style('.v2-passport h2'),
+  copy:style('.v2-passport .v2-passport-copy'), feature:style('.v2-passport .v2-passport-features span'),
+  note:style('.v2-passport .v2-passport-note')
+ };
+}""")
+          hb,ib,fb,fl=metrics["header"],metrics["icon"],metrics["footer"],metrics["footerLogo"]
+          if w>=1024:
+            if not hb or hb["h"]<124:row["issues"].append("header below 124px")
+            if not ib or ib["w"]<140 or ib["h"]<108:row["issues"].append("emblem below desktop minimum")
+            if not fb or fb["h"]>82:row["issues"].append("footer above 82px")
+            if not fl or fl["w"]>52 or fl["h"]>52:row["issues"].append("footer logo above 52px")
+          elif w>=700:
+            if not hb or hb["h"]<102:row["issues"].append("tablet header below 102px")
+            if not ib or ib["w"]<80:row["issues"].append("tablet emblem below 80px")
+            if not fb or fb["h"]>104:row["issues"].append("tablet footer above 104px")
+          else:
+            if not hb or hb["h"]<96:row["issues"].append("mobile header below 96px")
+            if not ib or ib["w"]<68:row["issues"].append("mobile emblem below 68px")
+            if not fb or fb["h"]>112:row["issues"].append("mobile footer above 112px")
+            if not fl or fl["w"]>48 or fl["h"]>48:row["issues"].append("mobile footer logo above 48px")
+          for key in ("kicker","title","copy","feature","note"):
+            st=metrics[key]
+            if "gradient" not in st["bg"]:row["issues"].append(key+" missing gradient")
+            if st["fill"] not in ("transparent","rgba(0, 0, 0, 0)"):row["issues"].append(key+" gradient fill not transparent")
+          row["metrics"]=metrics
+        except Exception as e:
+          row["issues"].append(str(e))
+        if row["issues"]:failures.append({"viewport":label,"issues":row["issues"]})
+        rows.append(row);page.close();context.close()
+      browser.close()
+    report={"failures":failures,"rows":rows}
+    (OUT/"home-chrome-geometry.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
+    return report
+
 def normalize(src:Path,width=360):
     im=Image.open(src).convert("RGB")
     if im.width!=width:
@@ -178,6 +237,10 @@ def capture(base_url:str,dest:Path):
           page.wait_for_selector("#quizIntro:not([hidden])",state="visible",timeout=15000)
           page.locator("#quizStart").click()
         page.wait_for_selector(case["wait"],state="visible",timeout=15000)
+        if case.get("action")=="scroll-passport":
+          page.locator(".v2-passport").scroll_into_view_if_needed()
+        elif case.get("action")=="scroll-footer":
+          page.locator(".site-footer").scroll_into_view_if_needed()
         page.wait_for_timeout(550)
         page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
         page.wait_for_timeout(140)
@@ -278,9 +341,10 @@ def main():
         server.shutdown();server.server_close()
 
     masthead=verify_mastheads(base_url)
-    if masthead["failures"]:
+    home_chrome=verify_home_chrome(base_url)
+    if masthead["failures"] or home_chrome["failures"]:
       server.shutdown();server.server_close()
-      print(json.dumps({"mastheadVerification":masthead},indent=2))
+      print(json.dumps({"mastheadVerification":masthead,"homeChromeVerification":home_chrome},indent=2))
       return 1
     current=OUT/"current"
     try:
