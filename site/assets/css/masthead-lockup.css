@@ -1,0 +1,278 @@
+/* ENTER WILD ONES — canonical guest masthead lockup.
+   This is the single source of truth for the emblem + ENTER WILD ONES /
+   THE FOUR REALMS wordmark on every guest-facing surface, including home. */
+body.wo-guest-masthead{
+  --wo-masthead-height:120px;
+  --bar-height:var(--wo-masthead-height);
+  --wo-masthead-ease:cubic-bezier(.2,.72,.18,1);
+}
+body.wo-guest-masthead .topbar{
+  min-height:var(--wo-masthead-height);
+  padding-top:6px;
+  padding-bottom:8px;
+  align-items:center;
+  background:rgba(4,5,8,.925);
+  border-bottom-color:rgba(255,255,255,.075);
+  -webkit-backdrop-filter:blur(15px) saturate(112%);
+  backdrop-filter:blur(15px) saturate(112%);
+  box-shadow:0 8px 28px rgba(0,0,0,.16);
+  transition:
+    min-height .34s var(--wo-masthead-ease),
+    padding .34s var(--wo-masthead-ease),
+    background-color .34s ease,
+    border-color .34s ease,
+    box-shadow .34s ease,
+    -webkit-backdrop-filter .34s ease,
+    backdrop-filter .34s ease;
+}
+body.wo-guest-masthead .topbar .brand{
+  display:flex!important;
+  align-items:center!important;
+  gap:14px!important;
+  min-width:0;
+  min-height:106px;
+  overflow:visible!important;
+  transition:min-height .34s var(--wo-masthead-ease),gap .34s var(--wo-masthead-ease);
+}
+body.wo-guest-masthead .topbar .brand-icon{
+  position:relative!important;
+  display:block!important;
+  width:126px!important;
+  height:110px!important;
+  flex:0 0 126px!important;
+  overflow:hidden!important;
+  border-radius:0!important;
+  filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 17%,transparent))!important;
+  transition:
+    width .34s var(--wo-masthead-ease),
+    height .34s var(--wo-masthead-ease),
+    flex-basis .34s var(--wo-masthead-ease),
+    filter .34s ease;
+}
+body.wo-guest-masthead .topbar .brand-icon img{
+  position:absolute!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  left:0!important;
+  top:0!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  mix-blend-mode:normal!important;
+  transform:none!important;
+  filter:saturate(1.08) contrast(1.06) brightness(1.05)!important;
+  transition:
+    width .34s var(--wo-masthead-ease),
+    height .34s var(--wo-masthead-ease),
+    left .34s var(--wo-masthead-ease),
+    top .34s var(--wo-masthead-ease),
+    filter .34s ease;
+}
+body.wo-guest-masthead .topbar .brand-label{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  min-width:0;
+  margin:0!important;
+  color:#f8f0e3!important;
+  font-size:11px!important;
+  font-weight:750!important;
+  line-height:1.15!important;
+  letter-spacing:.22em!important;
+  white-space:nowrap!important;
+  text-transform:uppercase;
+  opacity:1!important;
+  transition:
+    font-size .34s var(--wo-masthead-ease),
+    letter-spacing .34s var(--wo-masthead-ease),
+    opacity .2s ease;
+}
+body.wo-guest-masthead .topbar .brand-label>span{
+  display:block!important;
+  margin-top:7px!important;
+  color:#aa9d88!important;
+  font-size:7px!important;
+  font-weight:550!important;
+  letter-spacing:.30em!important;
+  line-height:1.1!important;
+  opacity:1!important;
+  transition:
+    margin .34s var(--wo-masthead-ease),
+    font-size .34s var(--wo-masthead-ease),
+    letter-spacing .34s var(--wo-masthead-ease);
+}
+
+/* Homepage geometry follows the same masthead dimensions as every other guest page. */
+body.wo-guest-masthead.cinematic-home .v2-progress{top:var(--wo-masthead-height)!important}
+body.wo-guest-masthead.cinematic-home .v2-hero{padding-top:var(--wo-masthead-height)!important}
+
+/* Premium compact state after scroll: smaller, never tiny, never wordmark-less. */
+body.wo-guest-masthead.masthead-scrolled{
+  --wo-masthead-height:100px;
+}
+body.wo-guest-masthead.masthead-scrolled .topbar{
+  padding-top:5px;
+  padding-bottom:7px;
+  background:rgba(2,3,6,.965);
+  border-bottom-color:rgba(240,207,122,.12);
+  -webkit-backdrop-filter:blur(22px) saturate(126%);
+  backdrop-filter:blur(22px) saturate(126%);
+  box-shadow:0 16px 46px rgba(0,0,0,.34),inset 0 -1px rgba(255,255,255,.018);
+}
+body.wo-guest-masthead.masthead-scrolled .topbar .brand{
+  min-height:88px;
+  gap:12px!important;
+}
+body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon{
+  width:106px!important;
+  height:90px!important;
+  flex-basis:106px!important;
+  filter:drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 14%,transparent))!important;
+}
+body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon img{
+  width:100%!important;
+  height:100%!important;
+  left:0!important;
+}
+body.wo-guest-masthead.masthead-scrolled .topbar .brand-label{
+  font-size:10.25px!important;
+  letter-spacing:.205em!important;
+}
+body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
+  margin-top:5px!important;
+  font-size:6.5px!important;
+  letter-spacing:.275em!important;
+}
+
+@media(max-width:850px){
+  body.wo-guest-masthead{
+    --wo-masthead-height:102px;
+  }
+  body.wo-guest-masthead .topbar{
+    padding-top:6px;
+    padding-bottom:8px;
+    gap:10px;
+  }
+  body.wo-guest-masthead .topbar .brand{
+    min-height:88px;
+    gap:9px!important;
+    flex:1 1 auto;
+  }
+  body.wo-guest-masthead .topbar .brand-icon{
+    width:78px!important;
+    height:92px!important;
+    flex-basis:78px!important;
+  }
+  body.wo-guest-masthead .topbar .brand-icon img{
+    width:100%!important;
+    height:100%!important;
+    left:0!important;
+    top:0!important;
+  }
+  body.wo-guest-masthead .topbar .brand-label{
+    max-width:156px;
+    font-size:9.2px!important;
+    letter-spacing:.16em!important;
+  }
+  body.wo-guest-masthead .topbar .brand-label>span{
+    margin-top:5px!important;
+    font-size:6.15px!important;
+    letter-spacing:.21em!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled{
+    --wo-masthead-height:90px;
+  }
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand{
+    min-height:76px;
+    gap:8px!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon{
+    width:68px!important;
+    height:78px!important;
+    flex-basis:68px!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon img{
+    width:100%!important;
+    height:100%!important;
+    left:0!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand-label{
+    font-size:8.6px!important;
+    letter-spacing:.145em!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
+    font-size:5.9px!important;
+    letter-spacing:.19em!important;
+  }
+}
+
+@media(max-width:390px){
+  body.wo-guest-masthead{
+    --wo-masthead-height:98px;
+  }
+  body.wo-guest-masthead .topbar .brand{
+    min-height:84px;
+    gap:7px!important;
+  }
+  body.wo-guest-masthead .topbar .brand-icon{
+    width:72px!important;
+    height:88px!important;
+    flex-basis:72px!important;
+  }
+  body.wo-guest-masthead .topbar .brand-icon img{
+    width:100%!important;
+    height:100%!important;
+    left:0!important;
+  }
+  body.wo-guest-masthead .topbar .brand-label{
+    max-width:124px;
+    font-size:8px!important;
+    letter-spacing:.12em!important;
+  }
+  body.wo-guest-masthead .topbar .brand-label>span{
+    font-size:5.7px!important;
+    letter-spacing:.16em!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled{
+    --wo-masthead-height:88px;
+  }
+}
+
+
+/* Navbar brand hover is intentionally static.
+   The masthead brand is a home link, not an animated card: no lift, scale,
+   brightness pulse, opacity change, or glow jump should occur on hover. */
+@media (hover:hover) and (pointer:fine){
+  body.wo-guest-masthead .topbar .brand:hover{
+    color:inherit!important;
+    opacity:1!important;
+    transform:none!important;
+    filter:none!important;
+    text-decoration:none!important;
+  }
+  body.wo-guest-masthead .topbar .brand:hover .brand-icon{
+    transform:none!important;
+    filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 17%,transparent))!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled .topbar .brand:hover .brand-icon{
+    filter:drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 14%,transparent))!important;
+  }
+  body.wo-guest-masthead .topbar .brand:hover .brand-icon img{
+    transform:none!important;
+    filter:saturate(1.08) contrast(1.06) brightness(1.05)!important;
+    opacity:1!important;
+  }
+  body.wo-guest-masthead .topbar .brand:hover .brand-label{
+    color:#f8f0e3!important;
+    opacity:1!important;
+    transform:none!important;
+    filter:none!important;
+  }
+  body.wo-guest-masthead .topbar .brand:hover .brand-label>span{
+    color:#aa9d88!important;
+    opacity:1!important;
+    transform:none!important;
+    filter:none!important;
+  }
+}

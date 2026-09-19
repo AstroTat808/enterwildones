@@ -248,3 +248,45 @@ body.cinematic-home .v2-passport .v2-passport-note{display:block;width:100%;marg
   .realm-key,.realm-word,.realm-ticket,.realm-passport,.realm-admin,.realm-chip,.passport-card{transition:none!important}
   .realm-chip:hover,.realm-chip:focus-visible,a:hover .realm-key,a:focus-visible .realm-key,.passport-card:hover,.passport-card:hover h2.realm-key{transform:none!important}
 }
+
+
+/* Final homepage Passport gradient treatment.
+   This stylesheet loads after home-final-polish.css, so keep the definitive
+   text-paint rules here to prevent later editorial color declarations from
+   flattening the Four Realms gradient back to neutral text. */
+body.cinematic-home main .v2-passport .v2-kicker,
+body.cinematic-home main .v2-passport h2{
+  color:transparent!important;
+  background:var(--wo-realm-gradient)!important;
+  background-repeat:no-repeat!important;
+  background-size:100% 100%!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;
+  text-shadow:none!important;
+}
+body.cinematic-home main .v2-passport .v2-passport-copy{
+  color:transparent!important;
+  background:linear-gradient(90deg,#e0cf9b 0%,#d5ded5 22%,#9fdbe4 42%,#e7b792 64%,#c1abe4 84%,#ddd3c8 100%)!important;
+  background-repeat:no-repeat!important;
+  background-size:100% 100%!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;
+}
+body.cinematic-home main .v2-passport .v2-passport-features span,
+body.cinematic-home main .v2-passport .v2-passport-note{
+  color:transparent!important;
+  background:var(--wo-realm-gradient)!important;
+  background-repeat:no-repeat!important;
+  background-size:100% 100%!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;
+  filter:none!important;
+}
+body.cinematic-home main .v2-passport .v2-passport-features span+span::before{
+  color:rgba(240,207,122,.34)!important;
+  -webkit-text-fill-color:rgba(240,207,122,.34)!important;
+  background:none!important;
+}

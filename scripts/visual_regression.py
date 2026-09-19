@@ -15,6 +15,12 @@ OUT=ROOT/"visual-regression-results"
 # One stable screenshot for every major guest, ticketing, admin and event-day state.
 CASES=[
  {"name":"home-desktop","path":"/","state":"home","viewport":(1440,1000),"dpr":1,"wait":"main"},
+ {"name":"masthead-home-phone","path":"/","state":"home","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-event-phone","path":"/events/aureva","state":"plain","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-quiz-phone","path":"/find-your-realm","state":"plain","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-passport-phone","path":"/passport","state":"passport-login","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-invite-phone","path":"/invite","state":"plain","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
+ {"name":"masthead-apply-phone","path":"/apply/aureva","state":"apply-aureva","viewport":(390,844),"dpr":2,"wait":".topbar .brand-label","full_page":False},
  {"name":"realm-quiz-intro-desktop","path":"/find-your-realm","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizIntro:not([hidden])"},
  {"name":"realm-quiz-result-desktop","path":"/find-your-realm?realm=nocturne","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#quizResult:not([hidden])"},
  {"name":"realm-quiz-intro-1366","path":"/find-your-realm","state":"plain","viewport":(1366,768),"dpr":1,"wait":"#quizIntro:not([hidden])","full_page":False},
@@ -46,9 +52,23 @@ CASES=[
  {"name":"bar-phone","path":"/bar","state":"bar","viewport":(390,844),"dpr":2,"wait":"#bar:not([hidden])"},
 ]
 
+MASTHEAD_VIEWPORTS=[
+ ("320",320,568,2),("390",390,844,2),("768",768,1024,2),
+ ("1024",1024,768,1),("1440",1440,1000,1),("1920",1920,1080,1),
+]
+MASTHEAD_ROUTES=[
+ ("home","/","home"),
+ ("event","/events/aureva","plain"),
+ ("quiz","/find-your-realm","plain"),
+ ("passport","/passport","passport-login"),
+ ("invite","/invite","plain"),
+ ("apply","/apply/aureva","apply-aureva"),
+]
+
 ROUTES={
  "/":"index.html",
  "/find-your-realm":"find-your-realm.html",
+ "/events/aureva":"events/aureva.html",
  "/apply/aureva":"apply.html",
  "/apply/nocturne":"apply.html",
  "/passport":"passport.html",
@@ -76,6 +96,65 @@ class Handler(SimpleHTTPRequestHandler):
         target=(SITE/clean.lstrip("/")).resolve()
         if SITE.resolve() not in target.parents and target!=SITE.resolve():return str(SITE/"index.html")
         return str(target)
+
+def verify_mastheads(base_url:str):
+    OUT.mkdir(exist_ok=True)
+    rows=[];failures=[]
+    desktop_reference={}
+    with sync_playwright() as p:
+      browser=p.chromium.launch()
+      for vp,w,h,dpr in MASTHEAD_VIEWPORTS:
+        for name,path,state in MASTHEAD_ROUTES:
+          context=browser.new_context(viewport={"width":w,"height":h},device_scale_factor=dpr,is_mobile=w<900,has_touch=w<900,color_scheme="dark",reduced_motion="reduce")
+          page=context.new_page();qa.fixtures(page,state)
+          row={"viewport":vp,"width":w,"route":name,"path":path,"failures":[]}
+          try:
+            page.goto(base_url+path,wait_until="domcontentloaded",timeout=30000)
+            page.wait_for_selector(".topbar .brand-label",state="visible",timeout=15000)
+            page.wait_for_function("document.body.classList.contains('wo-guest-masthead')",timeout=10000)
+            page.wait_for_timeout(260)
+            initial=page.evaluate("""() => {
+ const r=e=>{const b=e.getBoundingClientRect(),s=getComputedStyle(e);return {x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}};
+ const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
+ const hs=header?getComputedStyle(header):null;
+ return {header:r(header),brand:r(brand),icon:r(icon),label:r(label),sub:r(sub),labelText:(label?.childNodes?.[0]?.textContent||'').trim(),subText:(sub?.textContent||'').trim(),blur:hs?.backdropFilter||hs?.webkitBackdropFilter||'',shadow:hs?.boxShadow||''};
+}""")
+            def clipped(child,parent,tol=1.5):
+              return child["y"]<parent["y"]-tol or child["y"]+child["h"]>parent["y"]+parent["h"]+tol
+            if initial["labelText"]!="ENTER WILD ONES":row["failures"].append("ENTER WILD ONES wordmark missing")
+            if initial["subText"]!="THE FOUR REALMS":row["failures"].append("THE FOUR REALMS wordmark missing")
+            if clipped(initial["icon"],initial["header"]):row["failures"].append("emblem clipped in expanded header")
+            if clipped(initial["brand"],initial["header"]):row["failures"].append("brand lockup clipped in expanded header")
+            if initial["label"]["w"]<=0 or initial["sub"]["w"]<=0:row["failures"].append("wordmark not visible")
+            desktop_signature={k:round(initial[k2][k3],2) if isinstance(initial[k2][k3],(int,float)) else initial[k2][k3] for k,k2,k3 in [("iconW","icon","w"),("iconH","icon","h"),("labelFont","label","font"),("labelTracking","label","tracking"),("subFont","sub","font"),("subTracking","sub","tracking")]}
+            if w>=1024:
+              ref=desktop_reference.get(vp)
+              if ref is None:desktop_reference[vp]=desktop_signature
+              elif desktop_signature!=ref:row["failures"].append("desktop masthead physical dimensions differ from "+str(ref)+" got "+str(desktop_signature))
+            page.evaluate("document.body.classList.add('masthead-scrolled')")
+            page.wait_for_timeout(430)
+            compact=page.evaluate("""() => {
+ const r=e=>{const b=e.getBoundingClientRect(),s=getComputedStyle(e);return {x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}};
+ const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
+ const hs=header?getComputedStyle(header):null;
+ return {header:r(header),brand:r(brand),icon:r(icon),label:r(label),sub:r(sub),labelText:(label?.childNodes?.[0]?.textContent||'').trim(),subText:(sub?.textContent||'').trim(),blur:hs?.backdropFilter||hs?.webkitBackdropFilter||'',shadow:hs?.boxShadow||''};
+}""")
+            if compact["header"]["h"]>=initial["header"]["h"]-1:row["failures"].append("masthead did not compact")
+            if clipped(compact["icon"],compact["header"]):row["failures"].append("emblem clipped in compact header")
+            if clipped(compact["brand"],compact["header"]):row["failures"].append("brand lockup clipped in compact header")
+            if compact["labelText"]!="ENTER WILD ONES" or compact["subText"]!="THE FOUR REALMS":row["failures"].append("wordmark disappears in compact header")
+            if compact["label"]["w"]<=0 or compact["sub"]["w"]<=0:row["failures"].append("compact wordmark not visible")
+            if compact["blur"]==initial["blur"]:row["failures"].append("premium blur does not change on compact header")
+            if compact["shadow"]==initial["shadow"]:row["failures"].append("premium shadow does not change on compact header")
+            row["expanded"]=initial;row["compact"]=compact
+          except Exception as e:
+            row["failures"].append(str(e))
+          if row["failures"]:failures.append({"viewport":vp,"route":name,"issues":row["failures"]})
+          rows.append(row);page.close();context.close()
+      browser.close()
+    report={"viewports":[x[0] for x in MASTHEAD_VIEWPORTS],"routes":[x[0] for x in MASTHEAD_ROUTES],"desktopReference":desktop_reference,"failures":failures,"checks":len(rows)}
+    (OUT/"masthead-geometry.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
+    return report
 
 def normalize(src:Path,width=360):
     im=Image.open(src).convert("RGB")
@@ -198,6 +277,11 @@ def main():
       finally:
         server.shutdown();server.server_close()
 
+    masthead=verify_mastheads(base_url)
+    if masthead["failures"]:
+      server.shutdown();server.server_close()
+      print(json.dumps({"mastheadVerification":masthead},indent=2))
+      return 1
     current=OUT/"current"
     try:
       capture(base_url,current)
