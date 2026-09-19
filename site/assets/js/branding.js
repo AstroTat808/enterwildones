@@ -11,7 +11,7 @@
   const valid = value => Object.hasOwn(realms,value) ? value : 'cycle';
   const asset = realm => `/assets/images/realms/${realms[valid(realm)].slug}-1200.webp`;
   const canonicalHome = document.body.classList.contains('cinematic-home');
-  const guestMasthead = !!document.querySelector('.topbar .brand') && !document.body.matches('.admin-page,.staff-page,.check-in-page,.bar-page');
+  const guestMasthead = !!document.querySelector('.topbar .brand') && !document.body.matches('.admin-page,.admin-cinematic,.operations-page,.staff-page,.check-in-page,.bar-page');
   if(guestMasthead){
     document.body.classList.add('wo-guest-masthead');
     if(!document.querySelector('link[data-wild-ones-masthead]')){
