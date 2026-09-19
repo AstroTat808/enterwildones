@@ -134,6 +134,45 @@ def state_checks(page,case,width=None):
  if case.state=="home":
   for s in ("#aureva","#halora","#sunveil","#nocturne"):
    if page.locator(s).count()!=1:f.append("missing "+s)
+  # Homepage chrome geometry is a release contract, not a subjective screenshot check.
+  vp=page.viewport_size or {}
+  w=vp.get("width",width or 0)
+  header=page.locator(".topbar").first
+  icon=page.locator(".topbar .brand-icon").first
+  footer=page.locator(".site-footer").first
+  footer_logo=page.locator(".site-footer .footer-brand").first
+  hb=header.bounding_box() if header.count() else None
+  ib=icon.bounding_box() if icon.count() else None
+  fb=footer.bounding_box() if footer.count() else None
+  flb=footer_logo.bounding_box() if footer_logo.count() else None
+  if w>=1024:
+   if not hb or hb["height"]<124:f.append("homepage desktop header must be at least 124px tall")
+   if not ib or ib["width"]<140 or ib["height"]<108:f.append("homepage desktop emblem must remain visually prominent")
+   if fb and fb["height"]>82:f.append("homepage desktop footer exceeded 82px end-credit limit")
+   if flb and (flb["width"]>52 or flb["height"]>52):f.append("homepage desktop footer logo exceeded compact size")
+  elif w>=700:
+   if not hb or hb["height"]<102:f.append("homepage tablet header must be at least 102px tall")
+   if not ib or ib["width"]<80:f.append("homepage tablet emblem is too small")
+   if fb and fb["height"]>104:f.append("homepage tablet footer exceeded compact height")
+  else:
+   if not hb or hb["height"]<96:f.append("homepage mobile header must be at least 96px tall")
+   if not ib or ib["width"]<68:f.append("homepage mobile emblem is too small")
+   if fb and fb["height"]>112:f.append("homepage mobile footer exceeded compact height")
+   if flb and (flb["width"]>48 or flb["height"]>48):f.append("homepage mobile footer logo exceeded compact size")
+  gradient=page.evaluate("""() => {
+ const q=s=>getComputedStyle(document.querySelector(s));
+ const read=s=>{const x=q(s);return {bg:x.backgroundImage,fill:x.webkitTextFillColor,color:x.color}};
+ return {
+  kicker:read('.v2-passport .v2-kicker'),
+  title:read('.v2-passport h2'),
+  copy:read('.v2-passport .v2-passport-copy'),
+  feature:read('.v2-passport .v2-passport-features span'),
+  note:read('.v2-passport .v2-passport-note')
+ };
+}""")
+  for name,style in gradient.items():
+   if "gradient" not in style["bg"]:f.append("homepage Passport "+name+" is missing gradient text paint")
+   if style["fill"] not in ("transparent","rgba(0, 0, 0, 0)"):f.append("homepage Passport "+name+" gradient text fill is not transparent")
  elif case.name=="realm-quiz":
   vp=page.viewport_size or {}
   if vp.get("height",0)>=768:
