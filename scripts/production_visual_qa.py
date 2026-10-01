@@ -333,7 +333,7 @@ def source_mode():
  required={"/","/events/aureva","/events/halora","/events/sunveil","/events/nocturne","/apply/aureva","/apply/halora","/apply/sunveil","/apply/nocturne","/passport","/invite","/ticket-access","/public-tickets/sunveil","/ticket/addons","/admin","/admin/overview","/admin/packages","/admin/operations","/admin/event-day","/admin/live","/admin/launch","/admin/rehearsal","/check-in","/bar"}
  matrix={c.path.split("?",1)[0] for cases in SUITES.values() for c in cases}
  if required-matrix:fail.append("browser matrix missing "+str(sorted(required-matrix)))
- passport=(SITE/"assets/js/passport.js").read_text(encoding="utf-8");ph=(SITE/"passport.html").read_text(encoding="utf-8");css=(SITE/"assets/css/transactional-hero.css").read_text(encoding="utf-8");tv=Path("netlify/functions/ticket-view.mjs").read_text(encoding="utf-8")
+ passport=(SITE/"assets/js/passport.js").read_text(encoding="utf-8");ph=(SITE/"passport.html").read_text(encoding="utf-8");css=(SITE/"assets/css/transactional-hero.css").read_text(encoding="utf-8");premium=(SITE/"assets/css/transactional-premium.css").read_text(encoding="utf-8");tv=Path("netlify/functions/ticket-view.mjs").read_text(encoding="utf-8")
  for s in ("MASTER CYCLE","passport-master-card"):
   if s not in passport:fail.append("passport regression guard missing "+s)
  masthead=(SITE/"assets/css/masthead-lockup.css").read_text(encoding="utf-8") if (SITE/"assets/css/masthead-lockup.css").exists() else ""
@@ -346,6 +346,9 @@ def source_mode():
  for s in (".tx-display-title",".tx-page-title",".tx-section-title",".tx-label",".tx-subheadline"):
   if s not in css:fail.append("shared typography missing "+s)
  if "ticket-entitlement-badge" not in tv:fail.append("ticket entitlement badge hook missing")
+ if not re.search(r"\.ticket-page\.tx-page \.ticket-support-card>\.button\{[^}]*display:inline-flex;[^}]*align-items:center;[^}]*justify-content:center;[^}]*text-decoration:none",premium,re.S):fail.append("ticket support CTA centering regression guard missing")
+ if not re.search(r"@media\(max-width:760px\)\{.*?\.ticket-page\.tx-page \.ticket-support-card\{min-height:0;",premium,re.S):fail.append("mobile ticket support cards must collapse fixed min-height")
+ if "calc(72px + env(safe-area-inset-bottom))" not in premium:fail.append("mobile ticket footer safe-area spacing regression guard missing")
  report={"htmlFiles":len(html),"failures":fail,"warnings":warn};(OUT/"source-audit.json").write_text(json.dumps(report,indent=2),encoding="utf-8");print(json.dumps(report,indent=2));return 1 if fail else 0
 
 def get(path,timeout=25):
