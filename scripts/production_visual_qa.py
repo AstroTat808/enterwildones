@@ -161,6 +161,86 @@ def state_checks(page,case,width=None):
   compact_h=compact_metrics["header"]["h"] if compact_metrics.get("header") else None
   if initial_h and compact_h and compact_h>=initial_h-1:f.append("guest masthead did not compact after scroll")
   page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(70)
+ # Transactional typography is a release contract: semantic roles must resolve to one
+ # shared hierarchy and live markup must not override the shared font metrics.
+ transactional_required={
+  "passport-auth":{
+   "tx-display-title":".passport-header .tx-display-title",
+   "tx-subheadline":".passport-header .tx-subheadline",
+   "tx-section-title":".passport-account-copy .tx-section-title",
+   "tx-card-title":"#realms .tx-card-title",
+   "tx-body":"#progress.tx-body",
+   "tx-label":".passport-member-kicker.tx-label",
+   "tx-meta-label":".passport-cycle-meter-head .tx-meta-label",
+  },
+  "passport-login":{
+   "tx-display-title":".passport-header .tx-display-title",
+   "tx-subheadline":".passport-header .tx-subheadline",
+   "tx-section-title":"#login .tx-section-title",
+   "tx-body":"#login .tx-body",
+   "tx-label":".passport-header .tx-label",
+   "tx-meta-label":".passport-cycle-meter-head .tx-meta-label",
+  },
+  "invite":{
+   "tx-display-title":".invite-workflow .tx-display-title",
+   "tx-subheadline":".invite-workflow>.tx-subheadline",
+   "tx-card-title":"[data-granted-name].tx-card-title",
+   "tx-label":".invite-workflow>.tx-label",
+   "tx-meta-label":".invite-workflow .tx-meta-label",
+  },
+  "ticket-access":{
+   "tx-page-title":".ticket-access-page .tx-page-title",
+   "tx-label":".ticket-access-page .tx-label",
+   "tx-body":".ticket-access-page .tx-body",
+  },
+  "public-tickets":{
+   "tx-page-title":".public-ticket-page .tx-page-title",
+   "tx-subheadline":".public-ticket-page .tx-subheadline",
+   "tx-label":".public-ticket-page .tx-label",
+   "tx-meta-label":".public-ticket-page .tx-meta-label",
+   "tx-body":".public-ticket-page .tx-body",
+  },
+  "ticket-addons":{
+   "tx-page-title":".ticket-addons-page .tx-page-title",
+   "tx-subheadline":".ticket-addons-page .tx-subheadline",
+   "tx-card-title":"#addons .tx-card-title",
+   "tx-meta-label":"#addons .tx-meta-label",
+   "tx-body":"#addons .tx-body",
+  },
+ }
+ if case.name in transactional_required:
+  type_metrics=page.evaluate("""() => {
+   const roles=['tx-display-title','tx-page-title','tx-section-title','tx-card-title','tx-subheadline','tx-body','tx-label','tx-meta-label'];
+   const props=e=>{const s=getComputedStyle(e);return {family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,tracking:s.letterSpacing,transform:s.textTransform}};
+   const host=document.createElement('div');
+   host.setAttribute('data-qa-type-contract','');
+   host.style.cssText='position:fixed;left:-200vw;top:0;visibility:hidden;pointer-events:none';
+   for(const role of roles){const e=document.createElement('div');e.className=role;e.textContent='Typography contract';host.appendChild(e)}
+   document.body.appendChild(host);
+   const sample=Object.fromEntries(roles.map(role=>[role,props(host.querySelector('.'+role))]));
+   host.remove();
+   return {sample};
+  }""")
+  sample=type_metrics["sample"]
+  def px(v):
+   try:return float(str(v).replace("px",""))
+   except Exception:return 0.0
+  display_group=[sample[x] for x in ("tx-display-title","tx-page-title","tx-section-title","tx-card-title")]
+  ui_group=[sample[x] for x in ("tx-subheadline","tx-body","tx-label","tx-meta-label")]
+  if len({x["family"] for x in display_group})!=1:f.append("transactional display roles do not share one font family")
+  if len({x["family"] for x in ui_group})!=1:f.append("transactional UI roles do not share one font family")
+  sizes={k:px(v["size"]) for k,v in sample.items()}
+  if not (sizes["tx-display-title"]>sizes["tx-page-title"]>sizes["tx-section-title"]>sizes["tx-card-title"]>sizes["tx-subheadline"]>=sizes["tx-body"]>sizes["tx-label"]):
+   f.append("transactional typography hierarchy is out of order: "+str(sizes))
+  for prop in ("family","size","weight","line","tracking","transform"):
+   if sample["tx-label"][prop]!=sample["tx-meta-label"][prop]:f.append("tx-label and tx-meta-label diverged on "+prop)
+  for role,selector in transactional_required[case.name].items():
+   loc=page.locator(selector).first
+   if loc.count()==0:
+    f.append(case.name+" missing semantic typography hook "+role+" at "+selector);continue
+   actual=loc.evaluate("""e=>{const s=getComputedStyle(e);return {family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,tracking:s.letterSpacing,transform:s.textTransform}}""")
+   for prop in ("family","size","weight","line","tracking","transform"):
+    if actual[prop]!=sample[role][prop]:f.append(case.name+" "+role+" overrides shared "+prop+": "+str(actual[prop])+" != "+str(sample[role][prop]))
  if case.state=="home":
   for s in ("#aureva","#halora","#sunveil","#nocturne"):
    if page.locator(s).count()!=1:f.append("missing "+s)
@@ -378,8 +458,20 @@ def source_mode():
  for s in ('("430",430,932,3)','("1366",1366,768,1)','("1920",1920,1080,1)','("realm-aureva","/events/aureva","plain")','("realm-halora","/events/halora","plain")','("realm-sunveil","/events/sunveil","plain")','("realm-nocturne","/events/nocturne","plain")',"aspect ratio distorted","vertically misaligned","dimensions differ across routes"):
   if s not in visual_regression:fail.append("permanent masthead visual regression contract missing "+s)
  if "realm-gradient-title tx-display-title" not in ph:fail.append("premium Passport title markup missing")
- for s in (".tx-display-title",".tx-page-title",".tx-section-title",".tx-label",".tx-subheadline"):
+ for s in (".tx-display-title",".tx-page-title",".tx-section-title",".tx-card-title",".tx-subheadline",".tx-body",".tx-label",".tx-meta-label"):
   if s not in css:fail.append("shared typography missing "+s)
+ markup_contracts={
+  "passport.html":((SITE/"passport.html").read_text(encoding="utf-8"),("tx-display-title","tx-section-title","tx-subheadline","tx-body","tx-label","tx-meta-label")),
+  "invite.html":((SITE/"invite.html").read_text(encoding="utf-8"),("tx-display-title","tx-card-title","tx-subheadline","tx-label","tx-meta-label")),
+  "ticket-access.html":((SITE/"ticket-access.html").read_text(encoding="utf-8"),("tx-page-title","tx-body","tx-label")),
+  "public-tickets.html":((SITE/"public-tickets.html").read_text(encoding="utf-8"),("tx-page-title","tx-subheadline","tx-body","tx-label","tx-meta-label")),
+  "ticket-addons.js":((SITE/"assets/js/ticket-addons.js").read_text(encoding="utf-8"),("tx-card-title","tx-body","tx-meta-label")),
+  "passport.js":(passport,("tx-card-title","tx-body","tx-meta-label")),
+  "ticket-view.mjs":(tv,("tx-page-title","tx-card-title","tx-subheadline","tx-body","tx-label","tx-meta-label")),
+ }
+ for name,(source,roles) in markup_contracts.items():
+  for role in roles:
+   if role not in source:fail.append(name+" missing shared typography role "+role)
  if "ticket-entitlement-badge" not in tv:fail.append("ticket entitlement badge hook missing")
  if not re.search(r"\.ticket-page\.tx-page \.ticket-support-card>\.button\{[^}]*display:inline-flex;[^}]*align-items:center;[^}]*justify-content:center;[^}]*text-decoration:none",premium,re.S):fail.append("ticket support CTA centering regression guard missing")
  if not re.search(r"@media\(max-width:760px\)\{.*?\.ticket-page\.tx-page \.ticket-support-card\{min-height:0;",premium,re.S):fail.append("mobile ticket support cards must collapse fixed min-height")
