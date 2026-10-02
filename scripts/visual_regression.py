@@ -215,6 +215,96 @@ def verify_home_chrome(base_url:str):
     (OUT/"home-chrome-geometry.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
     return report
 
+
+def verify_ticket_credential_geometry(base_url:str):
+    OUT.mkdir(exist_ok=True)
+    viewports=[
+      ("320",320,568,2),
+      ("390",390,844,2),
+      ("430",430,932,3),
+      ("iphone-pro-max",440,956,3),
+    ]
+    rows=[];failures=[]
+    css=[
+      "/assets/css/branding.css",
+      "/assets/css/retina-lockups.css",
+      "/assets/css/realm-luxury-polish.css",
+      "/assets/css/transactional-hero.css",
+      "/assets/css/guest-transaction-detail.css",
+      "/assets/css/transactional-premium.css",
+    ]
+    links="".join(f'<link rel="stylesheet" href="{base_url}{href}">' for href in css)
+    html=f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">{links}</head>
+<body class="ticket-page tx-page" data-realm="light" style="--a:#e6c879;--b:#030407;--f:#f7f0e5">
+<main class="ticket-shell">
+<header class="ticket-brand-header"><a href="#">ENTER WILD ONES</a><a href="#">MY PASSPORT</a></header>
+<section class="ticket-intro"><p class="eyebrow tx-label">ENTER WILD ONES · DIGITAL CREDENTIAL</p><h1 class="tx-page-title">Your digital credential.</h1><p class="tx-subheadline">Present this credential for entry. Your waiver, QR access, event details, and add-ons remain attached to this ticket.</p></section>
+<article class="ticket-credential" data-brand-realm="light" data-ticket-status="paid">
+<div class="ticket-credential-topline"><span class="ticket-roman">I</span><span class="ticket-credential-label">DIGITAL EVENT CREDENTIAL</span><span class="realm-chip realm-light">REALM I · LIGHT</span></div>
+<div class="ticket-logo-wrap"><div style="width:180px;aspect-ratio:1;border-radius:50%;border:1px solid color-mix(in srgb,var(--a) 34%,transparent);display:grid;place-items:center;color:var(--a);font:42px Georgia,serif">I</div></div>
+<p class="eyebrow tx-label">ADMISSION CREDENTIAL</p><h2 class="ticket-event-name realm-key realm-light">AUREVA</h2><p class="ticket-tagline">Where the cycle begins in light.</p>
+<div class="ticket-status-row"><span>STATUS</span><strong>READY FOR ENTRY</strong></div>
+<div class="ticket-meta-grid"><div><span>GUEST</span><strong>Christopher</strong></div><div><span>TICKET ID</span><strong>WLD-AUR-QA-1</strong></div><div><span>DATE</span><strong>Sep 6, 2027</strong></div><div><span>WAIVER</span><strong>RECORDED</strong></div></div>
+<div class="ticket-qr-panel"><div class="ticket-qr-shell" style="aspect-ratio:1"><div style="width:100%;height:100%;background:repeating-linear-gradient(45deg,#000 0 6px,#fff 6px 12px)"></div></div><p class="ticket-qr-title">SCAN AT ENTRY</p><p class="muted">Present this credential with matching photo ID.</p></div>
+</article>
+<div class="ticket-support-grid">
+<section class="ticket-support-card"><p class="eyebrow tx-label">YOUR EXTRAS</p><h2 class="tx-section-title">Packages &amp; Add-Ons</h2><p>View drink packages, late checkout / car camping, and event-specific upgrades tied to this credential.</p><a class="button" href="#">Manage Add-Ons</a></section>
+<section class="ticket-support-card"><p class="eyebrow tx-label">APPLE WALLET</p><h2 class="tx-section-title">Carry your credential.</h2><p>Add this event-bound ticket to Apple Wallet for fast access on event day.</p><a class="button" href="#">Add to Apple Wallet</a></section>
+</div></main>
+<footer class="site-footer"><nav><a href="#">THE REALMS</a><a href="#">PASSPORT</a><a href="#">CONTACT</a></nav><span>WILD ONES LLC / HAWAI'I / ENTERWILDONES.COM</span></footer>
+</body></html>"""
+    with sync_playwright() as p:
+      browser=p.chromium.launch()
+      for label,w,h,dpr in viewports:
+        context=browser.new_context(viewport={"width":w,"height":h},device_scale_factor=dpr,is_mobile=True,has_touch=True,color_scheme="dark",reduced_motion="reduce")
+        page=context.new_page();row={"viewport":label,"width":w,"height":h,"issues":[]}
+        try:
+          page.set_content(html,wait_until="networkidle",timeout=30000)
+          page.wait_for_selector(".ticket-support-card .button",state="visible",timeout=10000)
+          page.wait_for_timeout(200)
+          metrics=page.evaluate("""() => {
+ const box=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom}};
+ const shell=box(document.querySelector('.ticket-shell')),credential=box(document.querySelector('.ticket-credential')),grid=box(document.querySelector('.ticket-support-grid'));
+ const cards=[...document.querySelectorAll('.ticket-support-card')].map(card=>{
+   const button=card.querySelector('.button'),p=card.querySelector(':scope > p:not(.eyebrow)'),h2=card.querySelector('h2');
+   const range=document.createRange();range.selectNodeContents(button);const tr=range.getBoundingClientRect(),br=button.getBoundingClientRect(),cr=card.getBoundingClientRect(),pr=p.getBoundingClientRect(),hr=h2.getBoundingClientRect();
+   return {card:box(card),button:box(button),paragraph:box(p),heading:box(h2),buttonText:{x:tr.x,y:tr.y,w:tr.width,h:tr.height},centerDx:Math.abs((tr.x+tr.width/2)-(br.x+br.width/2)),centerDy:Math.abs((tr.y+tr.height/2)-(br.y+br.height/2)),bottomPad:cr.bottom-br.bottom};
+ });
+ const footer=box(document.querySelector('.site-footer'));
+ return {scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,shell,credential,grid,cards,footer};
+}""")
+          if metrics["scrollWidth"]>metrics["clientWidth"]+2:row["issues"].append("horizontal overflow")
+          for name in ("shell","credential","grid"):
+            b=metrics[name]
+            if b["x"]<-1 or b["right"]>w+1:row["issues"].append(name+" escapes viewport")
+          if abs(metrics["shell"]["x"]-(w-metrics["shell"]["right"]))>2.5:row["issues"].append("ticket shell is not horizontally centered")
+          cards=metrics["cards"]
+          if len(cards)!=2:row["issues"].append("support cards missing")
+          else:
+            gap=cards[1]["card"]["y"]-cards[0]["card"]["bottom"]
+            if gap<10 or gap>24:row["issues"].append(f"support card gap {gap:.1f}px outside compact range")
+            for i,card in enumerate(cards,1):
+              cb,bb=card["card"],card["button"]
+              if cb["h"]>315:row["issues"].append(f"support card {i} too tall at {cb['h']:.1f}px")
+              if bb["x"]<cb["x"]-1 or bb["right"]>cb["right"]+1:row["issues"].append(f"support CTA {i} escapes card")
+              if bb["w"]<cb["w"]*.78:row["issues"].append(f"support CTA {i} is not full-width enough on mobile")
+              if bb["h"]<48:row["issues"].append(f"support CTA {i} below 48px tap target")
+              if card["centerDx"]>3 or card["centerDy"]>4:row["issues"].append(f"support CTA {i} text is not centered")
+              if card["bottomPad"]<18 or card["bottomPad"]>28:row["issues"].append(f"support card {i} bottom padding is uneven")
+          row["metrics"]=metrics
+          shot=OUT/f"ticket-credential-{label}.png"
+          page.screenshot(path=str(shot),full_page=True,animations="disabled",caret="hide")
+          row["screenshot"]=str(shot)
+        except Exception as e:
+          row["issues"].append(str(e))
+        if row["issues"]:failures.append({"viewport":label,"issues":row["issues"]})
+        rows.append(row);page.close();context.close()
+      browser.close()
+    report={"viewports":[x[0] for x in viewports],"rows":rows,"failures":failures}
+    (OUT/"ticket-credential-geometry.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
+    return report
+
+
 def normalize(src:Path,width=360):
     im=Image.open(src).convert("RGB")
     if im.width!=width:
@@ -342,9 +432,10 @@ def main():
 
     masthead=verify_mastheads(base_url)
     home_chrome=verify_home_chrome(base_url)
-    if masthead["failures"] or home_chrome["failures"]:
+    ticket_credential=verify_ticket_credential_geometry(base_url)
+    if masthead["failures"] or home_chrome["failures"] or ticket_credential["failures"]:
       server.shutdown();server.server_close()
-      print(json.dumps({"mastheadVerification":masthead,"homeChromeVerification":home_chrome},indent=2))
+      print(json.dumps({"mastheadVerification":masthead,"homeChromeVerification":home_chrome,"ticketCredentialVerification":ticket_credential},indent=2))
       return 1
     current=OUT/"current"
     try:
