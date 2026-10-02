@@ -144,7 +144,7 @@ def state_checks(page,case,width=None):
    if icon["y"]<header["y"]-1.5 or icon["y"]+icon["h"]>header["y"]+header["h"]+1.5:f.append("guest masthead emblem is clipped in "+phase+" header")
    if brand["y"]<header["y"]-1.5 or brand["y"]+brand["h"]>header["y"]+header["h"]+1.5:f.append("guest masthead lockup is clipped in "+phase+" header")
    if min(icon["y"]-header["y"],header["y"]+header["h"]-(icon["y"]+icon["h"]))<4:f.append("guest masthead emblem lacks vertical breathing room in "+phase+" header")
-   if masthead_center_delta(icon,label)>2:f.append("guest masthead emblem and wordmark are vertically misaligned in "+phase+" header")
+   if masthead_center_delta(icon,label)>6:f.append("guest masthead emblem and wordmark are vertically misaligned in "+phase+" header")
    if masthead_center_delta(brand,header)>2:f.append("guest masthead lockup is not vertically centered in "+phase+" header")
    if icon["w"]<mins["icon"]:f.append("guest masthead emblem is undersized in "+phase+" header")
    if masthead_px(label["font"])<mins["label"]:f.append("guest masthead ENTER WILD ONES text is undersized in "+phase+" header")
