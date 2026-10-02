@@ -101,13 +101,21 @@ jobs:
         with:
           path: .visual-baselines
           key: ${{ env.VISUAL_BASELINE_KEY }}
-      - name: Capture deployed main as fallback baseline
+      - name: Checkout exact PR base for deterministic reference baseline
+        if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .visual-reference
+          persist-credentials: false
+      - name: Capture exact PR base as fallback baseline
         if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
         run: >-
           python scripts/visual_regression.py
-          --mode capture-production
+          --mode capture-reference
+          --reference-site .visual-reference/site
           --baseline-dir .visual-baselines-production
-      - name: Establish approved Find Your Realm baseline for this visual change
+      - name: Establish approved preview baseline for intentional visual changes
         if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
         run: >-
           python scripts/visual_regression.py
