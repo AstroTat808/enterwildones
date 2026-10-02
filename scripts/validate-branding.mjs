@@ -25,8 +25,12 @@ for(const name of names)validateWebp(name);
 
 const branding=read('site/assets/js/branding.js');
 const masthead=read('site/assets/css/masthead-lockup.css');
+const mastheadEmblem=read('site/assets/images/realms/enter-wild-ones-emblem.svg');
 assert(branding.includes('/assets/images/realms/${realms[valid(realm)].slug}-1200.webp'));
 assert(branding.includes('/assets/images/realms/enter-wild-ones-emblem.svg'),'canonical masthead emblem asset');
+assert(mastheadEmblem.includes('viewBox="120 0 960 735"'),'canonical masthead emblem viewBox');
+assert(mastheadEmblem.includes('width="960"'),'canonical masthead emblem width');
+assert(mastheadEmblem.includes('height="735"'),'canonical masthead emblem height');
 for(const token of ['--wo-masthead-icon-w','aspect-ratio:960 / 735','object-fit:contain','align-self:center']){
   assert(masthead.includes(token),`canonical masthead contract missing ${token}`);
 }
