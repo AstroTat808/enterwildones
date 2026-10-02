@@ -57,12 +57,15 @@ CASES=[
 ]
 
 MASTHEAD_VIEWPORTS=[
- ("320",320,568,2),("390",390,844,2),("768",768,1024,2),
- ("1024",1024,768,1),("1440",1440,1000,1),("1920",1920,1080,1),
+ ("320",320,568,2),("390",390,844,2),("430",430,932,3),("768",768,1024,2),
+ ("1024",1024,768,1),("1366",1366,768,1),("1440",1440,1000,1),("1920",1920,1080,1),
 ]
 MASTHEAD_ROUTES=[
  ("home","/","home"),
- ("event","/events/aureva","plain"),
+ ("realm-aureva","/events/aureva","plain"),
+ ("realm-halora","/events/halora","plain"),
+ ("realm-sunveil","/events/sunveil","plain"),
+ ("realm-nocturne","/events/nocturne","plain"),
  ("quiz","/find-your-realm","plain"),
  ("passport","/passport","passport-login"),
  ("invite","/invite","plain"),
@@ -73,6 +76,9 @@ ROUTES={
  "/":"index.html",
  "/find-your-realm":"find-your-realm.html",
  "/events/aureva":"events/aureva.html",
+ "/events/halora":"events/halora.html",
+ "/events/sunveil":"events/sunveil.html",
+ "/events/nocturne":"events/nocturne.html",
  "/apply/aureva":"apply.html",
  "/apply/nocturne":"apply.html",
  "/passport":"passport.html",
@@ -104,7 +110,73 @@ class Handler(SimpleHTTPRequestHandler):
 def verify_mastheads(base_url:str):
     OUT.mkdir(exist_ok=True)
     rows=[];failures=[]
-    desktop_reference={}
+    viewport_reference={}
+
+    def px(value):
+      try:return float(str(value).replace("px",""))
+      except Exception:return 0.0
+
+    def center_delta(a,b):
+      return abs((a["y"]+a["h"]/2)-(b["y"]+b["h"]/2))
+
+    def minimums(width,compact=False):
+      if width>=1024:
+        return {"icon":96 if compact else 118,"label":10.8 if compact else 12.5,"sub":6.3 if compact else 7.2}
+      if width>=700:
+        return {"icon":72 if compact else 84,"label":8.4 if compact else 9.2,"sub":5.6 if compact else 6.0}
+      if width>350:
+        return {"icon":66 if compact else 76,"label":7.7 if compact else 8.4,"sub":5.2 if compact else 5.6}
+      return {"icon":58 if compact else 64,"label":7.2 if compact else 7.7,"sub":4.9 if compact else 5.2}
+
+    capture_js="""() => {
+ const r=e=>{const b=e.getBoundingClientRect(),s=getComputedStyle(e);return {x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,fontFamily:s.fontFamily,fontWeight:s.fontWeight,display:s.display,visibility:s.visibility,opacity:+s.opacity}};
+ const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
+ const hs=header?getComputedStyle(header):null,ims=img?getComputedStyle(img):null;
+ return {
+   header:r(header),brand:r(brand),icon:r(icon),image:r(img),label:r(label),sub:r(sub),
+   labelText:(label?.childNodes?.[0]?.textContent||'').trim(),subText:(sub?.textContent||'').trim(),
+   imageSrc:img?.getAttribute('src')||'',naturalW:img?.naturalWidth||0,naturalH:img?.naturalHeight||0,
+   objectFit:ims?.objectFit||'',blur:hs?.backdropFilter||hs?.webkitBackdropFilter||'',shadow:hs?.boxShadow||''
+ };
+}"""
+
+    def signature(metrics):
+      return {
+        "headerH":round(metrics["header"]["h"],2),
+        "brandH":round(metrics["brand"]["h"],2),
+        "iconW":round(metrics["icon"]["w"],2),
+        "iconH":round(metrics["icon"]["h"],2),
+        "labelW":round(metrics["label"]["w"],2),
+        "labelH":round(metrics["label"]["h"],2),
+        "labelFont":metrics["label"]["font"],
+        "labelTracking":metrics["label"]["tracking"],
+        "subW":round(metrics["sub"]["w"],2),
+        "subH":round(metrics["sub"]["h"],2),
+        "subFont":metrics["sub"]["font"],
+        "subTracking":metrics["sub"]["tracking"],
+      }
+
+    def validate(metrics,width,compact,row):
+      phase="compact" if compact else "expanded"
+      mins=minimums(width,compact)
+      header,brand,icon,image,label,sub=[metrics[k] for k in ("header","brand","icon","image","label","sub")]
+      if metrics["labelText"]!="ENTER WILD ONES":row["failures"].append(f"ENTER WILD ONES wordmark missing in {phase} header")
+      if metrics["subText"]!="THE FOUR REALMS":row["failures"].append(f"THE FOUR REALMS wordmark missing in {phase} header")
+      if metrics["imageSrc"]!="/assets/images/realms/enter-wild-ones-emblem.svg":row["failures"].append(f"wrong masthead emblem asset in {phase} header")
+      if metrics["objectFit"]!="contain":row["failures"].append(f"masthead emblem must use object-fit contain in {phase} header")
+      if metrics["naturalW"]<900 or metrics["naturalH"]<700:row["failures"].append(f"masthead emblem source is undersized in {phase} header")
+      if icon["h"]<=0 or abs((icon["w"]/icon["h"])-(960/735))>.015:row["failures"].append(f"masthead emblem aspect ratio distorted in {phase} header")
+      if abs(image["w"]-icon["w"])>1 or abs(image["h"]-icon["h"])>1:row["failures"].append(f"masthead image does not fill ratio-safe icon box in {phase} header")
+      if icon["y"]<header["y"]-1.5 or icon["y"]+icon["h"]>header["y"]+header["h"]+1.5:row["failures"].append(f"emblem clipped in {phase} header")
+      if brand["y"]<header["y"]-1.5 or brand["y"]+brand["h"]>header["y"]+header["h"]+1.5:row["failures"].append(f"brand lockup clipped in {phase} header")
+      if min(icon["y"]-header["y"],header["y"]+header["h"]-(icon["y"]+icon["h"]))<4:row["failures"].append(f"emblem lacks vertical breathing room in {phase} header")
+      if center_delta(icon,label)>2:row["failures"].append(f"emblem and wordmark are vertically misaligned in {phase} header")
+      if center_delta(brand,header)>2:row["failures"].append(f"brand lockup is not vertically centered in {phase} header")
+      if icon["w"]<mins["icon"]:row["failures"].append(f"emblem undersized in {phase} header: {icon['w']:.1f}px")
+      if px(label["font"])<mins["label"]:row["failures"].append(f"ENTER WILD ONES undersized in {phase} header: {label['font']}")
+      if px(sub["font"])<mins["sub"]:row["failures"].append(f"THE FOUR REALMS undersized in {phase} header: {sub['font']}")
+      if label["w"]<=0 or sub["w"]<=0:row["failures"].append(f"wordmark not visible in {phase} header")
+
     with sync_playwright() as p:
       browser=p.chromium.launch()
       for vp,w,h,dpr in MASTHEAD_VIEWPORTS:
@@ -117,52 +189,39 @@ def verify_mastheads(base_url:str):
             page.wait_for_selector(".topbar .brand-label",state="visible",timeout=15000)
             page.wait_for_function("document.body.classList.contains('wo-guest-masthead')",timeout=10000)
             page.wait_for_timeout(260)
-            initial=page.evaluate("""() => {
- const r=e=>{const b=e.getBoundingClientRect(),s=getComputedStyle(e);return {x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}};
- const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
- const hs=header?getComputedStyle(header):null;
- return {header:r(header),brand:r(brand),icon:r(icon),label:r(label),sub:r(sub),labelText:(label?.childNodes?.[0]?.textContent||'').trim(),subText:(sub?.textContent||'').trim(),blur:hs?.backdropFilter||hs?.webkitBackdropFilter||'',shadow:hs?.boxShadow||''};
-}""")
-            def clipped(child,parent,tol=1.5):
-              return child["y"]<parent["y"]-tol or child["y"]+child["h"]>parent["y"]+parent["h"]+tol
-            if initial["labelText"]!="ENTER WILD ONES":row["failures"].append("ENTER WILD ONES wordmark missing")
-            if initial["subText"]!="THE FOUR REALMS":row["failures"].append("THE FOUR REALMS wordmark missing")
-            if clipped(initial["icon"],initial["header"]):row["failures"].append("emblem clipped in expanded header")
-            if clipped(initial["brand"],initial["header"]):row["failures"].append("brand lockup clipped in expanded header")
-            if initial["label"]["w"]<=0 or initial["sub"]["w"]<=0:row["failures"].append("wordmark not visible")
-            desktop_signature={k:round(initial[k2][k3],2) if isinstance(initial[k2][k3],(int,float)) else initial[k2][k3] for k,k2,k3 in [("iconW","icon","w"),("iconH","icon","h"),("labelFont","label","font"),("labelTracking","label","tracking"),("subFont","sub","font"),("subTracking","sub","tracking")]}
-            if w>=1024:
-              ref=desktop_reference.get(vp)
-              if ref is None:desktop_reference[vp]=desktop_signature
-              elif desktop_signature!=ref:row["failures"].append("desktop masthead physical dimensions differ from "+str(ref)+" got "+str(desktop_signature))
+            initial=page.evaluate(capture_js)
+            validate(initial,w,False,row)
+            initial_signature=signature(initial)
+            ref=viewport_reference.get((vp,"expanded"))
+            if ref is None:viewport_reference[(vp,"expanded")]=initial_signature
+            elif initial_signature!=ref:row["failures"].append("expanded masthead physical dimensions differ across routes: "+str(ref)+" got "+str(initial_signature))
+
             page.evaluate("document.body.classList.add('masthead-scrolled')")
             page.wait_for_timeout(430)
-            compact=page.evaluate("""() => {
- const r=e=>{const b=e.getBoundingClientRect(),s=getComputedStyle(e);return {x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}};
- const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
- const hs=header?getComputedStyle(header):null;
- return {header:r(header),brand:r(brand),icon:r(icon),label:r(label),sub:r(sub),labelText:(label?.childNodes?.[0]?.textContent||'').trim(),subText:(sub?.textContent||'').trim(),blur:hs?.backdropFilter||hs?.webkitBackdropFilter||'',shadow:hs?.boxShadow||''};
-}""")
+            compact=page.evaluate(capture_js)
+            validate(compact,w,True,row)
             if compact["header"]["h"]>=initial["header"]["h"]-1:row["failures"].append("masthead did not compact")
-            if clipped(compact["icon"],compact["header"]):row["failures"].append("emblem clipped in compact header")
-            if clipped(compact["brand"],compact["header"]):row["failures"].append("brand lockup clipped in compact header")
-            if compact["labelText"]!="ENTER WILD ONES" or compact["subText"]!="THE FOUR REALMS":row["failures"].append("wordmark disappears in compact header")
-            if compact["label"]["w"]<=0 or compact["sub"]["w"]<=0:row["failures"].append("compact wordmark not visible")
             if compact["blur"]==initial["blur"]:row["failures"].append("premium blur does not change on compact header")
             if compact["shadow"]==initial["shadow"]:row["failures"].append("premium shadow does not change on compact header")
+            compact_signature=signature(compact)
+            ref=viewport_reference.get((vp,"compact"))
+            if ref is None:viewport_reference[(vp,"compact")]=compact_signature
+            elif compact_signature!=ref:row["failures"].append("compact masthead physical dimensions differ across routes: "+str(ref)+" got "+str(compact_signature))
+
             row["expanded"]=initial;row["compact"]=compact
           except Exception as e:
             row["failures"].append(str(e))
           if row["failures"]:failures.append({"viewport":vp,"route":name,"issues":row["failures"]})
           rows.append(row);page.close();context.close()
       browser.close()
-    report={"viewports":[x[0] for x in MASTHEAD_VIEWPORTS],"routes":[x[0] for x in MASTHEAD_ROUTES],"desktopReference":desktop_reference,"failures":failures,"checks":len(rows)}
+    serialized_reference={f"{vp}-{phase}":sig for (vp,phase),sig in viewport_reference.items()}
+    report={"viewports":[x[0] for x in MASTHEAD_VIEWPORTS],"routes":[x[0] for x in MASTHEAD_ROUTES],"routeDimensionReference":serialized_reference,"failures":failures,"checks":len(rows)}
     (OUT/"masthead-geometry.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
     return report
 
 def verify_home_chrome(base_url:str):
     failures=[];rows=[]
-    viewports=[("320",320,568,2),("390",390,844,2),("768",768,1024,2),("1024",1024,768,1),("1440",1440,1000,1),("1920",1920,1080,1)]
+    viewports=[("320",320,568,2),("390",390,844,2),("430",430,932,3),("768",768,1024,2),("1024",1024,768,1),("1366",1366,768,1),("1440",1440,1000,1),("1920",1920,1080,1)]
     with sync_playwright() as p:
       browser=p.chromium.launch()
       for label,w,h,dpr in viewports:
