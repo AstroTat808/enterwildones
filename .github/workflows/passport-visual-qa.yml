@@ -10,6 +10,8 @@ on:
       - 'site/assets/css/transactional-hero.css'
       - 'site/assets/css/transactional-premium.css'
       - 'site/assets/css/realm-luxury-polish.css'
+      - 'site/assets/css/guest-transaction-detail.css'
+      - 'netlify/functions/ticket-view.mjs'
   workflow_dispatch:
 permissions:
   contents: read
