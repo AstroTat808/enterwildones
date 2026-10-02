@@ -134,6 +134,37 @@ jobs:
           if-no-files-found: error
 
 
+  masthead-browser-qa:
+    name: Masthead · ${{ matrix.browser }}
+    needs: source-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install masthead browser dependencies
+        run: |
+          pip install playwright==1.55.0 pillow==11.3.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Verify canonical masthead at all approved widths
+        run: python scripts/visual_regression.py --mode verify-masthead --browser ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: masthead-${{ matrix.browser }}-${{ github.run_id }}
+          path: visual-regression-results/masthead-geometry-${{ matrix.browser }}.json
+          retention-days: 14
+          if-no-files-found: error
+
   lighthouse-ci:
     name: Lighthouse + Core Web Vitals gate
     runs-on: ubuntu-latest
@@ -162,7 +193,7 @@ jobs:
   production-qa-gate:
     name: Production QA Gate
     if: always()
-    needs: [source-audit, visual-regression, lighthouse-ci]
+    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa]
     runs-on: ubuntu-latest
     steps:
       - name: Enforce pre-merge critical gates
@@ -170,13 +201,16 @@ jobs:
           SOURCE_RESULT: ${{ needs.source-audit.result }}
           VISUAL_RESULT: ${{ needs.visual-regression.result }}
           LIGHTHOUSE_RESULT: ${{ needs.lighthouse-ci.result }}
+          MASTHEAD_BROWSER_RESULT: ${{ needs.masthead-browser-qa.result }}
         run: |
           echo "Source + build audit: $SOURCE_RESULT"
           echo "Approved visual regression: $VISUAL_RESULT"
           echo "Lighthouse + lab Core Web Vitals: $LIGHTHOUSE_RESULT"
+          echo "Chromium/WebKit masthead geometry: $MASTHEAD_BROWSER_RESULT"
           test "$SOURCE_RESULT" = "success"
           test "$VISUAL_RESULT" = "success"
           test "$LIGHTHOUSE_RESULT" = "success"
+          test "$MASTHEAD_BROWSER_RESULT" = "success"
 
   deploy-sync:
     name: Confirm production deployment
