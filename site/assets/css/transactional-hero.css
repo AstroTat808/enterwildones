@@ -33,7 +33,7 @@
   --tx-subheadline-size:clamp(1rem,1.3vw,1.125rem);
   --tx-subheadline-leading:1.64;
   --tx-subheadline-tracking:.018em;
-  --tx-subheadline-weight:450;
+  --tx-subheadline-weight:350;
 }
 
 :is(.tx-page,.passport-page,.invite-page,.ticket-access-page,.public-ticket-page,.ticket-addons-page,.tx-generated-page){
@@ -538,7 +538,6 @@
   color:rgba(246,235,215,.80);
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
-  letter-spacing:.30em!important;
 }
 .passport-page .passport-header h1.realm-gradient-title{
   max-width:9.5ch;
@@ -584,8 +583,6 @@
   .passport-page .passport-header>.eyebrow{
     margin-bottom:16px;
     padding-inline:13px 10px;
-    font-size:9px!important;
-    letter-spacing:.22em!important;
   }
   .passport-page .passport-header h1.realm-gradient-title{max-width:10ch}
   .passport-page .passport-header .tx-subheadline{
