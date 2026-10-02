@@ -27,9 +27,9 @@ body.wo-guest-masthead .topbar{
   -webkit-backdrop-filter:blur(15px) saturate(112%);
   backdrop-filter:blur(15px) saturate(112%);
   box-shadow:0 8px 28px rgba(0,0,0,.16);
+  /* Geometry changes are instantaneous so late CSS delivery cannot expose an
+     interpolated, undersized lockup. Visual surface effects may still ease. */
   transition:
-    min-height .34s var(--wo-masthead-ease),
-    padding .34s var(--wo-masthead-ease),
     background-color .34s ease,
     border-color .34s ease,
     box-shadow .34s ease,
@@ -44,7 +44,7 @@ body.wo-guest-masthead .topbar .brand{
   min-width:0;
   min-height:var(--wo-masthead-brand-height);
   overflow:visible!important;
-  transition:min-height .34s var(--wo-masthead-ease),gap .34s var(--wo-masthead-ease);
+
 }
 body.wo-guest-masthead .topbar .brand-icon{
   position:relative!important;
@@ -56,10 +56,7 @@ body.wo-guest-masthead .topbar .brand-icon{
   overflow:visible!important;
   border-radius:0!important;
   filter:drop-shadow(0 0 16px color-mix(in srgb,var(--accent) 15%,transparent))!important;
-  transition:
-    width .34s var(--wo-masthead-ease),
-    flex-basis .34s var(--wo-masthead-ease),
-    filter .34s ease;
+  transition:filter .34s ease;
 }
 body.wo-guest-masthead .topbar .brand-icon img{
   position:absolute!important;
@@ -94,10 +91,7 @@ body.wo-guest-masthead .topbar .brand-label{
   text-transform:uppercase;
   opacity:1!important;
   text-shadow:0 1px 14px rgba(240,207,122,.05);
-  transition:
-    font-size .34s var(--wo-masthead-ease),
-    letter-spacing .34s var(--wo-masthead-ease),
-    opacity .2s ease;
+  transition:opacity .2s ease;
 }
 body.wo-guest-masthead .topbar .brand-label>span{
   display:block!important;
@@ -108,10 +102,7 @@ body.wo-guest-masthead .topbar .brand-label>span{
   letter-spacing:var(--wo-masthead-subtitle-tracking)!important;
   line-height:1.1!important;
   opacity:1!important;
-  transition:
-    margin .34s var(--wo-masthead-ease),
-    font-size .34s var(--wo-masthead-ease),
-    letter-spacing .34s var(--wo-masthead-ease);
+  transition:opacity .2s ease;
 }
 
 /* Homepage geometry follows the same masthead dimensions as every other guest page. */
