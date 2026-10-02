@@ -45,6 +45,16 @@ CASES=[
 
  {"name":"passport-auth-desktop","path":"/passport","state":"passport","viewport":(1440,1000),"dpr":1,"wait":"#account:not([hidden])"},
  {"name":"passport-login-phone","path":"/passport","state":"passport-login","viewport":(390,844),"dpr":2,"wait":"#login:not([hidden])"},
+ {"name":"master-cycle-card-320","path":"/passport","state":"passport-complete","viewport":(320,568),"dpr":2,"wait":"[data-master-cycle=\"unlocked\"]","action":"master-cycle-card","target":"[data-master-cycle=\"unlocked\"]"},
+ {"name":"master-cycle-card-390","path":"/passport","state":"passport-complete","viewport":(390,844),"dpr":2,"wait":"[data-master-cycle=\"unlocked\"]","action":"master-cycle-card","target":"[data-master-cycle=\"unlocked\"]"},
+ {"name":"master-cycle-card-430","path":"/passport","state":"passport-complete","viewport":(430,932),"dpr":3,"wait":"[data-master-cycle=\"unlocked\"]","action":"master-cycle-card","target":"[data-master-cycle=\"unlocked\"]"},
+ {"name":"master-cycle-card-pro-max","path":"/passport","state":"passport-complete","viewport":(440,956),"dpr":3,"wait":"[data-master-cycle=\"unlocked\"]","action":"master-cycle-card","target":"[data-master-cycle=\"unlocked\"]"},
+ {"name":"master-cycle-card-desktop","path":"/passport","state":"passport-complete","viewport":(1440,1000),"dpr":1,"wait":"[data-master-cycle=\"unlocked\"]","action":"master-cycle-card","target":"[data-master-cycle=\"unlocked\"]"},
+ {"name":"master-cycle-ceremony-320","path":"/passport","state":"passport-complete","viewport":(320,568),"dpr":2,"wait":".master-cycle-ceremony.is-visible","full_page":False,"preserve_scroll":True},
+ {"name":"master-cycle-ceremony-390","path":"/passport","state":"passport-complete","viewport":(390,844),"dpr":2,"wait":".master-cycle-ceremony.is-visible","full_page":False,"preserve_scroll":True},
+ {"name":"master-cycle-ceremony-430","path":"/passport","state":"passport-complete","viewport":(430,932),"dpr":3,"wait":".master-cycle-ceremony.is-visible","full_page":False,"preserve_scroll":True},
+ {"name":"master-cycle-ceremony-pro-max","path":"/passport","state":"passport-complete","viewport":(440,956),"dpr":3,"wait":".master-cycle-ceremony.is-visible","full_page":False,"preserve_scroll":True},
+ {"name":"master-cycle-ceremony-desktop","path":"/passport","state":"passport-complete","viewport":(1440,1000),"dpr":1,"wait":".master-cycle-ceremony.is-visible","full_page":False,"preserve_scroll":True},
  {"name":"invite-desktop","path":"/invite","state":"plain","viewport":(1440,1000),"dpr":1,"wait":"#inviteForm"},
  {"name":"ticket-access-desktop","path":"/ticket-access?event=aureva","state":"ticket-access","viewport":(1440,1000),"dpr":1,"wait":"#buy:not([hidden])"},
  {"name":"public-ticket-desktop","path":"/public-tickets/sunveil","state":"public-tickets","viewport":(1440,1000),"dpr":1,"wait":"#public-ticket-form"},
@@ -431,14 +441,26 @@ def capture(base_url:str,dest:Path):
           page.locator(".v2-passport").scroll_into_view_if_needed()
         elif case.get("action")=="scroll-footer":
           page.locator(".site-footer").scroll_into_view_if_needed()
+        elif case.get("action")=="master-cycle-card":
+          try:
+            page.wait_for_selector(".master-cycle-ceremony.is-visible",state="visible",timeout=5000)
+            page.locator(".master-cycle-continue").click()
+            page.wait_for_selector(".master-cycle-ceremony",state="detached",timeout=3000)
+          except Exception:
+            pass
+          page.locator('[data-master-cycle="unlocked"]').scroll_into_view_if_needed()
         page.wait_for_timeout(550)
-        page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
-        page.wait_for_timeout(140)
-        page.evaluate("window.scrollTo(0,0)")
-        page.wait_for_timeout(140)
+        if not case.get("preserve_scroll") and not case.get("target"):
+          page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+          page.wait_for_timeout(140)
+          page.evaluate("window.scrollTo(0,0)")
+          page.wait_for_timeout(140)
         raw=dest/(case["name"]+"-raw.png")
         final=dest/(case["name"]+".png")
-        page.screenshot(path=str(raw),full_page=case.get("full_page",True),animations="disabled",caret="hide")
+        if case.get("target"):
+          page.locator(case["target"]).screenshot(path=str(raw),animations="disabled",caret="hide")
+        else:
+          page.screenshot(path=str(raw),full_page=case.get("full_page",True),animations="disabled",caret="hide")
         normalize(raw).save(final,optimize=True)
         raw.unlink()
         results.append({"name":case["name"],"path":case["path"],"state":case["state"],"file":str(final)})
