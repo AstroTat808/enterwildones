@@ -116,8 +116,6 @@ body #realms.passport-grid > article.passport-card > a.button{
 
 /* Passport readability pass: stronger realm controls and section hierarchy. */
 .passport-page .passport-member-kicker{
-  font-size:12px!important;
-  letter-spacing:.24em!important;
   color:rgba(245,232,207,.82);
 }
 .passport-page .passport-cycle-meter-head{
@@ -187,8 +185,6 @@ body #realms.passport-grid > article.passport-card > a.button{
   border-bottom:1px solid rgba(255,255,255,.09);
 }
 .passport-page .passport-section-head .tx-label{
-  font-size:14px!important;
-  letter-spacing:.24em!important;
   color:#fff3d8;
 }
 .passport-page .passport-section-head p{
@@ -210,6 +206,5 @@ body #realms.passport-grid > article.passport-card > a.button{
   .passport-page .passport-filter{grid-template-columns:repeat(2,minmax(0,1fr))}
   .passport-page .passport-filter button:first-child{grid-column:1/-1}
   .passport-page .passport-filter button{min-height:54px;font-size:11px}
-  .passport-page .passport-section-head .tx-label{font-size:12px!important}
 }
 
