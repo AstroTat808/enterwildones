@@ -24,12 +24,25 @@ function validateWebp(name){
 for(const name of names)validateWebp(name);
 
 const branding=read('site/assets/js/branding.js');
+const masthead=read('site/assets/css/masthead-lockup.css');
 assert(branding.includes('/assets/images/realms/${realms[valid(realm)].slug}-1200.webp'));
+assert(branding.includes('/assets/images/realms/enter-wild-ones-emblem.svg'),'canonical masthead emblem asset');
+for(const token of ['--wo-masthead-icon-w','aspect-ratio:960 / 735','object-fit:contain','align-self:center']){
+  assert(masthead.includes(token),`canonical masthead contract missing ${token}`);
+}
 for(const key of ['../secret','toString','<script>'])assert.equal(realmArtwork(key),'/assets/images/realms/enter-wild-ones-1200.webp');
 assert(realmLogo({realm:'night'}).includes('/nocturne-1200.webp'));
 for(const page of ['index','event','apply','passport','invite','ticket-access','ticket-addons','public-tickets','bar','check-in','find-your-realm']){
   const html=read(`site/${page}.html`);assert(html.includes('/assets/css/branding.css'),page);assert(html.includes('viewport-fit=cover'),page);
   assert(html.includes('aria-label="Mobile navigation"'),page);
+}
+for(const page of ['index','passport','invite','find-your-realm']){
+  assert(read(`site/${page}.html`).includes('/assets/js/branding.js'),`${page} must load canonical guest branding`);
+}
+for(const realm of ['aureva','halora','sunveil','nocturne']){
+  const html=read(`site/events/${realm}.html`);
+  assert(html.includes('/assets/js/branding.js'),`${realm} realm page must load canonical guest branding`);
+  assert(html.includes('class="brand"'),`${realm} realm page must expose canonical masthead hook`);
 }
 const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>{
   const file=path.join(dir,entry.name);
