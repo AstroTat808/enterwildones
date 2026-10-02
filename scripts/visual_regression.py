@@ -308,16 +308,16 @@ def verify_ticket_credential_geometry(base_url:str):
 <header class="ticket-brand-header"><a href="#">ENTER WILD ONES</a><a href="#">MY PASSPORT</a></header>
 <section class="ticket-intro"><p class="eyebrow tx-label">ENTER WILD ONES · DIGITAL CREDENTIAL</p><h1 class="tx-page-title">Your digital credential.</h1><p class="tx-subheadline">Present this credential for entry. Your waiver, QR access, event details, and add-ons remain attached to this ticket.</p></section>
 <article class="ticket-credential" data-brand-realm="light" data-ticket-status="paid">
-<div class="ticket-credential-topline"><span class="ticket-roman">I</span><span class="ticket-credential-label">DIGITAL EVENT CREDENTIAL</span><span class="realm-chip realm-light">REALM I · LIGHT</span></div>
+<div class="ticket-credential-topline"><span class="ticket-roman">I</span><span class="ticket-credential-label tx-meta-label">DIGITAL EVENT CREDENTIAL</span><span class="realm-chip realm-light tx-meta-label">REALM I · LIGHT</span></div>
 <div class="ticket-logo-wrap"><div style="width:180px;aspect-ratio:1;border-radius:50%;border:1px solid color-mix(in srgb,var(--a) 34%,transparent);display:grid;place-items:center;color:var(--a);font:42px Georgia,serif">I</div></div>
-<p class="eyebrow tx-label">ADMISSION CREDENTIAL</p><h2 class="ticket-event-name realm-key realm-light">AUREVA</h2><p class="ticket-tagline">Where the cycle begins in light.</p>
-<div class="ticket-status-row"><span>STATUS</span><strong>READY FOR ENTRY</strong></div>
-<div class="ticket-meta-grid"><div><span>GUEST</span><strong>Christopher</strong></div><div><span>TICKET ID</span><strong>WLD-AUR-QA-1</strong></div><div><span>DATE</span><strong>Sep 6, 2027</strong></div><div><span>WAIVER</span><strong>RECORDED</strong></div></div>
-<div class="ticket-qr-panel"><div class="ticket-qr-shell" style="aspect-ratio:1"><div style="width:100%;height:100%;background:repeating-linear-gradient(45deg,#000 0 6px,#fff 6px 12px)"></div></div><p class="ticket-qr-title">SCAN AT ENTRY</p><p class="muted">Present this credential with matching photo ID.</p></div>
+<p class="eyebrow tx-label">ADMISSION CREDENTIAL</p><h2 class="ticket-event-name realm-key realm-light tx-card-title">AUREVA</h2><p class="ticket-tagline tx-body">Where the cycle begins in light.</p>
+<div class="ticket-status-row"><span class="tx-meta-label">STATUS</span><strong>READY FOR ENTRY</strong></div>
+<div class="ticket-meta-grid"><div><span class="tx-meta-label">GUEST</span><strong>Christopher</strong></div><div><span class="tx-meta-label">TICKET ID</span><strong>WLD-AUR-QA-1</strong></div><div><span class="tx-meta-label">DATE</span><strong>Sep 6, 2027</strong></div><div><span class="tx-meta-label">WAIVER</span><strong>RECORDED</strong></div></div>
+<div class="ticket-qr-panel"><div class="ticket-qr-shell" style="aspect-ratio:1"><div style="width:100%;height:100%;background:repeating-linear-gradient(45deg,#000 0 6px,#fff 6px 12px)"></div></div><p class="ticket-qr-title tx-meta-label">SCAN AT ENTRY</p><p class="muted tx-body">Present this credential with matching photo ID.</p></div>
 </article>
 <div class="ticket-support-grid">
-<section class="ticket-support-card"><p class="eyebrow tx-label">YOUR EXTRAS</p><h2 class="tx-section-title">Packages &amp; Add-Ons</h2><p>View drink packages, late checkout / car camping, and event-specific upgrades tied to this credential.</p><a class="button" href="#">Manage Add-Ons</a></section>
-<section class="ticket-support-card"><p class="eyebrow tx-label">APPLE WALLET</p><h2 class="tx-section-title">Carry your credential.</h2><p>Add this event-bound ticket to Apple Wallet for fast access on event day.</p><a class="button" href="#">Add to Apple Wallet</a></section>
+<section class="ticket-support-card"><p class="eyebrow tx-label">YOUR EXTRAS</p><h2 class="tx-card-title">Packages &amp; Add-Ons</h2><p class="tx-body">View drink packages, late checkout / car camping, and event-specific upgrades tied to this credential.</p><a class="button" href="#">Manage Add-Ons</a></section>
+<section class="ticket-support-card"><p class="eyebrow tx-label">APPLE WALLET</p><h2 class="tx-card-title">Carry your credential.</h2><p class="tx-body">Add this event-bound ticket to Apple Wallet for fast access on event day.</p><a class="button" href="#">Add to Apple Wallet</a></section>
 </div></main>
 <footer class="site-footer"><nav><a href="#">THE REALMS</a><a href="#">PASSPORT</a><a href="#">CONTACT</a></nav><span>WILD ONES LLC / HAWAI'I / ENTERWILDONES.COM</span></footer>
 </body></html>"""
@@ -339,9 +339,39 @@ def verify_ticket_credential_geometry(base_url:str):
    return {card:box(card),button:box(button),paragraph:box(p),heading:box(h2),buttonText:{x:tr.x,y:tr.y,w:tr.width,h:tr.height},centerDx:Math.abs((tr.x+tr.width/2)-(br.x+br.width/2)),centerDy:Math.abs((tr.y+tr.height/2)-(br.y+br.height/2)),bottomPad:cr.bottom-br.bottom};
  });
  const footer=box(document.querySelector('.site-footer'));
- return {scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,shell,credential,grid,cards,footer};
+ const typeProps=e=>{const s=getComputedStyle(e);return {family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,tracking:s.letterSpacing,transform:s.textTransform}};
+ const roles=['tx-display-title','tx-page-title','tx-section-title','tx-card-title','tx-subheadline','tx-body','tx-label','tx-meta-label'];
+ const host=document.createElement('div');host.style.cssText='position:fixed;left:-200vw;top:0;visibility:hidden;pointer-events:none';
+ for(const role of roles){const e=document.createElement('div');e.className=role;e.textContent='Typography contract';host.appendChild(e)}
+ document.body.appendChild(host);
+ const sample=Object.fromEntries(roles.map(role=>[role,typeProps(host.querySelector('.'+role))]));host.remove();
+ const actual={
+   'tx-page-title':typeProps(document.querySelector('.ticket-intro .tx-page-title')),
+   'tx-card-title':typeProps(document.querySelector('.ticket-support-card .tx-card-title')),
+   'tx-subheadline':typeProps(document.querySelector('.ticket-intro .tx-subheadline')),
+   'tx-body':typeProps(document.querySelector('.ticket-support-card .tx-body')),
+   'tx-label':typeProps(document.querySelector('.ticket-intro .tx-label')),
+   'tx-meta-label':typeProps(document.querySelector('.ticket-status-row .tx-meta-label'))
+ };
+ return {scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,shell,credential,grid,cards,footer,typography:{sample,actual}};
 }""")
           if metrics["scrollWidth"]>metrics["clientWidth"]+2:row["issues"].append("horizontal overflow")
+          sample=metrics["typography"]["sample"];actual=metrics["typography"]["actual"]
+          def type_px(value):
+            try:return float(str(value).replace("px",""))
+            except Exception:return 0.0
+          sizes={k:type_px(v["size"]) for k,v in sample.items()}
+          if not (sizes["tx-display-title"]>sizes["tx-page-title"]>sizes["tx-section-title"]>sizes["tx-card-title"]>sizes["tx-subheadline"]>=sizes["tx-body"]>sizes["tx-label"]):
+            row["issues"].append("digital credential typography hierarchy is out of order")
+          if len({sample[x]["family"] for x in ("tx-display-title","tx-page-title","tx-section-title","tx-card-title")})!=1:
+            row["issues"].append("digital credential display roles do not share one font family")
+          if len({sample[x]["family"] for x in ("tx-subheadline","tx-body","tx-label","tx-meta-label")})!=1:
+            row["issues"].append("digital credential UI roles do not share one font family")
+          for prop in ("family","size","weight","line","tracking","transform"):
+            if sample["tx-label"][prop]!=sample["tx-meta-label"][prop]:row["issues"].append("digital credential label roles diverged on "+prop)
+          for role,style in actual.items():
+            for prop in ("family","size","weight","line","tracking","transform"):
+              if style[prop]!=sample[role][prop]:row["issues"].append("digital credential "+role+" overrides shared "+prop)
           for name in ("shell","credential","grid"):
             b=metrics[name]
             if b["x"]<-1 or b["right"]>w+1:row["issues"].append(name+" escapes viewport")
