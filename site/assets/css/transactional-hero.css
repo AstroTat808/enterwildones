@@ -393,8 +393,8 @@
   box-shadow:var(--tx-shadow),inset 0 1px rgba(255,255,255,.04);
   backdrop-filter:blur(15px);
 }
-.ticket-access-page .purchase h1{margin:0 auto 10px;font:400 clamp(48px,8vw,82px)/1 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.045em}
-.ticket-access-page .purchase #realm{color:#a99e90;letter-spacing:.14em;text-transform:uppercase;font-size:10px}
+.ticket-access-page .purchase h1{margin:0 auto 10px}
+.ticket-access-page .purchase #realm{color:#a99e90}
 .ticket-access-page .purchase .price{font-size:clamp(56px,10vw,84px);margin:22px 0 14px}
 .ticket-access-page #release{display:inline-flex!important;margin:8px auto 0;padding:7px 11px;border:1px solid color-mix(in srgb,var(--accent) 44%,transparent);border-radius:999px}
 .ticket-access-page #release[hidden]{display:none!important}
