@@ -533,17 +533,17 @@
   .passport-page #realms.passport-grid>.passport-card{min-height:0;padding:24px 20px 26px!important;border-radius:24px!important}
   .passport-page #realms.passport-grid>.passport-card::after{inset:8px;border-radius:18px}
   .passport-page #realms.passport-grid>.passport-card>.passport-card-logo{width:min(66%,270px);margin-top:18px}
-  .passport-page #realms.passport-grid>.passport-card>h2.realm-key{font-size:clamp(40px,12vw,54px)}
+  .passport-page #realms.passport-grid>.passport-card>h2.realm-key{}
 }
 @media(max-width:520px){
   .passport-page .passport-member-main{grid-template-columns:68px minmax(0,1fr);gap:15px}
   .passport-page .passport-member-mark{width:64px;height:64px;font-size:30px}
   
-  .passport-page .passport-account-copy #progress{font-size:12px}
+  .passport-page .passport-account-copy #progress{}
   .passport-page .passport-cycle-nodes{grid-template-columns:1fr 1fr}
   .passport-page .passport-cycle-node{padding:9px 10px}
   .passport-page .passport-card-topline{grid-template-columns:auto minmax(0,1fr) auto;gap:8px}
-  .passport-page .passport-credential-label{font-size:6px;letter-spacing:.14em}
+  .passport-page .passport-credential-label{}
   .passport-page .passport-roman{width:36px;height:36px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -624,7 +624,7 @@
 }
 .passport-page #realms.passport-grid>.passport-master-card>h2.realm-key{
   color:#f5e8c8;
-  font-size:clamp(46px,5.2vw,66px);
+
 }
 .passport-page .passport-master-realms{
   display:grid;
@@ -920,12 +920,10 @@
   min-width:0;
   overflow:hidden;
   color:rgba(224,215,202,.43);
-  font-size:7px;
-  font-weight:900;
-  letter-spacing:.22em;
+
   text-align:center;
   text-overflow:ellipsis;
-  text-transform:uppercase;
+
   white-space:nowrap;
 }
 .ticket-page.tx-page .ticket-collector-rail{
@@ -971,19 +969,14 @@
 .ticket-page.tx-page .ticket-event-name{
   margin:0;
   color:#f8f0e5;
-  font-family:var(--tx-font-display);
-  font-size:clamp(48px,8vw,82px);
-  font-weight:400;
-  line-height:.96;
-  letter-spacing:-.048em;
+
   text-align:center;
 }
 .ticket-page.tx-page .ticket-tagline{
   max-width:620px;
   margin:14px auto 24px;
   color:rgba(226,217,204,.72);
-  font-size:15px;
-  line-height:1.72;
+
   text-align:center;
 }
 .ticket-page.tx-page .ticket-status-row{
@@ -1003,10 +996,7 @@
 .ticket-page.tx-page .ticket-status-row span,
 .ticket-page.tx-page .ticket-meta-grid span{
   color:#7f776e;
-  font-size:8px;
-  font-weight:900;
-  letter-spacing:.17em;
-  text-transform:uppercase;
+
 }
 .ticket-page.tx-page .ticket-status-row strong{
   color:color-mix(in srgb,var(--a) 68%,white);
@@ -1172,24 +1162,24 @@
   .ticket-page.tx-page .ticket-collector-rail{gap:8px;margin-top:9px;padding-top:8px;font-size:5.8px;letter-spacing:.13em}
   .ticket-page.tx-page .ticket-logo-wrap{margin:16px 0 8px}
   .ticket-page.tx-page .ticket-logo-wrap .ticket-logo{width:min(66%,280px)}
-  .ticket-page.tx-page .ticket-tagline{margin:12px auto 20px;font-size:14px;line-height:1.64}
+  .ticket-page.tx-page .ticket-tagline{margin:12px auto 20px;}
   .ticket-page.tx-page .ticket-status-row{padding:13px 14px}
   .ticket-page.tx-page .ticket-meta-grid{grid-template-columns:1fr;gap:8px;margin-bottom:16px}
   .ticket-page.tx-page .ticket-meta-grid>div{padding:12px 13px}
   .ticket-page.tx-page .ticket-qr-panel{margin-top:18px;padding:18px;border-radius:18px}
   .ticket-page.tx-page .ticket-support-grid{grid-template-columns:1fr;gap:14px;margin-top:18px}
   .ticket-page.tx-page .ticket-support-card{min-height:0;padding:22px 20px 20px;border-radius:20px!important}
-  .ticket-page.tx-page .ticket-support-card>p{margin-bottom:14px;line-height:1.58}
+  .ticket-page.tx-page .ticket-support-card>p{margin-bottom:14px;}
   .ticket-page.tx-page .ticket-support-card>.button{align-self:stretch;min-width:0;min-height:52px;margin-top:2px}
   .ticket-page.tx-page .ticket-support-card.venue{grid-column:auto}
   .ticket-page.tx-page>.site-footer{padding:30px 18px calc(72px + env(safe-area-inset-bottom))}
 }
 @media(max-width:480px){
   .ticket-page.tx-page .ticket-credential-topline{grid-template-columns:auto minmax(0,1fr) auto;gap:7px}
-  .ticket-page.tx-page .ticket-credential-label{font-size:6px;letter-spacing:.12em}
+  .ticket-page.tx-page .ticket-credential-label{}
   .ticket-page.tx-page .ticket-roman{width:36px;height:36px}
   .ticket-page.tx-page .realm-chip{max-width:108px;padding-inline:8px;font-size:7px;letter-spacing:.12em}
-  .ticket-page.tx-page .ticket-event-name{font-size:clamp(42px,13vw,58px)}
+  .ticket-page.tx-page .ticket-event-name{}
   .ticket-page.tx-page .ticket-collector-rail span:nth-child(2){display:none}
   .ticket-page.tx-page .ticket-collector-rail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .ticket-page.tx-page .ticket-pass-footnote{font-size:5.8px;letter-spacing:.15em}
@@ -1538,16 +1528,11 @@ body.master-cycle-ceremony-open{overflow:hidden}
 }
 .ticket-page.tx-page .ticket-entitlement-heading span{
   color:rgba(224,215,202,.52);
-  font-size:7px;
-  font-weight:900;
-  letter-spacing:.18em;
-  text-transform:uppercase;
+
 }
 .ticket-page.tx-page .ticket-entitlement-heading strong{
   color:color-mix(in srgb,var(--a) 68%,white);
-  font-size:8px;
-  font-weight:900;
-  letter-spacing:.15em;
+
 }
 .ticket-page.tx-page .ticket-entitlement-grid{
   display:grid;
@@ -1597,9 +1582,7 @@ body.master-cycle-ceremony-open{overflow:hidden}
   display:block;
   margin-bottom:4px;
   color:rgba(211,202,190,.42);
-  font-size:6.5px;
-  font-weight:900;
-  letter-spacing:.16em;
+
 }
 .ticket-page.tx-page .ticket-entitlement-copy strong{
   display:block;
@@ -1616,11 +1599,7 @@ body.master-cycle-ceremony-open{overflow:hidden}
   display:block;
   margin-top:5px;
   color:color-mix(in srgb,var(--a) 52%,#a89f94);
-  font-size:8px;
-  font-weight:800;
-  line-height:1.45;
-  letter-spacing:.09em;
-  text-transform:uppercase;
+
 }
 .ticket-page.tx-page .ticket-entitlement-badge[data-entitlement="drink_package"] .ticket-entitlement-mark::before{
   content:"◫";
