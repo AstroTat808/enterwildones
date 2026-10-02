@@ -32,7 +32,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: production-visual-qa-${{ github.workflow }}-${{ github.ref }}
+  # v2 isolates the current QA contract from legacy runs that predate
+  # cancel-in-progress, so stale screenshot jobs cannot block fresh PR checks.
+  group: production-visual-qa-v2-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -40,8 +42,8 @@ permissions:
   actions: read
 
 env:
-  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v7
-  APPROVED_REALM_VISUAL_CASES: home-desktop,home-passport-close-desktop,home-footer-desktop,home-footer-phone,home-footer-wide,masthead-home-phone,masthead-event-phone,masthead-quiz-phone,masthead-passport-phone,masthead-invite-phone,masthead-apply-phone,realm-quiz-intro-desktop,realm-quiz-result-desktop,realm-quiz-intro-1366,realm-quiz-question-1366,realm-quiz-aureva-result-1366,realm-quiz-halora-result-1366,realm-quiz-sunveil-result-1366,realm-quiz-nocturne-result-1366,application-open-desktop,application-gated-desktop,passport-auth-desktop,passport-login-phone,invite-desktop,ticket-access-desktop,public-ticket-desktop,ticket-addons-desktop
+  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v10
+  APPROVED_REALM_VISUAL_CASES: home-desktop,home-passport-close-desktop,home-footer-desktop,home-footer-phone,home-footer-wide,masthead-home-320,masthead-home-phone,masthead-home-430,masthead-home-768,masthead-home-1024,masthead-home-1366,masthead-home-1440,masthead-home-1920,masthead-event-phone,masthead-quiz-phone,masthead-passport-phone,masthead-invite-phone,masthead-apply-phone,realm-quiz-intro-desktop,realm-quiz-result-desktop,realm-quiz-intro-1366,realm-quiz-question-1366,realm-quiz-aureva-result-1366,realm-quiz-halora-result-1366,realm-quiz-sunveil-result-1366,realm-quiz-nocturne-result-1366,application-open-desktop,application-gated-desktop,passport-auth-desktop,passport-login-phone,invite-desktop,ticket-access-desktop,public-ticket-desktop,ticket-addons-desktop,admin-applications-desktop,admin-packages-desktop,admin-operations-desktop,admin-event-day-desktop,admin-live-desktop,admin-launch-desktop,admin-rehearsal-desktop
 
 jobs:
   source-audit:
@@ -69,6 +71,7 @@ jobs:
         run: python scripts/production_visual_qa.py --mode source
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: production-visual-source-audit
           path: visual-results/source-audit.json
@@ -98,13 +101,21 @@ jobs:
         with:
           path: .visual-baselines
           key: ${{ env.VISUAL_BASELINE_KEY }}
-      - name: Capture deployed main as fallback baseline
+      - name: Checkout exact PR base for deterministic reference baseline
+        if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .visual-reference
+          persist-credentials: false
+      - name: Capture exact PR base as fallback baseline
         if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
         run: >-
           python scripts/visual_regression.py
-          --mode capture-production
+          --mode capture-reference
+          --reference-site .visual-reference/site
           --baseline-dir .visual-baselines-production
-      - name: Establish approved Find Your Realm baseline for this visual change
+      - name: Establish approved preview baseline for intentional visual changes
         if: steps.baseline.outputs.cache-hit != 'true' && github.event_name == 'pull_request'
         run: >-
           python scripts/visual_regression.py
@@ -125,12 +136,44 @@ jobs:
         run: python scripts/visual_regression.py --mode compare-preview --baseline-dir .visual-baselines
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: approved-visual-regression-${{ github.run_id }}
           path: visual-regression-results
           retention-days: 30
           if-no-files-found: error
 
+
+  masthead-browser-qa:
+    name: Masthead · ${{ matrix.browser }}
+    needs: source-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install masthead browser dependencies
+        run: |
+          pip install playwright==1.55.0 pillow==11.3.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Verify canonical masthead at all approved widths
+        run: python scripts/visual_regression.py --mode verify-masthead --browser ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: masthead-${{ matrix.browser }}-${{ github.run_id }}
+          path: visual-regression-results/masthead-geometry-${{ matrix.browser }}.json
+          retention-days: 14
+          if-no-files-found: error
 
   lighthouse-ci:
     name: Lighthouse + Core Web Vitals gate
@@ -150,6 +193,7 @@ jobs:
         run: npx -y @lhci/cli@0.14.0 autorun --config=./lighthouserc.cjs
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: lighthouse-release-results
           path: lighthouse-results
@@ -159,7 +203,7 @@ jobs:
   production-qa-gate:
     name: Production QA Gate
     if: always()
-    needs: [source-audit, visual-regression, lighthouse-ci]
+    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa]
     runs-on: ubuntu-latest
     steps:
       - name: Enforce pre-merge critical gates
@@ -167,13 +211,16 @@ jobs:
           SOURCE_RESULT: ${{ needs.source-audit.result }}
           VISUAL_RESULT: ${{ needs.visual-regression.result }}
           LIGHTHOUSE_RESULT: ${{ needs.lighthouse-ci.result }}
+          MASTHEAD_BROWSER_RESULT: ${{ needs.masthead-browser-qa.result }}
         run: |
           echo "Source + build audit: $SOURCE_RESULT"
           echo "Approved visual regression: $VISUAL_RESULT"
           echo "Lighthouse + lab Core Web Vitals: $LIGHTHOUSE_RESULT"
+          echo "Chromium/WebKit masthead geometry: $MASTHEAD_BROWSER_RESULT"
           test "$SOURCE_RESULT" = "success"
           test "$VISUAL_RESULT" = "success"
           test "$LIGHTHOUSE_RESULT" = "success"
+          test "$MASTHEAD_BROWSER_RESULT" = "success"
 
   deploy-sync:
     name: Confirm production deployment
@@ -215,6 +262,7 @@ jobs:
         run: python scripts/production_visual_qa.py --mode smoke
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: production-runtime-smoke
           path: visual-results/production-smoke.json
@@ -251,6 +299,7 @@ jobs:
         run: python scripts/production_visual_qa.py --mode browser --suite ${{ matrix.suite }} --browser ${{ matrix.browser }}
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: production-visual-${{ matrix.suite }}-${{ matrix.browser }}
           path: visual-results/${{ matrix.suite }}-${{ matrix.browser }}

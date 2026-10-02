@@ -14,18 +14,26 @@
   --tx-cycle-gradient:var(--tx-realm-gradient);
   --tx-font-display:var(--wo-font-display,"Iowan Old Style",Baskerville,Georgia,serif);
   --tx-font-ui:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  /* Shared type scale: one hierarchy for Passport, invite, checkout and ticket states. */
   --tx-display-size:clamp(3rem,7vw,6.5rem);
   --tx-page-title-size:clamp(2.75rem,6vw,5.25rem);
   --tx-section-title-size:clamp(2rem,4vw,3.25rem);
+  --tx-card-title-size:clamp(1.875rem,3.5vw,2.75rem);
+  --tx-body-size:clamp(.9375rem,1.15vw,1.0625rem);
+  --tx-label-size:.625rem;
   --tx-display-leading:.95;
   --tx-page-title-leading:.98;
+  --tx-section-title-leading:1.04;
+  --tx-card-title-leading:1.08;
   --tx-title-tracking:-.04em;
   --tx-section-tracking:-.028em;
+  --tx-card-title-tracking:-.018em;
   --tx-label-tracking:.20em;
   --tx-copy-leading:1.72;
-  --tx-subheadline-size:clamp(1rem,1.35vw,1.125rem);
-  --tx-subheadline-leading:1.70;
-  --tx-subheadline-tracking:.03em;
+  --tx-subheadline-size:clamp(1rem,1.3vw,1.125rem);
+  --tx-subheadline-leading:1.64;
+  --tx-subheadline-tracking:.018em;
+  --tx-subheadline-weight:450;
 }
 
 :is(.tx-page,.passport-page,.invite-page,.ticket-access-page,.public-ticket-page,.ticket-addons-page,.tx-generated-page){
@@ -44,9 +52,9 @@
   letter-spacing:var(--tx-section-tracking);
 }
 :is(.tx-page,.passport-page,.invite-page,.ticket-access-page,.public-ticket-page,.ticket-addons-page,.tx-generated-page)
-:is(.eyebrow,.realm-chip,.tx-label,.meta small){
+:is(.eyebrow,.realm-chip,.tx-label,.tx-meta-label,.meta small){
   font-family:var(--tx-font-ui);
-  font-size:10px;
+  font-size:var(--tx-label-size);
   font-weight:800;
   line-height:1.5;
   letter-spacing:var(--tx-label-tracking);
@@ -58,7 +66,8 @@
   line-height:var(--tx-copy-leading);
 }
 
-/* Shared semantic typography utilities for Passport and ticket flows. */
+/* Shared semantic typography utilities for every Passport and ticket-flow surface.
+   Use these roles instead of page-local font declarations so hierarchy stays consistent. */
 .tx-display-title{
   font-family:var(--tx-font-display)!important;
   font-size:var(--tx-display-size)!important;
@@ -79,13 +88,22 @@
   font-family:var(--tx-font-display)!important;
   font-size:var(--tx-section-title-size)!important;
   font-weight:400!important;
-  line-height:1.04!important;
+  line-height:var(--tx-section-title-leading)!important;
   letter-spacing:var(--tx-section-tracking)!important;
   text-wrap:balance;
 }
-.tx-label{
+.tx-card-title{
+  font-family:var(--tx-font-display)!important;
+  font-size:var(--tx-card-title-size)!important;
+  font-weight:400!important;
+  line-height:var(--tx-card-title-leading)!important;
+  letter-spacing:var(--tx-card-title-tracking)!important;
+  text-wrap:balance;
+}
+.tx-label,
+.tx-meta-label{
   font-family:var(--tx-font-ui)!important;
-  font-size:10px!important;
+  font-size:var(--tx-label-size)!important;
   font-weight:800!important;
   line-height:1.5!important;
   letter-spacing:var(--tx-label-tracking)!important;
@@ -95,12 +113,20 @@
   max-width:640px;
   font-family:var(--tx-font-ui)!important;
   font-size:var(--tx-subheadline-size)!important;
-  font-weight:500!important;
+  font-weight:var(--tx-subheadline-weight)!important;
   line-height:var(--tx-subheadline-leading)!important;
   letter-spacing:var(--tx-subheadline-tracking)!important;
-  color:rgba(233,224,211,.78);
+  color:rgba(235,227,216,.76);
   text-wrap:balance;
-  text-shadow:0 1px 22px rgba(0,0,0,.24);
+  text-shadow:0 1px 18px rgba(0,0,0,.28);
+}
+.tx-body{
+  font-family:var(--tx-font-ui)!important;
+  font-size:var(--tx-body-size)!important;
+  font-weight:400!important;
+  line-height:var(--tx-copy-leading)!important;
+  letter-spacing:.004em!important;
+  color:var(--tx-muted);
 }
 
 .tx-page,
@@ -160,12 +186,7 @@
   color:#f3d88a;
   text-shadow:0 0 22px rgba(255,255,255,.12),0 0 34px rgba(215,172,88,.08);
 }
-.realm-gradient-title{
-  font-size:var(--tx-display-size)!important;
-  font-weight:800!important;
-  line-height:var(--tx-display-leading)!important;
-  letter-spacing:var(--tx-title-tracking)!important;
-}
+.realm-gradient-title{font-family:var(--tx-font-display)!important}
 @supports ((-webkit-background-clip:text) or (background-clip:text)){
   .realm-gradient-title,
   .tx-cycle-title{
@@ -302,10 +323,6 @@
   text-wrap:balance;
 }
 .passport-page .passport-header h1.realm-gradient-title{
-  font-size:var(--tx-display-size)!important;
-  font-weight:800!important;
-  line-height:.95!important;
-  letter-spacing:-.04em!important;
   text-shadow:0 0 18px rgba(255,255,255,.14),0 0 30px rgba(232,200,121,.08);
 }
 .passport-page .passport-header .lede{
@@ -376,8 +393,8 @@
   box-shadow:var(--tx-shadow),inset 0 1px rgba(255,255,255,.04);
   backdrop-filter:blur(15px);
 }
-.ticket-access-page .purchase h1{margin:0 auto 10px;font:400 clamp(48px,8vw,82px)/1 "Iowan Old Style",Baskerville,Georgia,serif;letter-spacing:-.045em}
-.ticket-access-page .purchase #realm{color:#a99e90;letter-spacing:.14em;text-transform:uppercase;font-size:10px}
+.ticket-access-page .purchase h1{margin:0 auto 10px}
+.ticket-access-page .purchase #realm{color:#a99e90}
 .ticket-access-page .purchase .price{font-size:clamp(56px,10vw,84px);margin:22px 0 14px}
 .ticket-access-page #release{display:inline-flex!important;margin:8px auto 0;padding:7px 11px;border:1px solid color-mix(in srgb,var(--accent) 44%,transparent);border-radius:999px}
 .ticket-access-page #release[hidden]{display:none!important}
@@ -526,35 +543,28 @@
 .passport-page .passport-header h1.realm-gradient-title{
   max-width:9.5ch;
   margin:0 auto 22px;
-  font-size:clamp(3.45rem,7.6vw,7.2rem)!important;
-  line-height:.91!important;
-  letter-spacing:-.045em!important;
   text-shadow:
     0 2px 26px rgba(0,0,0,.62),
     0 0 26px rgba(255,255,255,.08);
 }
 .passport-page .passport-header .tx-subheadline{
   position:relative;
-  max-width:700px;
+  max-width:650px;
   margin:0 auto;
-  padding-top:20px;
-  color:rgba(247,240,229,.88);
-  font-size:clamp(1.02rem,1.45vw,1.22rem)!important;
-  font-weight:500!important;
-  line-height:1.65!important;
-  letter-spacing:.035em!important;
-  text-shadow:0 2px 20px rgba(0,0,0,.48);
+  padding-top:19px;
+  color:rgba(242,234,222,.80);
+  text-shadow:0 2px 18px rgba(0,0,0,.44);
 }
 .passport-page .passport-header .tx-subheadline::before{
   content:"";
   position:absolute;
   left:50%;
   top:0;
-  width:min(250px,52vw);
+  width:min(220px,48vw);
   height:1px;
   transform:translateX(-50%);
-  background:linear-gradient(90deg,transparent,rgba(242,214,123,.72),rgba(128,226,238,.54),rgba(255,149,81,.54),rgba(183,142,255,.62),transparent);
-  box-shadow:0 0 18px rgba(232,200,121,.18);
+  background:linear-gradient(90deg,transparent,rgba(242,214,123,.48),rgba(128,226,238,.34),rgba(255,149,81,.32),rgba(183,142,255,.38),transparent);
+  box-shadow:0 0 14px rgba(232,200,121,.11);
 }
 @media(hover:hover) and (pointer:fine){
   .passport-page .passport-header .page-brand{
@@ -577,22 +587,16 @@
     font-size:9px!important;
     letter-spacing:.22em!important;
   }
-  .passport-page .passport-header h1.realm-gradient-title{
-    max-width:10ch;
-    font-size:clamp(3rem,14vw,4.8rem)!important;
-    line-height:.93!important;
-  }
+  .passport-page .passport-header h1.realm-gradient-title{max-width:10ch}
   .passport-page .passport-header .tx-subheadline{
     max-width:32rem;
     padding-top:18px;
-    font-size:clamp(.98rem,4vw,1.1rem)!important;
-    line-height:1.62!important;
   }
 }
 @media(max-width:420px){
   .passport-page .passport-header{min-height:470px;padding:40px 16px 48px}
   .passport-page .passport-header .page-brand{width:min(235px,72vw)}
-  .passport-page .passport-header h1.realm-gradient-title{font-size:clamp(2.65rem,13.5vw,3.65rem)!important}
+
 }
 @media(prefers-reduced-motion:reduce){
   .passport-page .passport-header .page-brand{transition:none!important;transform:none!important}
@@ -600,19 +604,11 @@
 
 
 
-/* Supporting copy for multi-realm gradient headlines.
-   Uses a softer version of the same realm spectrum to preserve hierarchy and readability. */
-:is(.realm-gradient-title,.tx-cycle-title) + p{
-  color:#d7cfc2;
-  text-shadow:0 2px 20px rgba(0,0,0,.46);
-}
-@supports ((-webkit-background-clip:text) or (background-clip:text)){
-  :is(.realm-gradient-title,.tx-cycle-title) + p{
-    background:var(--wo-support-gradient,linear-gradient(90deg,#ddd0ad 0%,#ded9ca 18%,#b8d7d8 39%,#e2c1aa 64%,#c9c0dc 86%,#ddd4c8 100%));
-    background-size:100% 100%;
-    -webkit-background-clip:text;
-    background-clip:text;
-    color:transparent!important;
-    -webkit-text-fill-color:transparent;
-  }
+/* Supporting copy deliberately stays quieter than realm-gradient headlines.
+   Realm color is carried by the hairline/accent treatment, not by full-spectrum body text. */
+:is(.realm-gradient-title,.tx-cycle-title) + .tx-subheadline{
+  color:rgba(235,227,216,.78)!important;
+  background:none!important;
+  -webkit-text-fill-color:currentColor!important;
+  text-shadow:0 2px 18px rgba(0,0,0,.42);
 }

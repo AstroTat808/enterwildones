@@ -59,8 +59,11 @@ SUITES={
  "admin":[Case("admin-applications","/admin","admin-apps","#adminPanel:not(.hidden)"),Case("admin-overview","/admin/overview","overview","#events .event"),Case("admin-packages","/admin/packages","packages","#report .metric"),Case("admin-operations","/admin/operations","operations","#opsPanel:not(.hidden)"),Case("admin-event-day","/admin/event-day","command","#indicatorGrid > *"),Case("admin-live","/admin/live","command","#indicatorGrid > *"),Case("admin-launch","/admin/launch","command","#indicatorGrid > *"),Case("admin-rehearsal","/admin/rehearsal","command","#indicatorGrid > *")],
  "staff":[Case("check-in","/check-in","check-in","#gate:not([hidden])"),Case("bar","/bar","bar","#bar:not([hidden])")]
 }
-VIEWPORTS={"chromium":[("phone-small",320,568,2),("phone",390,844,2),("landscape",844,390,1),("tablet",768,1024,2),("laptop",1024,768,1),("desktop",1440,1000,1),("wide",1920,1080,1)],"webkit":[("phone-small",320,568,2),("phone",390,844,2),("tablet",768,1024,2),("desktop",1440,1000,1)]}
-SHOTS={"chromium":{"phone-small","phone","tablet","desktop","wide"},"webkit":{"phone","desktop"}}
+VIEWPORTS={
+ "chromium":[("phone-small",320,568,2),("phone",390,844,2),("phone-large",430,932,3),("landscape",844,390,1),("tablet",768,1024,2),("laptop",1024,768,1),("desktop-small",1366,768,1),("desktop",1440,1000,1),("wide",1920,1080,1)],
+ "webkit":[("phone-small",320,568,2),("phone",390,844,2),("phone-large",430,932,3),("tablet",768,1024,2),("laptop",1024,768,1),("desktop-small",1366,768,1),("desktop",1440,1000,1),("wide",1920,1080,1)]
+}
+SHOTS={"chromium":{"phone-small","phone","phone-large","tablet","laptop","desktop-small","desktop","wide"},"webkit":{"phone-small","phone","phone-large","tablet","laptop","desktop-small","desktop","wide"}}
 
 def fulfill(route,payload,status=200):
  route.fulfill(status=status,content_type="application/json",body=json.dumps(payload))
@@ -107,30 +110,233 @@ def dom(page):
  return {title:document.title,h1:h1?.textContent?.trim()||'',overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,dups,unlabeled,unnamed,broken,missingAlt,tiny,text:(document.querySelector('main')?.innerText||'').trim().length};
  }""")
 
-def state_checks(page,case,width=None):
+
+TRANSACTIONAL_TYPOGRAPHY={
+ "passport-auth":{
+   "tx-card-title":".passport-card .tx-card-title",
+   "tx-body":".passport-card .tx-body",
+   "tx-meta-label":".passport-card .tx-meta-label",
+ },
+ "passport-login":{
+   "tx-section-title":"#login .tx-section-title",
+   "tx-body":"#login .tx-body",
+   "tx-label":".passport-header .tx-label",
+ },
+ "invite":{
+   "tx-display-title":".invite-workflow .tx-display-title",
+   "tx-subheadline":".invite-workflow > .tx-subheadline",
+   "tx-meta-label":"#inviteForm .tx-meta-label",
+ },
+ "ticket-access":{
+   "tx-page-title":".purchase .tx-page-title",
+   "tx-body":"#status.tx-body",
+   "tx-label":".purchase > .tx-label",
+   "tx-meta-label":"#releaseCountdown.tx-meta-label",
+ },
+ "public-tickets":{
+   "tx-page-title":".workflow-shell .tx-page-title",
+   "tx-subheadline":".workflow-shell > .tx-subheadline",
+   "tx-body":"#public-ticket-form .tx-body",
+   "tx-meta-label":"#public-ticket-form .tx-meta-label",
+ },
+ "ticket-addons":{
+   "tx-page-title":".workflow-shell .tx-page-title",
+   "tx-subheadline":".workflow-shell > .tx-subheadline",
+   "tx-card-title":"#addons .card .tx-card-title",
+   "tx-body":"#addons .card .tx-body",
+   "tx-meta-label":"#addons .card .tx-meta-label",
+ },
+}
+
+def typography_contract_checks(page,case):
+ cfg=TRANSACTIONAL_TYPOGRAPHY.get(case.name)
+ if not cfg:return []
+ payload=page.evaluate("""selectors => {
+  const props=e=>{const s=getComputedStyle(e);return {
+   family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,
+   tracking:s.letterSpacing,transform:s.textTransform,background:s.backgroundImage,
+   fill:s.webkitTextFillColor,color:s.color
+  }};
+  const roles=['tx-display-title','tx-page-title','tx-section-title','tx-card-title','tx-subheadline','tx-body','tx-label','tx-meta-label'];
+  const host=document.createElement('div');
+  host.style.cssText='position:fixed;left:-200vw;top:0;visibility:hidden;pointer-events:none';
+  for(const role of roles){const e=document.createElement('div');e.className=role;e.textContent='Typography contract';host.appendChild(e)}
+  document.body.appendChild(host);
+  const sample=Object.fromEntries(roles.map(role=>[role,props(host.querySelector('.'+role))]));
+  const actual={};
+  for(const [role,selector] of Object.entries(selectors)){
+    const e=document.querySelector(selector);
+    actual[role]=e?props(e):null;
+  }
+  host.remove();
+  return {sample,actual};
+ }""",cfg)
  f=[]
+ sample=data=payload["sample"];actual=payload["actual"]
+ def px(value):
+  try:return float(str(value).replace("px",""))
+  except Exception:return 0.0
+ sizes={k:px(v["size"]) for k,v in sample.items()}
+ if not (sizes["tx-display-title"]>sizes["tx-page-title"]>sizes["tx-section-title"]>sizes["tx-card-title"]>sizes["tx-subheadline"]>=sizes["tx-body"]>sizes["tx-label"]):
+  f.append("shared transactional typography hierarchy is out of order")
+ display_families={sample[x]["family"] for x in ("tx-display-title","tx-page-title","tx-section-title","tx-card-title")}
+ ui_families={sample[x]["family"] for x in ("tx-subheadline","tx-body","tx-label","tx-meta-label")}
+ if len(display_families)!=1:f.append("shared transactional display roles do not use one font family")
+ if len(ui_families)!=1:f.append("shared transactional UI roles do not use one font family")
+ for prop in ("family","size","weight","line","tracking","transform"):
+  if sample["tx-label"][prop]!=sample["tx-meta-label"][prop]:f.append("tx-label and tx-meta-label diverged on "+prop)
+ for role,style in actual.items():
+  if style is None:
+   f.append(case.name+" missing visible semantic typography role "+role)
+   continue
+  for prop in ("family","size","weight","line","tracking","transform"):
+   if style[prop]!=sample[role][prop]:f.append(case.name+" "+role+" overrides shared "+prop+" ("+str(style[prop])+" != "+str(sample[role][prop])+")")
+ if case.name.startswith("passport"):
+  hero=page.evaluate("""() => {
+   const h=document.querySelector('.passport-header .tx-display-title'),s=document.querySelector('.passport-header .tx-subheadline');
+   if(!h||!s)return null;
+   const hs=getComputedStyle(h),ss=getComputedStyle(s);
+   return {headlineSize:parseFloat(hs.fontSize),subSize:parseFloat(ss.fontSize),headlineWeight:+hs.fontWeight,subWeight:+ss.fontWeight,subBackground:ss.backgroundImage,subFill:ss.webkitTextFillColor};
+  }""")
+  if not hero:f.append("Passport hero typography contract missing")
+  else:
+   if hero["subSize"]>=hero["headlineSize"]*.45:f.append("Passport subheadline competes with headline size")
+   if hero["subWeight"]>=hero["headlineWeight"]:f.append("Passport subheadline must remain lighter than headline")
+   if hero["subBackground"]!="none":f.append("Passport subheadline must not use a competing text gradient")
+   if hero["subFill"] in ("transparent","rgba(0, 0, 0, 0)"):f.append("Passport subheadline must retain readable solid text fill")
+ return f
+
+
+def state_checks(page,case,width=None):
+ f=typography_contract_checks(page,case)
  guest_header=page.locator(".topbar .brand").count()>0 and not (case.name.startswith("admin-") or case.name in ("check-in","bar"))
  if guest_header:
-  header=page.locator(".topbar").first
-  brand=page.locator(".topbar .brand").first
-  icon=page.locator(".topbar .brand-icon").first
-  label=page.locator(".topbar .brand-label").first
-  sub=page.locator(".topbar .brand-label span").first
-  if not (header.is_visible() and brand.is_visible() and icon.is_visible()):f.append("guest masthead emblem must be visible")
-  if not label.is_visible() or "ENTER WILD ONES" not in label.inner_text():f.append("guest masthead ENTER WILD ONES label missing")
-  if not sub.is_visible() or "THE FOUR REALMS" not in sub.inner_text():f.append("guest masthead THE FOUR REALMS label missing")
-  hb=header.bounding_box();ib=icon.bounding_box();bb=brand.bounding_box()
-  if hb and ib and (ib["y"]<hb["y"]-1 or ib["y"]+ib["height"]>hb["y"]+hb["height"]+1):f.append("guest masthead emblem is clipped by header")
-  if hb and bb and (bb["y"]<hb["y"]-1 or bb["y"]+bb["height"]>hb["y"]+hb["height"]+1):f.append("guest masthead lockup is clipped by header")
-  initial_h=hb["height"] if hb else None
-  page.evaluate("window.scrollTo(0,140)");page.wait_for_timeout(90)
-  compact_h=header.bounding_box()["height"] if header.bounding_box() else None
-  if initial_h and compact_h and compact_h>initial_h+1:f.append("guest masthead grows after scroll")
-  if not label.is_visible() or not sub.is_visible():f.append("guest masthead wordmark disappears after scroll")
-  hb2=header.bounding_box();ib2=icon.bounding_box();bb2=brand.bounding_box()
-  if hb2 and ib2 and (ib2["y"]<hb2["y"]-1 or ib2["y"]+ib2["height"]>hb2["y"]+hb2["height"]+1):f.append("compact guest masthead emblem is clipped")
-  if hb2 and bb2 and (bb2["y"]<hb2["y"]-1 or bb2["y"]+bb2["height"]>hb2["y"]+hb2["height"]+1):f.append("compact guest masthead lockup is clipped")
+  metrics=page.evaluate("""() => {
+   const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
+   const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
+   const ims=img?getComputedStyle(img):null;
+   return {header:r(header),brand:r(brand),icon:r(icon),image:r(img),label:r(label),sub:r(sub),labelText:(label?.childNodes?.[0]?.textContent||'').trim(),subText:(sub?.textContent||'').trim(),imageSrc:img?.getAttribute('src')||'',naturalW:img?.naturalWidth||0,naturalH:img?.naturalHeight||0,objectFit:ims?.objectFit||''};
+  }""")
+  def masthead_px(value):
+   try:return float(str(value).replace("px",""))
+   except Exception:return 0.0
+  def masthead_center_delta(a,b):
+   return abs((a["y"]+a["h"]/2)-(b["y"]+b["h"]/2))
+  def masthead_minimums(w,compact=False):
+   if w>=1024:return {"icon":96 if compact else 118,"label":10.8 if compact else 12.5,"sub":6.3 if compact else 7.2}
+   if w>=700:return {"icon":72 if compact else 84,"label":8.4 if compact else 9.2,"sub":5.6 if compact else 6.0}
+   if w>350:return {"icon":66 if compact else 76,"label":7.7 if compact else 8.4,"sub":5.2 if compact else 5.6}
+   return {"icon":58 if compact else 64,"label":7.2 if compact else 7.7,"sub":4.9 if compact else 5.2}
+  def validate_masthead(m,compact=False):
+   phase="compact" if compact else "expanded";mins=masthead_minimums(width or 0,compact)
+   header,brand,icon,image,label,sub=[m.get(k) for k in ("header","brand","icon","image","label","sub")]
+   if not all((header,brand,icon,image,label,sub)):f.append("guest masthead structure incomplete in "+phase+" header");return
+   if m["labelText"]!="ENTER WILD ONES":f.append("guest masthead ENTER WILD ONES label missing in "+phase+" header")
+   if m["subText"]!="THE FOUR REALMS":f.append("guest masthead THE FOUR REALMS label missing in "+phase+" header")
+   if m["imageSrc"]!="/assets/images/realms/enter-wild-ones-emblem.svg":f.append("guest masthead uses wrong emblem asset in "+phase+" header")
+   if m["objectFit"]!="contain":f.append("guest masthead emblem must use object-fit contain in "+phase+" header")
+   if icon["h"]<=0 or abs((icon["w"]/icon["h"])-(960/735))>.015:f.append("guest masthead emblem is stretched in "+phase+" header")
+   if abs(image["w"]-icon["w"])>1 or abs(image["h"]-icon["h"])>1:f.append("guest masthead image does not fill its ratio-safe box in "+phase+" header")
+   if icon["y"]<header["y"]-1.5 or icon["y"]+icon["h"]>header["y"]+header["h"]+1.5:f.append("guest masthead emblem is clipped in "+phase+" header")
+   if brand["y"]<header["y"]-1.5 or brand["y"]+brand["h"]>header["y"]+header["h"]+1.5:f.append("guest masthead lockup is clipped in "+phase+" header")
+   if min(icon["y"]-header["y"],header["y"]+header["h"]-(icon["y"]+icon["h"]))<4:f.append("guest masthead emblem lacks vertical breathing room in "+phase+" header")
+   if masthead_center_delta(icon,label)>6:f.append("guest masthead emblem and wordmark are vertically misaligned in "+phase+" header")
+   if masthead_center_delta(brand,header)>2:f.append("guest masthead lockup is not vertically centered in "+phase+" header")
+   if icon["w"]<mins["icon"]:f.append("guest masthead emblem is undersized in "+phase+" header")
+   if masthead_px(label["font"])<mins["label"]:f.append("guest masthead ENTER WILD ONES text is undersized in "+phase+" header")
+   if masthead_px(sub["font"])<mins["sub"]:f.append("guest masthead THE FOUR REALMS text is undersized in "+phase+" header")
+  validate_masthead(metrics,False)
+  initial_h=metrics["header"]["h"] if metrics.get("header") else None
+  page.evaluate("window.scrollTo(0,140)");page.wait_for_timeout(420)
+  compact_metrics=page.evaluate("""() => {
+   const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
+   const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span'),ims=img?getComputedStyle(img):null;
+   return {header:r(header),brand:r(brand),icon:r(icon),image:r(img),label:r(label),sub:r(sub),labelText:(label?.childNodes?.[0]?.textContent||'').trim(),subText:(sub?.textContent||'').trim(),imageSrc:img?.getAttribute('src')||'',naturalW:img?.naturalWidth||0,naturalH:img?.naturalHeight||0,objectFit:ims?.objectFit||''};
+  }""")
+  validate_masthead(compact_metrics,True)
+  compact_h=compact_metrics["header"]["h"] if compact_metrics.get("header") else None
+  if initial_h and compact_h and compact_h>=initial_h-1:f.append("guest masthead did not compact after scroll")
   page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(70)
+ # Transactional typography is a release contract: semantic roles must resolve to one
+ # shared hierarchy and live markup must not override the shared font metrics.
+ transactional_required={
+  "passport-auth":{
+   "tx-display-title":".passport-header .tx-display-title",
+   "tx-subheadline":".passport-header .tx-subheadline",
+   "tx-section-title":".passport-account-copy .tx-section-title",
+   "tx-card-title":"#realms .tx-card-title",
+   "tx-body":"#progress.tx-body",
+   "tx-label":".passport-member-kicker.tx-label",
+   "tx-meta-label":".passport-cycle-meter-head .tx-meta-label",
+  },
+  "passport-login":{
+   "tx-display-title":".passport-header .tx-display-title",
+   "tx-subheadline":".passport-header .tx-subheadline",
+   "tx-section-title":"#login .tx-section-title",
+   "tx-body":"#login .tx-body",
+   "tx-label":".passport-header .tx-label",
+   "tx-meta-label":".passport-cycle-meter-head .tx-meta-label",
+  },
+  "invite":{
+   "tx-display-title":".invite-workflow .tx-display-title",
+   "tx-subheadline":".invite-workflow>.tx-subheadline",
+   "tx-card-title":"[data-granted-name].tx-card-title",
+   "tx-label":".invite-workflow>.tx-label",
+   "tx-meta-label":".invite-workflow .tx-meta-label",
+  },
+  "ticket-access":{
+   "tx-page-title":".ticket-access-page .tx-page-title",
+   "tx-label":".ticket-access-page .tx-label",
+   "tx-body":".ticket-access-page .tx-body",
+  },
+  "public-tickets":{
+   "tx-page-title":".public-ticket-page .tx-page-title",
+   "tx-subheadline":".public-ticket-page .tx-subheadline",
+   "tx-label":".public-ticket-page .tx-label",
+   "tx-meta-label":".public-ticket-page .tx-meta-label",
+   "tx-body":".public-ticket-page .tx-body",
+  },
+  "ticket-addons":{
+   "tx-page-title":".ticket-addons-page .tx-page-title",
+   "tx-subheadline":".ticket-addons-page .tx-subheadline",
+   "tx-card-title":"#addons .tx-card-title",
+   "tx-meta-label":"#addons .tx-meta-label",
+   "tx-body":"#addons .tx-body",
+  },
+ }
+ if case.name in transactional_required:
+  type_metrics=page.evaluate("""() => {
+   const roles=['tx-display-title','tx-page-title','tx-section-title','tx-card-title','tx-subheadline','tx-body','tx-label','tx-meta-label'];
+   const props=e=>{const s=getComputedStyle(e);return {family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,tracking:s.letterSpacing,transform:s.textTransform}};
+   const host=document.createElement('div');
+   host.setAttribute('data-qa-type-contract','');
+   host.style.cssText='position:fixed;left:-200vw;top:0;visibility:hidden;pointer-events:none';
+   for(const role of roles){const e=document.createElement('div');e.className=role;e.textContent='Typography contract';host.appendChild(e)}
+   document.body.appendChild(host);
+   const sample=Object.fromEntries(roles.map(role=>[role,props(host.querySelector('.'+role))]));
+   host.remove();
+   return {sample};
+  }""")
+  sample=type_metrics["sample"]
+  def px(v):
+   try:return float(str(v).replace("px",""))
+   except Exception:return 0.0
+  display_group=[sample[x] for x in ("tx-display-title","tx-page-title","tx-section-title","tx-card-title")]
+  ui_group=[sample[x] for x in ("tx-subheadline","tx-body","tx-label","tx-meta-label")]
+  if len({x["family"] for x in display_group})!=1:f.append("transactional display roles do not share one font family")
+  if len({x["family"] for x in ui_group})!=1:f.append("transactional UI roles do not share one font family")
+  sizes={k:px(v["size"]) for k,v in sample.items()}
+  if not (sizes["tx-display-title"]>sizes["tx-page-title"]>sizes["tx-section-title"]>sizes["tx-card-title"]>sizes["tx-subheadline"]>=sizes["tx-body"]>sizes["tx-label"]):
+   f.append("transactional typography hierarchy is out of order: "+str(sizes))
+  for prop in ("family","size","weight","line","tracking","transform"):
+   if sample["tx-label"][prop]!=sample["tx-meta-label"][prop]:f.append("tx-label and tx-meta-label diverged on "+prop)
+  for role,selector in transactional_required[case.name].items():
+   loc=page.locator(selector).first
+   if loc.count()==0:
+    f.append(case.name+" missing semantic typography hook "+role+" at "+selector);continue
+   actual=loc.evaluate("""e=>{const s=getComputedStyle(e);return {family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,tracking:s.letterSpacing,transform:s.textTransform}}""")
+   for prop in ("family","size","weight","line","tracking","transform"):
+    if actual[prop]!=sample[role][prop]:f.append(case.name+" "+role+" overrides shared "+prop+": "+str(actual[prop])+" != "+str(sample[role][prop]))
  if case.state=="home":
   for s in ("#aureva","#halora","#sunveil","#nocturne"):
    if page.locator(s).count()!=1:f.append("missing "+s)
@@ -146,17 +352,19 @@ def state_checks(page,case,width=None):
   fb=footer.bounding_box() if footer.count() else None
   flb=footer_logo.bounding_box() if footer_logo.count() else None
   if w>=1024:
-   if not hb or hb["height"]<124:f.append("homepage desktop header must be at least 124px tall")
-   if not ib or ib["width"]<140 or ib["height"]<108:f.append("homepage desktop emblem must remain visually prominent")
+   if not hb or hb["height"]<110:f.append("homepage desktop header must remain at least 110px tall")
+   if not ib or ib["width"]<118 or ib["height"]<90:f.append("homepage desktop emblem must remain visually prominent and proportionate")
    if fb and fb["height"]>82:f.append("homepage desktop footer exceeded 82px end-credit limit")
    if flb and (flb["width"]>52 or flb["height"]>52):f.append("homepage desktop footer logo exceeded compact size")
   elif w>=700:
-   if not hb or hb["height"]<102:f.append("homepage tablet header must be at least 102px tall")
-   if not ib or ib["width"]<80:f.append("homepage tablet emblem is too small")
+   if not hb or hb["height"]<94:f.append("homepage tablet header must remain at least 94px tall")
+   if not ib or ib["width"]<84:f.append("homepage tablet emblem is too small")
    if fb and fb["height"]>104:f.append("homepage tablet footer exceeded compact height")
   else:
-   if not hb or hb["height"]<96:f.append("homepage mobile header must be at least 96px tall")
-   if not ib or ib["width"]<68:f.append("homepage mobile emblem is too small")
+   min_header=86 if w<=350 else 90
+   min_icon=66 if w<=350 else 76
+   if not hb or hb["height"]<min_header:f.append("homepage mobile header is too short")
+   if not ib or ib["width"]<min_icon:f.append("homepage mobile emblem is too small")
    if fb and fb["height"]>112:f.append("homepage mobile footer exceeded compact height")
    if flb and (flb["width"]>48 or flb["height"]>48):f.append("homepage mobile footer logo exceeded compact size")
   gradient=page.evaluate("""() => {
@@ -333,19 +541,42 @@ def source_mode():
  required={"/","/events/aureva","/events/halora","/events/sunveil","/events/nocturne","/apply/aureva","/apply/halora","/apply/sunveil","/apply/nocturne","/passport","/invite","/ticket-access","/public-tickets/sunveil","/ticket/addons","/admin","/admin/overview","/admin/packages","/admin/operations","/admin/event-day","/admin/live","/admin/launch","/admin/rehearsal","/check-in","/bar"}
  matrix={c.path.split("?",1)[0] for cases in SUITES.values() for c in cases}
  if required-matrix:fail.append("browser matrix missing "+str(sorted(required-matrix)))
- passport=(SITE/"assets/js/passport.js").read_text(encoding="utf-8");ph=(SITE/"passport.html").read_text(encoding="utf-8");css=(SITE/"assets/css/transactional-hero.css").read_text(encoding="utf-8");tv=Path("netlify/functions/ticket-view.mjs").read_text(encoding="utf-8")
+ passport=(SITE/"assets/js/passport.js").read_text(encoding="utf-8");ph=(SITE/"passport.html").read_text(encoding="utf-8");css=(SITE/"assets/css/transactional-hero.css").read_text(encoding="utf-8");premium=(SITE/"assets/css/transactional-premium.css").read_text(encoding="utf-8");tv=Path("netlify/functions/ticket-view.mjs").read_text(encoding="utf-8")
  for s in ("MASTER CYCLE","passport-master-card"):
   if s not in passport:fail.append("passport regression guard missing "+s)
  masthead=(SITE/"assets/css/masthead-lockup.css").read_text(encoding="utf-8") if (SITE/"assets/css/masthead-lockup.css").exists() else ""
  branding=(SITE/"assets/js/branding.js").read_text(encoding="utf-8")
- for s in (".wo-guest-masthead",".brand-icon",".brand-label","masthead-scrolled"):
+ emblem_svg=(SITE/"assets/images/realms/enter-wild-ones-emblem.svg").read_text(encoding="utf-8")
+ for s in ('viewBox="120 0 960 735"','width="960"','height="735"'):
+  if s not in emblem_svg:fail.append("canonical masthead SVG dimension contract missing "+s)
+ for s in (".wo-guest-masthead",".brand-icon",".brand-label","masthead-scrolled","--wo-masthead-icon-w","aspect-ratio:960 / 735","object-fit:contain","align-self:center"):
   if s not in masthead:fail.append("shared masthead regression guard missing "+s)
- for s in ("wo-guest-masthead","ENTER WILD ONES","THE FOUR REALMS","mastheadScrollState"):
+ for s in ("wo-guest-masthead","ENTER WILD ONES","THE FOUR REALMS","mastheadScrollState","/assets/images/realms/enter-wild-ones-emblem.svg"):
   if s not in branding:fail.append("branding masthead contract missing "+s)
+ visual_regression=Path("scripts/visual_regression.py").read_text(encoding="utf-8")
+ for s in ('("430",430,932,3)','("1366",1366,768,1)','("1920",1920,1080,1)','("realm-aureva","/events/aureva","plain")','("realm-halora","/events/halora","plain")','("realm-sunveil","/events/sunveil","plain")','("realm-nocturne","/events/nocturne","plain")',"aspect ratio distorted","vertically misaligned","dimensions differ across routes"):
+  if s not in visual_regression:fail.append("permanent masthead visual regression contract missing "+s)
  if "realm-gradient-title tx-display-title" not in ph:fail.append("premium Passport title markup missing")
- for s in (".tx-display-title",".tx-page-title",".tx-section-title",".tx-label",".tx-subheadline"):
+ for s in (".tx-display-title",".tx-page-title",".tx-section-title",".tx-card-title",".tx-subheadline",".tx-body",".tx-label",".tx-meta-label"):
   if s not in css:fail.append("shared typography missing "+s)
+ for s in ("TRANSACTIONAL_TYPOGRAPHY","typography_contract_checks","shared transactional typography hierarchy is out of order","Passport subheadline must not use a competing text gradient"):
+  if s not in Path("scripts/production_visual_qa.py").read_text(encoding="utf-8"):fail.append("permanent transactional typography visual contract missing "+s)
+ markup_contracts={
+  "passport.html":((SITE/"passport.html").read_text(encoding="utf-8"),("tx-display-title","tx-section-title","tx-subheadline","tx-body","tx-label","tx-meta-label")),
+  "invite.html":((SITE/"invite.html").read_text(encoding="utf-8"),("tx-display-title","tx-card-title","tx-subheadline","tx-label","tx-meta-label")),
+  "ticket-access.html":((SITE/"ticket-access.html").read_text(encoding="utf-8"),("tx-page-title","tx-body","tx-label")),
+  "public-tickets.html":((SITE/"public-tickets.html").read_text(encoding="utf-8"),("tx-page-title","tx-subheadline","tx-body","tx-label","tx-meta-label")),
+  "ticket-addons.js":((SITE/"assets/js/ticket-addons.js").read_text(encoding="utf-8"),("tx-card-title","tx-body","tx-meta-label")),
+  "passport.js":(passport,("tx-card-title","tx-body","tx-meta-label")),
+  "ticket-view.mjs":(tv,("tx-page-title","tx-card-title","tx-subheadline","tx-body","tx-label","tx-meta-label")),
+ }
+ for name,(source,roles) in markup_contracts.items():
+  for role in roles:
+   if role not in source:fail.append(name+" missing shared typography role "+role)
  if "ticket-entitlement-badge" not in tv:fail.append("ticket entitlement badge hook missing")
+ if not re.search(r"\.ticket-page\.tx-page \.ticket-support-card>\.button\{[^}]*display:inline-flex;[^}]*align-items:center;[^}]*justify-content:center;[^}]*text-decoration:none",premium,re.S):fail.append("ticket support CTA centering regression guard missing")
+ if not re.search(r"@media\(max-width:760px\)\{.*?\.ticket-page\.tx-page \.ticket-support-card\{min-height:0;",premium,re.S):fail.append("mobile ticket support cards must collapse fixed min-height")
+ if "calc(72px + env(safe-area-inset-bottom))" not in premium:fail.append("mobile ticket footer safe-area spacing regression guard missing")
  report={"htmlFiles":len(html),"failures":fail,"warnings":warn};(OUT/"source-audit.json").write_text(json.dumps(report,indent=2),encoding="utf-8");print(json.dumps(report,indent=2));return 1 if fail else 0
 
 def get(path,timeout=25):
