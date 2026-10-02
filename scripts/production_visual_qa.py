@@ -99,7 +99,7 @@ def fixtures(page,state):
   page.route("**/api/app-config?*",lambda r:fulfill(r,cfg))
  elif state=="passport": page.route("**/api/passport",lambda r:fulfill(r,PASSPORT))
  elif state=="passport-complete":
-  page.add_init_script("""() => { try { localStorage.setItem('wildones:passport:completion:qa-user', JSON.stringify({aureva:false,halora:false,sunveil:false,nocturne:false})); } catch {} }""")
+  page.add_init_script("""try { localStorage.setItem('wildones:passport:completion:qa-user', JSON.stringify({aureva:false,halora:false,sunveil:false,nocturne:false})); } catch {}""")
   page.route("**/api/passport",lambda r:fulfill(r,PASSPORT_COMPLETE))
  elif state=="passport-login":
   page.route("**/api/passport",lambda r:fulfill(r,{"authenticated":False},401)); page.route("**/api/passport/config",lambda r:fulfill(r,{"turnstileSiteKey":"qa"}))
