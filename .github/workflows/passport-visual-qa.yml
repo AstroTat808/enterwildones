@@ -10,6 +10,8 @@ on:
       - 'site/assets/css/transactional-hero.css'
       - 'site/assets/css/transactional-premium.css'
       - 'site/assets/css/realm-luxury-polish.css'
+      - 'site/assets/css/guest-transaction-detail.css'
+      - 'netlify/functions/ticket-view.mjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,12 +23,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install playwright==1.55.0
       - run: python -m playwright install --with-deps chromium webkit
-      - name: Authenticated Passport screenshots and assertions
+      - name: Confirm production matches this main commit
+        env:
+          PRODUCTION_BASE_URL: https://enterwildones.com
+          BEFORE_SHA: ${{ github.event.before }}
+        run: python scripts/production_visual_qa.py --mode wait --before "$BEFORE_SHA"
+      - name: Live Passport and digital credential responsive verification
         shell: python
         run: |
           import json,pathlib
@@ -44,21 +52,80 @@ jobs:
             ]
           }
           results=[]
+          widths=[(320,568),(390,844),(430,932),(440,956),(768,1024),(1024,768),(1366,768),(1440,1000),(1920,1080)]
+          base='https://enterwildones.com'
+          ticket_css=[
+            '/assets/css/branding.css',
+            '/assets/css/retina-lockups.css',
+            '/assets/css/realm-luxury-polish.css',
+            '/assets/css/transactional-hero.css',
+            '/assets/css/guest-transaction-detail.css',
+            '/assets/css/transactional-premium.css',
+          ]
+          ticket_links=''.join(f'<link rel="stylesheet" href="{base}{href}">' for href in ticket_css)
+          ticket_html=f'''<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">{ticket_links}</head>
+          <body class="ticket-page tx-page" data-realm="light" style="--a:#e6c879;--b:#030407;--f:#f7f0e5">
+          <main class="ticket-shell"><header class="ticket-brand-header"><a href="#">ENTER WILD ONES</a><a href="#">MY PASSPORT</a></header>
+          <section class="ticket-intro"><p class="eyebrow tx-label">ENTER WILD ONES · DIGITAL CREDENTIAL</p><h1 class="tx-page-title">Your digital credential.</h1><p class="tx-subheadline">Present this credential for entry. Your waiver, QR access, event details, and add-ons remain attached to this ticket.</p></section>
+          <article class="ticket-credential" data-brand-realm="light" data-ticket-status="paid">
+          <div class="ticket-credential-topline"><span class="ticket-roman">I</span><span class="ticket-credential-label tx-meta-label">DIGITAL EVENT CREDENTIAL</span><span class="realm-chip realm-light tx-meta-label">REALM I · LIGHT</span></div>
+          <div class="ticket-logo-wrap"><div style="width:180px;aspect-ratio:1;border-radius:50%;border:1px solid color-mix(in srgb,var(--a) 34%,transparent);display:grid;place-items:center;color:var(--a);font:42px Georgia,serif">I</div></div>
+          <p class="eyebrow tx-label">ADMISSION CREDENTIAL</p><h2 class="ticket-event-name realm-key realm-light tx-card-title">AUREVA</h2><p class="ticket-tagline tx-body">Where the cycle begins in light.</p>
+          <div class="ticket-status-row"><span class="tx-meta-label">STATUS</span><strong class="tx-meta-label">READY FOR ENTRY</strong></div>
+          <div class="ticket-meta-grid"><div><span class="tx-meta-label">GUEST</span><strong>Christopher</strong></div><div><span class="tx-meta-label">TICKET ID</span><strong>WLD-AUR-QA-1</strong></div><div><span class="tx-meta-label">DATE</span><strong>Sep 6, 2027</strong></div><div><span class="tx-meta-label">WAIVER</span><strong>RECORDED</strong></div></div>
+          <div class="ticket-qr-panel"><div class="ticket-qr-shell" style="aspect-ratio:1"><div style="width:100%;height:100%;background:repeating-linear-gradient(45deg,#000 0 6px,#fff 6px 12px)"></div></div><p class="ticket-qr-title tx-meta-label">SCAN AT ENTRY</p><p class="muted tx-body">Present this credential with matching photo ID.</p></div>
+          </article><div class="ticket-support-grid">
+          <section class="ticket-support-card"><p class="eyebrow tx-label">YOUR EXTRAS</p><h2 class="tx-card-title">Packages &amp; Add-Ons</h2><p class="tx-body">View drink packages, late checkout / car camping, and event-specific upgrades tied to this credential.</p><a class="button" href="#">Manage Add-Ons</a></section>
+          <section class="ticket-support-card"><p class="eyebrow tx-label">APPLE WALLET</p><h2 class="tx-card-title">Carry your credential.</h2><p class="tx-body">Add this event-bound ticket to Apple Wallet for fast access on event day.</p><a class="button" href="#">Add to Apple Wallet</a></section>
+          </div></main></body></html>'''
+
+          def type_metrics(page):
+            return page.evaluate('''() => {
+              const props=e=>{const s=getComputedStyle(e);return {family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,tracking:s.letterSpacing,transform:s.textTransform}};
+              const roles=['tx-display-title','tx-page-title','tx-section-title','tx-card-title','tx-subheadline','tx-body','tx-label','tx-meta-label'];
+              const host=document.createElement('div');host.style.cssText='position:fixed;left:-200vw;top:0;visibility:hidden;pointer-events:none';
+              for(const role of roles){const e=document.createElement('div');e.className=role;e.textContent='Typography contract';host.appendChild(e)}
+              document.body.appendChild(host);
+              const sample=Object.fromEntries(roles.map(role=>[role,props(host.querySelector('.'+role))]));
+              const actual={
+                'tx-page-title':props(document.querySelector('.ticket-intro .tx-page-title')),
+                'tx-card-title':props(document.querySelector('.ticket-support-card .tx-card-title')),
+                'tx-subheadline':props(document.querySelector('.ticket-intro .tx-subheadline')),
+                'tx-body':props(document.querySelector('.ticket-support-card .tx-body')),
+                'tx-label':props(document.querySelector('.ticket-intro .tx-label')),
+                'tx-meta-label':props(document.querySelector('.ticket-status-row .tx-meta-label'))
+              };
+              host.remove();return {sample,actual};
+            }''')
+
+          def assert_type_contract(metrics,failures):
+            sample,actual=metrics['sample'],metrics['actual']
+            px=lambda v:float(str(v).replace('px','') or 0)
+            sizes={k:px(v['size']) for k,v in sample.items()}
+            if not (sizes['tx-display-title']>sizes['tx-page-title']>sizes['tx-section-title']>sizes['tx-card-title']>sizes['tx-subheadline']>=sizes['tx-body']>sizes['tx-label']):
+              failures.append('typography hierarchy')
+            if len({sample[x]['family'] for x in ('tx-display-title','tx-page-title','tx-section-title','tx-card-title')})!=1:
+              failures.append('display family drift')
+            if len({sample[x]['family'] for x in ('tx-subheadline','tx-body','tx-label','tx-meta-label')})!=1:
+              failures.append('UI family drift')
+            for prop in ('family','size','weight','line','tracking','transform'):
+              if sample['tx-label'][prop]!=sample['tx-meta-label'][prop]:failures.append('label role drift '+prop)
+            for role,style in actual.items():
+              for prop in ('family','size','weight','line','tracking','transform'):
+                if style[prop]!=sample[role][prop]:failures.append(role+' override '+prop)
+
           with sync_playwright() as p:
             for engine in ['chromium','webkit']:
               browser=getattr(p,engine).launch()
-              for width in [375,390,430,1440]:
-                height=844 if width<900 else 1000
+              for width,height in widths:
                 context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,is_mobile=width<900,has_touch=width<900,reduced_motion='reduce')
                 page=context.new_page();errors=[]
                 page.on('pageerror',lambda error:errors.append(str(error)))
                 page.route('**/api/passport',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps(fixture)))
-                response=page.goto('https://enterwildones.com/passport',wait_until='domcontentloaded',timeout=45000)
+                response=page.goto(base+'/passport',wait_until='domcontentloaded',timeout=45000)
                 page.wait_for_selector('#account:not([hidden])',timeout=15000)
                 page.wait_for_selector('#realms .passport-card:nth-child(5)',timeout=15000)
-                page.evaluate("document.querySelector('#realms .passport-card:last-child')?.scrollIntoView({block:'center'})")
-                page.wait_for_timeout(1200)
-                page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(400)
+                page.wait_for_timeout(500)
                 report=page.evaluate('''() => ({
                   overflow:document.documentElement.scrollWidth>innerWidth+1,
                   cards:document.querySelectorAll('#realms .passport-card').length,
@@ -68,15 +135,42 @@ jobs:
                   memberWidth:Math.round(document.querySelector('.passport-member-card')?.getBoundingClientRect().width||0),
                   cardWidths:[...document.querySelectorAll('#realms .passport-card')].map(x=>Math.round(x.getBoundingClientRect().width))
                 })''')
-                report.update(engine=engine,width=width,status=response.status,errors=errors)
-                page.screenshot(path=str(root/(engine+'-'+str(width)+'-passport.png')),full_page=True)
+                report.update(kind='passport',engine=engine,width=width,height=height,status=response.status,errors=errors)
+                page.screenshot(path=str(root/(engine+'-'+str(width)+'-passport.png')),full_page=True,animations='disabled',caret='hide')
                 results.append(report)
+                context.close()
+
+                context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,is_mobile=width<900,has_touch=width<900,reduced_motion='reduce')
+                page=context.new_page();errors=[]
+                page.on('pageerror',lambda error:errors.append(str(error)))
+                page.goto(base+'/',wait_until='domcontentloaded',timeout=45000)
+                page.set_content(ticket_html,wait_until='networkidle',timeout=45000)
+                page.wait_for_selector('.ticket-support-card .button',state='visible',timeout=15000)
+                page.wait_for_timeout(300)
+                issues=[]
+                tm=type_metrics(page);assert_type_contract(tm,issues)
+                ticket=page.evaluate('''() => ({
+                  overflow:document.documentElement.scrollWidth>innerWidth+1,
+                  credential:document.querySelector('.ticket-credential')?.getBoundingClientRect().toJSON(),
+                  support:[...document.querySelectorAll('.ticket-support-card')].map(x=>x.getBoundingClientRect().toJSON()),
+                  buttons:[...document.querySelectorAll('.ticket-support-card .button')].map(x=>x.getBoundingClientRect().toJSON())
+                })''')
+                if ticket['overflow']:issues.append('horizontal overflow')
+                if not ticket['credential']:issues.append('credential missing')
+                if len(ticket['support'])!=2:issues.append('support cards missing')
+                for box in ticket['support']:
+                  if box['left'] < -1 or box['right'] > width+1:issues.append('support card escapes viewport')
+                for box in ticket['buttons']:
+                  if box['height'] < 48:issues.append('support CTA below 48px')
+                d={'kind':'digital-ticket','engine':engine,'width':width,'height':height,'status':200,'errors':errors,'issues':issues}
+                page.screenshot(path=str(root/(engine+'-'+str(width)+'-digital-ticket.png')),full_page=True,animations='disabled',caret='hide')
+                results.append(d)
                 context.close()
               browser.close()
           (root/'report.json').write_text(json.dumps(results,indent=2))
-          failures=[r for r in results if r['status']>=400 or r['overflow'] or r['cards']!=5 or not r['masterCycle'] or not r['accountVisible'] or r['brokenImages'] or r['errors']]
+          failures=[r for r in results if r['status']>=400 or r.get('overflow') or r.get('cards',5)!=5 or r.get('masterCycle',True) is False or r.get('accountVisible',True) is False or r.get('brokenImages') or r.get('errors') or r.get('issues')]
           print(json.dumps({'checks':len(results),'failures':failures},indent=2))
-          assert not failures,'Passport visual QA failed'
+          assert not failures,'Live Passport / digital credential visual QA failed'
       - uses: actions/upload-artifact@v4
         if: always()
         continue-on-error: true
