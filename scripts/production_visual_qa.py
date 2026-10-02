@@ -59,8 +59,11 @@ SUITES={
  "admin":[Case("admin-applications","/admin","admin-apps","#adminPanel:not(.hidden)"),Case("admin-overview","/admin/overview","overview","#events .event"),Case("admin-packages","/admin/packages","packages","#report .metric"),Case("admin-operations","/admin/operations","operations","#opsPanel:not(.hidden)"),Case("admin-event-day","/admin/event-day","command","#indicatorGrid > *"),Case("admin-live","/admin/live","command","#indicatorGrid > *"),Case("admin-launch","/admin/launch","command","#indicatorGrid > *"),Case("admin-rehearsal","/admin/rehearsal","command","#indicatorGrid > *")],
  "staff":[Case("check-in","/check-in","check-in","#gate:not([hidden])"),Case("bar","/bar","bar","#bar:not([hidden])")]
 }
-VIEWPORTS={"chromium":[("phone-small",320,568,2),("phone",390,844,2),("landscape",844,390,1),("tablet",768,1024,2),("laptop",1024,768,1),("desktop",1440,1000,1),("wide",1920,1080,1)],"webkit":[("phone-small",320,568,2),("phone",390,844,2),("tablet",768,1024,2),("desktop",1440,1000,1)]}
-SHOTS={"chromium":{"phone-small","phone","tablet","desktop","wide"},"webkit":{"phone","desktop"}}
+VIEWPORTS={
+ "chromium":[("phone-small",320,568,2),("phone",390,844,2),("phone-large",430,932,3),("landscape",844,390,1),("tablet",768,1024,2),("laptop",1024,768,1),("desktop-small",1366,768,1),("desktop",1440,1000,1),("wide",1920,1080,1)],
+ "webkit":[("phone-small",320,568,2),("phone",390,844,2),("phone-large",430,932,3),("tablet",768,1024,2),("laptop",1024,768,1),("desktop-small",1366,768,1),("desktop",1440,1000,1),("wide",1920,1080,1)]
+}
+SHOTS={"chromium":{"phone-small","phone","phone-large","tablet","laptop","desktop-small","desktop","wide"},"webkit":{"phone-small","phone","phone-large","tablet","laptop","desktop-small","desktop","wide"}}
 
 def fulfill(route,payload,status=200):
  route.fulfill(status=status,content_type="application/json",body=json.dumps(payload))
@@ -111,25 +114,52 @@ def state_checks(page,case,width=None):
  f=[]
  guest_header=page.locator(".topbar .brand").count()>0 and not (case.name.startswith("admin-") or case.name in ("check-in","bar"))
  if guest_header:
-  header=page.locator(".topbar").first
-  brand=page.locator(".topbar .brand").first
-  icon=page.locator(".topbar .brand-icon").first
-  label=page.locator(".topbar .brand-label").first
-  sub=page.locator(".topbar .brand-label span").first
-  if not (header.is_visible() and brand.is_visible() and icon.is_visible()):f.append("guest masthead emblem must be visible")
-  if not label.is_visible() or "ENTER WILD ONES" not in label.inner_text():f.append("guest masthead ENTER WILD ONES label missing")
-  if not sub.is_visible() or "THE FOUR REALMS" not in sub.inner_text():f.append("guest masthead THE FOUR REALMS label missing")
-  hb=header.bounding_box();ib=icon.bounding_box();bb=brand.bounding_box()
-  if hb and ib and (ib["y"]<hb["y"]-1 or ib["y"]+ib["height"]>hb["y"]+hb["height"]+1):f.append("guest masthead emblem is clipped by header")
-  if hb and bb and (bb["y"]<hb["y"]-1 or bb["y"]+bb["height"]>hb["y"]+hb["height"]+1):f.append("guest masthead lockup is clipped by header")
-  initial_h=hb["height"] if hb else None
-  page.evaluate("window.scrollTo(0,140)");page.wait_for_timeout(90)
-  compact_h=header.bounding_box()["height"] if header.bounding_box() else None
-  if initial_h and compact_h and compact_h>initial_h+1:f.append("guest masthead grows after scroll")
-  if not label.is_visible() or not sub.is_visible():f.append("guest masthead wordmark disappears after scroll")
-  hb2=header.bounding_box();ib2=icon.bounding_box();bb2=brand.bounding_box()
-  if hb2 and ib2 and (ib2["y"]<hb2["y"]-1 or ib2["y"]+ib2["height"]>hb2["y"]+hb2["height"]+1):f.append("compact guest masthead emblem is clipped")
-  if hb2 and bb2 and (bb2["y"]<hb2["y"]-1 or bb2["y"]+bb2["height"]>hb2["y"]+hb2["height"]+1):f.append("compact guest masthead lockup is clipped")
+  metrics=page.evaluate("""() => {
+   const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
+   const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
+   const ims=img?getComputedStyle(img):null;
+   return {header:r(header),brand:r(brand),icon:r(icon),image:r(img),label:r(label),sub:r(sub),labelText:(label?.childNodes?.[0]?.textContent||'').trim(),subText:(sub?.textContent||'').trim(),imageSrc:img?.getAttribute('src')||'',naturalW:img?.naturalWidth||0,naturalH:img?.naturalHeight||0,objectFit:ims?.objectFit||''};
+  }""")
+  def masthead_px(value):
+   try:return float(str(value).replace("px",""))
+   except Exception:return 0.0
+  def masthead_center_delta(a,b):
+   return abs((a["y"]+a["h"]/2)-(b["y"]+b["h"]/2))
+  def masthead_minimums(w,compact=False):
+   if w>=1024:return {"icon":96 if compact else 118,"label":10.8 if compact else 12.5,"sub":6.3 if compact else 7.2}
+   if w>=700:return {"icon":72 if compact else 84,"label":8.4 if compact else 9.2,"sub":5.6 if compact else 6.0}
+   if w>350:return {"icon":66 if compact else 76,"label":7.7 if compact else 8.4,"sub":5.2 if compact else 5.6}
+   return {"icon":58 if compact else 64,"label":7.2 if compact else 7.7,"sub":4.9 if compact else 5.2}
+  def validate_masthead(m,compact=False):
+   phase="compact" if compact else "expanded";mins=masthead_minimums(width or 0,compact)
+   header,brand,icon,image,label,sub=[m.get(k) for k in ("header","brand","icon","image","label","sub")]
+   if not all((header,brand,icon,image,label,sub)):f.append("guest masthead structure incomplete in "+phase+" header");return
+   if m["labelText"]!="ENTER WILD ONES":f.append("guest masthead ENTER WILD ONES label missing in "+phase+" header")
+   if m["subText"]!="THE FOUR REALMS":f.append("guest masthead THE FOUR REALMS label missing in "+phase+" header")
+   if m["imageSrc"]!="/assets/images/realms/enter-wild-ones-emblem.svg":f.append("guest masthead uses wrong emblem asset in "+phase+" header")
+   if m["objectFit"]!="contain":f.append("guest masthead emblem must use object-fit contain in "+phase+" header")
+   if m["naturalW"]<900 or m["naturalH"]<700:f.append("guest masthead emblem source is undersized in "+phase+" header")
+   if icon["h"]<=0 or abs((icon["w"]/icon["h"])-(960/735))>.015:f.append("guest masthead emblem is stretched in "+phase+" header")
+   if abs(image["w"]-icon["w"])>1 or abs(image["h"]-icon["h"])>1:f.append("guest masthead image does not fill its ratio-safe box in "+phase+" header")
+   if icon["y"]<header["y"]-1.5 or icon["y"]+icon["h"]>header["y"]+header["h"]+1.5:f.append("guest masthead emblem is clipped in "+phase+" header")
+   if brand["y"]<header["y"]-1.5 or brand["y"]+brand["h"]>header["y"]+header["h"]+1.5:f.append("guest masthead lockup is clipped in "+phase+" header")
+   if min(icon["y"]-header["y"],header["y"]+header["h"]-(icon["y"]+icon["h"]))<4:f.append("guest masthead emblem lacks vertical breathing room in "+phase+" header")
+   if masthead_center_delta(icon,label)>2:f.append("guest masthead emblem and wordmark are vertically misaligned in "+phase+" header")
+   if masthead_center_delta(brand,header)>2:f.append("guest masthead lockup is not vertically centered in "+phase+" header")
+   if icon["w"]<mins["icon"]:f.append("guest masthead emblem is undersized in "+phase+" header")
+   if masthead_px(label["font"])<mins["label"]:f.append("guest masthead ENTER WILD ONES text is undersized in "+phase+" header")
+   if masthead_px(sub["font"])<mins["sub"]:f.append("guest masthead THE FOUR REALMS text is undersized in "+phase+" header")
+  validate_masthead(metrics,False)
+  initial_h=metrics["header"]["h"] if metrics.get("header") else None
+  page.evaluate("window.scrollTo(0,140)");page.wait_for_timeout(420)
+  compact_metrics=page.evaluate("""() => {
+   const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
+   const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span'),ims=img?getComputedStyle(img):null;
+   return {header:r(header),brand:r(brand),icon:r(icon),image:r(img),label:r(label),sub:r(sub),labelText:(label?.childNodes?.[0]?.textContent||'').trim(),subText:(sub?.textContent||'').trim(),imageSrc:img?.getAttribute('src')||'',naturalW:img?.naturalWidth||0,naturalH:img?.naturalHeight||0,objectFit:ims?.objectFit||''};
+  }""")
+  validate_masthead(compact_metrics,True)
+  compact_h=compact_metrics["header"]["h"] if compact_metrics.get("header") else None
+  if initial_h and compact_h and compact_h>=initial_h-1:f.append("guest masthead did not compact after scroll")
   page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(70)
  if case.state=="home":
   for s in ("#aureva","#halora","#sunveil","#nocturne"):
@@ -146,17 +176,19 @@ def state_checks(page,case,width=None):
   fb=footer.bounding_box() if footer.count() else None
   flb=footer_logo.bounding_box() if footer_logo.count() else None
   if w>=1024:
-   if not hb or hb["height"]<124:f.append("homepage desktop header must be at least 124px tall")
-   if not ib or ib["width"]<140 or ib["height"]<108:f.append("homepage desktop emblem must remain visually prominent")
+   if not hb or hb["height"]<110:f.append("homepage desktop header must remain at least 110px tall")
+   if not ib or ib["width"]<118 or ib["height"]<90:f.append("homepage desktop emblem must remain visually prominent and proportionate")
    if fb and fb["height"]>82:f.append("homepage desktop footer exceeded 82px end-credit limit")
    if flb and (flb["width"]>52 or flb["height"]>52):f.append("homepage desktop footer logo exceeded compact size")
   elif w>=700:
-   if not hb or hb["height"]<102:f.append("homepage tablet header must be at least 102px tall")
-   if not ib or ib["width"]<80:f.append("homepage tablet emblem is too small")
+   if not hb or hb["height"]<94:f.append("homepage tablet header must remain at least 94px tall")
+   if not ib or ib["width"]<84:f.append("homepage tablet emblem is too small")
    if fb and fb["height"]>104:f.append("homepage tablet footer exceeded compact height")
   else:
-   if not hb or hb["height"]<96:f.append("homepage mobile header must be at least 96px tall")
-   if not ib or ib["width"]<68:f.append("homepage mobile emblem is too small")
+   min_header=86 if w<=350 else 90
+   min_icon=66 if w<=350 else 76
+   if not hb or hb["height"]<min_header:f.append("homepage mobile header is too short")
+   if not ib or ib["width"]<min_icon:f.append("homepage mobile emblem is too small")
    if fb and fb["height"]>112:f.append("homepage mobile footer exceeded compact height")
    if flb and (flb["width"]>48 or flb["height"]>48):f.append("homepage mobile footer logo exceeded compact size")
   gradient=page.evaluate("""() => {
@@ -338,10 +370,13 @@ def source_mode():
   if s not in passport:fail.append("passport regression guard missing "+s)
  masthead=(SITE/"assets/css/masthead-lockup.css").read_text(encoding="utf-8") if (SITE/"assets/css/masthead-lockup.css").exists() else ""
  branding=(SITE/"assets/js/branding.js").read_text(encoding="utf-8")
- for s in (".wo-guest-masthead",".brand-icon",".brand-label","masthead-scrolled"):
+ for s in (".wo-guest-masthead",".brand-icon",".brand-label","masthead-scrolled","--wo-masthead-icon-w","aspect-ratio:960 / 735","object-fit:contain","align-self:center"):
   if s not in masthead:fail.append("shared masthead regression guard missing "+s)
- for s in ("wo-guest-masthead","ENTER WILD ONES","THE FOUR REALMS","mastheadScrollState"):
+ for s in ("wo-guest-masthead","ENTER WILD ONES","THE FOUR REALMS","mastheadScrollState","/assets/images/realms/enter-wild-ones-emblem.svg"):
   if s not in branding:fail.append("branding masthead contract missing "+s)
+ visual_regression=(ROOT/"scripts/visual_regression.py").read_text(encoding="utf-8")
+ for s in ('("430",430,932,3)','("1366",1366,768,1)','("1920",1920,1080,1)','("realm-aureva","/events/aureva","plain")','("realm-halora","/events/halora","plain")','("realm-sunveil","/events/sunveil","plain")','("realm-nocturne","/events/nocturne","plain")',"aspect ratio distorted","vertically misaligned","dimensions differ across routes"):
+  if s not in visual_regression:fail.append("permanent masthead visual regression contract missing "+s)
  if "realm-gradient-title tx-display-title" not in ph:fail.append("premium Passport title markup missing")
  for s in (".tx-display-title",".tx-page-title",".tx-section-title",".tx-label",".tx-subheadline"):
   if s not in css:fail.append("shared typography missing "+s)
