@@ -47,7 +47,7 @@
 
   function cycleNode(x){
     const e=x.event,meta=window.WildOnesBrand?.meta(e.realm),state=stateInfo(x);
-    return '<div class="passport-cycle-node" data-brand-realm="'+esc(e.realm)+'" data-state="'+esc(state.kind)+'"><i>'+esc(meta?.roman||'•')+'</i><span>'+esc(e.name)+'</span></div>';
+    return '<div class="passport-cycle-node" data-brand-realm="'+esc(e.realm)+'" data-state="'+esc(state.kind)+'"><i>'+esc(meta?.roman||'•')+'</i><span class="tx-meta-label">'+esc(e.name)+'</span></div>';
   }
 
   function completionStorageKey(userId){return 'wildones:passport:completion:'+String(userId||'guest');}
@@ -170,7 +170,7 @@
       const ticketMeta=x.ticket?'<div class="passport-ticket-meta"><div><span class="tx-meta-label">ADMISSION</span><strong>'+esc(x.ticket.ticketId)+'</strong></div><div><span class="tx-meta-label">WAIVER</span><strong>'+(x.waiverSigned?'Recorded':'Required before entry')+'</strong></div></div>':'';
       const invitationMeta=x.invitation&&x.invitation.status==='redeemed'&&!x.ticket?'<div class="passport-access-note"><span class="tx-meta-label">ACCESS</span><strong>Invitation redeemed'+(x.commissioningAccess?' · Commissioning access':'')+'</strong></div>':'';
       const activeEntitlements=(Array.isArray(x.entitlements)?x.entitlements:[]).filter(a=>a.status==='active');
-      const entitlementBlock=activeEntitlements.length?'<div class="passport-entitlements"><span class="tx-meta-label">ADD-ONS</span><div class="passport-entitlement-list">'+activeEntitlements.map(a=>'<em>'+esc(String(a.addonType).replaceAll('_',' '))+'</em>').join('')+'</div></div>':'';
+      const entitlementBlock=activeEntitlements.length?'<div class="passport-entitlements"><span class="tx-meta-label">ADD-ONS</span><div class="passport-entitlement-list">'+activeEntitlements.map(a=>'<em class="tx-meta-label">'+esc(String(a.addonType).replaceAll('_',' '))+'</em>').join('')+'</div></div>':'';
       const action=x.purchaseAvailable?'<button class="button" type="button" data-purchase-event="'+esc(e.slug)+'">Purchase Ticket</button>':'<a class="button ghost" href="'+esc(link)+'">'+(active&&link.startsWith('/ticket?')?'Open Digital Ticket':'Explore the Realm')+'</a>';
       return '<article class="passport-card" data-event-slug="'+esc(e.slug)+'" data-brand-realm="'+esc(e.realm)+'" data-passport-state="'+esc(state.kind)+'"><div class="passport-card-topline"><span class="passport-roman">'+esc(meta?.roman||'•')+'</span><span class="passport-credential-label tx-meta-label">DIGITAL REALM CREDENTIAL</span><span class="realm-chip tx-meta-label '+cls+'">'+esc(meta?.sub||e.realm)+'</span></div><img class="passport-card-logo" src="'+esc(window.WildOnesBrand.asset(e.realm))+'" alt="'+esc(window.WildOnesBrand.label(e.realm))+'" width="768" height="768" loading="eager" decoding="async"><h2 class="realm-key tx-card-title '+cls+'">'+esc(e.name)+'</h2><strong class="passport-state tx-meta-label">'+esc(state.label)+'</strong><p class="passport-card-tagline tx-body">'+esc(e.copy.tagline)+'</p>'+ticketMeta+invitationMeta+entitlementBlock+'<div class="passport-card-actions">'+action+'</div></article>';
     });
@@ -209,7 +209,7 @@
       q('#progress').textContent=d.cycle.completed+' of '+d.cycle.total+' realms completed · your cycle updates automatically';
       updateCycle(d.cycle);
       const filters=[{realm:'cycle',name:'All Realms'},...records.map(x=>x.event)];
-      q('#realmFilter').replaceChildren(...filters.map(e=>{const b=document.createElement('button');b.type='button';b.dataset.realm=e.realm;b.className='realm-chip '+realmClass(e.realm);b.textContent=e.name;b.onclick=()=>render(e.realm);return b;}));
+      q('#realmFilter').replaceChildren(...filters.map(e=>{const b=document.createElement('button');b.type='button';b.dataset.realm=e.realm;b.className='realm-chip tx-meta-label '+realmClass(e.realm);b.textContent=e.name;b.onclick=()=>render(e.realm);return b;}));
       render();
     }catch(e){login.hidden=false;status.textContent=e.message||'Passport could not load. Please refresh.';}
   }
