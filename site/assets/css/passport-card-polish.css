@@ -41,9 +41,6 @@ body #realms.passport-grid > article.passport-card > h2.realm-key{
   max-width:100%;
   margin:0 0 5px;
   padding-bottom:.16em;
-  font-size:clamp(32px,3.2vw,42px);
-  line-height:1.05;
-  letter-spacing:-.035em;
   overflow:visible;
 }
 
@@ -52,18 +49,12 @@ body #realms.passport-grid > article.passport-card > .passport-state{
   width:100%;
   margin:0 0 20px;
   color:var(--realm-fallback,var(--accent));
-  font-size:10px;
-  font-weight:850;
-  line-height:1.45;
-  letter-spacing:.16em;
   text-transform:uppercase;
 }
 
 body #realms.passport-grid > article.passport-card > .passport-card-tagline{
   margin:0 0 18px;
   color:#b7aea3;
-  font-size:15px;
-  line-height:1.65;
 }
 
 body #realms.passport-grid > article.passport-card > .passport-ticket-meta{
@@ -111,7 +102,6 @@ body #realms.passport-grid > article.passport-card > a.button{
   .passport-account-panel .passport-filter{grid-column:auto;margin-top:0}
   body #realms.passport-grid > article.passport-card{padding:22px 20px 24px}
   body #realms.passport-grid > article.passport-card > .passport-card-logo{width:min(82%,330px);margin-bottom:10px}
-  body #realms.passport-grid > article.passport-card > h2.realm-key{font-size:clamp(30px,10vw,40px)}
 }
 
 /* Passport readability pass: stronger realm controls and section hierarchy. */
@@ -127,9 +117,6 @@ body #realms.passport-grid > article.passport-card > a.button{
 }
 .passport-page .passport-cycle-meter-head span{
   color:rgba(244,235,221,.76);
-  font-size:11px;
-  font-weight:850;
-  letter-spacing:.22em;
 }
 .passport-page .passport-cycle-meter-head strong{
   color:#fff7e8;
@@ -138,9 +125,6 @@ body #realms.passport-grid > article.passport-card > a.button{
 }
 .passport-page .passport-cycle-node span{
   color:rgba(242,236,225,.82);
-  font-size:11px;
-  font-weight:750;
-  letter-spacing:.08em;
 }
 .passport-page .passport-filter{
   display:grid;
@@ -157,10 +141,6 @@ body #realms.passport-grid > article.passport-card > a.button{
   border-radius:12px;
   background:rgba(255,255,255,.025);
   color:rgba(248,242,233,.76);
-  font-size:12px;
-  font-weight:850;
-  line-height:1.35;
-  letter-spacing:.16em;
   text-transform:uppercase;
   transition:border-color .2s ease,background .2s ease,color .2s ease,transform .2s ease,box-shadow .2s ease;
 }
@@ -191,20 +171,17 @@ body #realms.passport-grid > article.passport-card > a.button{
   max-width:620px;
   margin:0;
   color:rgba(226,217,204,.68);
-  font-size:14px;
-  line-height:1.65;
   text-align:right;
 }
 
 @media(max-width:900px){
   .passport-page .passport-filter{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .passport-page .passport-filter button{font-size:11.5px;letter-spacing:.13em}
   .passport-page .passport-section-head{align-items:flex-start;flex-direction:column;gap:10px}
   .passport-page .passport-section-head p{text-align:left}
 }
 @media(max-width:560px){
   .passport-page .passport-filter{grid-template-columns:repeat(2,minmax(0,1fr))}
   .passport-page .passport-filter button:first-child{grid-column:1/-1}
-  .passport-page .passport-filter button{min-height:54px;font-size:11px}
+  .passport-page .passport-filter button{min-height:54px}
 }
 
