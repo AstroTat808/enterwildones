@@ -624,6 +624,15 @@ def source_mode():
    r"\.ticket-page\.tx-page section h2\s*\{[^}]*\bfont\s*:",
    r"\.ticket-page\.tx-page section label\s*\{[^}]*(?:font-size|line-height)\s*:",
   ],
+  "passport-card-polish.css":[
+   r"body #realms\.passport-grid > article\.passport-card > h2\.realm-key\s*\{[^}]*(?:font-size|line-height|letter-spacing)\s*:",
+   r"body #realms\.passport-grid > article\.passport-card > \.passport-state\s*\{[^}]*(?:font-size|font-weight|line-height|letter-spacing)\s*:",
+   r"body #realms\.passport-grid > article\.passport-card > \.passport-card-tagline\s*\{[^}]*(?:font-size|line-height)\s*:",
+   r"\.passport-page \.passport-cycle-meter-head span\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
+   r"\.passport-page \.passport-cycle-node span\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
+   r"\.passport-page \.passport-filter button\s*\{[^}]*(?:font-size|font-weight|line-height|letter-spacing)\s*:",
+   r"\.passport-page \.passport-section-head p\s*\{[^}]*(?:font-size|line-height)\s*:",
+  ],
   "transactional-premium.css":[
    r"\.passport-page \.passport-filter button\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
    r"\.passport-page \.passport-master-realms>span\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
