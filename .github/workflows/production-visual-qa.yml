@@ -32,7 +32,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: production-visual-qa-${{ github.workflow }}-${{ github.ref }}
+  # v2 isolates the current QA contract from legacy runs that predate
+  # cancel-in-progress, so stale screenshot jobs cannot block fresh PR checks.
+  group: production-visual-qa-v2-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
