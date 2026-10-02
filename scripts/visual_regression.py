@@ -504,12 +504,14 @@ def compare(current_dir:Path,baseline_dir:Path):
     return results
 
 def main():
+    global SITE
     ap=argparse.ArgumentParser()
-    ap.add_argument("--mode",choices=("capture-production","seed-approved-preview","compare-preview","verify-masthead"),required=True)
+    ap.add_argument("--mode",choices=("capture-production","capture-reference","seed-approved-preview","compare-preview","verify-masthead"),required=True)
     ap.add_argument("--baseline-dir",default=".visual-baselines")
     ap.add_argument("--production-baseline-dir",default=".visual-baselines-production")
     ap.add_argument("--approved-cases",default="")
     ap.add_argument("--production-base",default="https://enterwildones.com")
+    ap.add_argument("--reference-site",default="")
     ap.add_argument("--browser",choices=("chromium","webkit"),default="chromium")
     args=ap.parse_args()
     baseline=Path(args.baseline_dir)
@@ -517,6 +519,25 @@ def main():
       result=capture(args.production_base.rstrip("/"),baseline)
       print(json.dumps({"captured":result,"count":len(result)},indent=2))
       return 0
+
+    if args.mode=="capture-reference":
+      if not args.reference_site:
+        raise ValueError("--reference-site is required for capture-reference")
+      reference_site=Path(args.reference_site).resolve()
+      if not reference_site.is_dir():
+        raise ValueError("reference site directory does not exist: "+str(reference_site))
+      original_site=SITE
+      SITE=reference_site
+      server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
+      thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+      reference_url=f"http://127.0.0.1:{server.server_address[1]}"
+      try:
+        result=capture(reference_url,baseline)
+        print(json.dumps({"captured":result,"count":len(result),"referenceSite":str(reference_site)},indent=2))
+        return 0
+      finally:
+        server.shutdown();server.server_close()
+        SITE=original_site
 
     server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
     thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
