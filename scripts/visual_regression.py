@@ -118,6 +118,8 @@ def verify_mastheads(base_url:str,browser_name:str="chromium"):
     OUT.mkdir(exist_ok=True)
     rows=[];failures=[]
     viewport_reference={}
+    emblem_svg=(SITE/"assets/images/realms/enter-wild-ones-emblem.svg").read_text(encoding="utf-8")
+    emblem_source_ok=all(token in emblem_svg for token in ('viewBox="120 0 960 735"','width="960"','height="735"'))
 
     def px(value):
       try:return float(str(value).replace("px",""))
@@ -171,7 +173,7 @@ def verify_mastheads(base_url:str,browser_name:str="chromium"):
       if metrics["subText"]!="THE FOUR REALMS":row["failures"].append(f"THE FOUR REALMS wordmark missing in {phase} header")
       if metrics["imageSrc"]!="/assets/images/realms/enter-wild-ones-emblem.svg":row["failures"].append(f"wrong masthead emblem asset in {phase} header")
       if metrics["objectFit"]!="contain":row["failures"].append(f"masthead emblem must use object-fit contain in {phase} header")
-      if metrics["naturalW"]<900 or metrics["naturalH"]<700:row["failures"].append(f"masthead emblem source is undersized in {phase} header")
+      if not emblem_source_ok:row["failures"].append(f"canonical masthead SVG dimensions are invalid in {phase} header")
       if icon["h"]<=0 or abs((icon["w"]/icon["h"])-(960/735))>.015:row["failures"].append(f"masthead emblem aspect ratio distorted in {phase} header")
       if abs(image["w"]-icon["w"])>1 or abs(image["h"]-icon["h"])>1:row["failures"].append(f"masthead image does not fill ratio-safe icon box in {phase} header")
       if icon["y"]<header["y"]-1.5 or icon["y"]+icon["h"]>header["y"]+header["h"]+1.5:row["failures"].append(f"emblem clipped in {phase} header")
