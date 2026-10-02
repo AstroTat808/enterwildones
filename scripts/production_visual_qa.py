@@ -374,7 +374,7 @@ def source_mode():
   if s not in masthead:fail.append("shared masthead regression guard missing "+s)
  for s in ("wo-guest-masthead","ENTER WILD ONES","THE FOUR REALMS","mastheadScrollState","/assets/images/realms/enter-wild-ones-emblem.svg"):
   if s not in branding:fail.append("branding masthead contract missing "+s)
- visual_regression=(ROOT/"scripts/visual_regression.py").read_text(encoding="utf-8")
+ visual_regression=Path("scripts/visual_regression.py").read_text(encoding="utf-8")
  for s in ('("430",430,932,3)','("1366",1366,768,1)','("1920",1920,1080,1)','("realm-aureva","/events/aureva","plain")','("realm-halora","/events/halora","plain")','("realm-sunveil","/events/sunveil","plain")','("realm-nocturne","/events/nocturne","plain")',"aspect ratio distorted","vertically misaligned","dimensions differ across routes"):
   if s not in visual_regression:fail.append("permanent masthead visual regression contract missing "+s)
  if "realm-gradient-title tx-display-title" not in ph:fail.append("premium Passport title markup missing")
