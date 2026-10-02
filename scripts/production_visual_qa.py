@@ -26,6 +26,27 @@ PASSPORT={"authenticated":True,"user":{"userId":"qa-user","preferredName":"Chris
  {"event":REALMS[3],"checkedIn":False,"waiverSigned":False,"entitlements":[],"purchaseAvailable":False}
 ]}
 
+PASSPORT_COMPLETE={
+ "authenticated":True,
+ "user":PASSPORT["user"],
+ "cycle":{"completed":4,"total":4},
+ "realms":[
+  {
+   **entry,
+   "checkedIn":True,
+   "ticket":{
+    **(entry.get("ticket") or {}),
+    "status":"checked_in",
+    "ticketId":(entry.get("ticket") or {}).get("ticketId") or f"WLD-{entry['event']['slug'][:3].upper()}-QA-COMPLETE",
+    "ticketUrl":(entry.get("ticket") or {}).get("ticketUrl") or f"/ticket?token=qa-{entry['event']['slug']}"
+   },
+   "waiverSigned":True,
+   "purchaseAvailable":False
+  }
+  for entry in PASSPORT["realms"]
+ ]
+}
+
 APPS=[
  {"applicationId":"qa-app-1","status":"pending","fullName":"Rehearsal Guest","preferredName":"Rehearsal","email":"qa@example.com","phone":"8085550101","location":"Hawaii Island","instagram":"@wildonesqa","referral":"Wild Ones","community":"Music and arts","whyAttend":"Validate the guest journey.","groupNames":"QA Crew","conductAck":True,"selectionAck":True,"privacyAck":True,"createdAt":"2026-09-17T12:00:00-10:00"},
  {"applicationId":"qa-app-2","status":"approved","fullName":"Approved Guest","preferredName":"Approved","email":"approved@example.com","phone":"8085550102","location":"Hilo","instagram":"@approvedguest","createdAt":"2026-09-16T12:00:00-10:00","invitationId":"qa-invite-2","invitationEmailSentAt":"2026-09-16T13:00:00-10:00"}
@@ -77,6 +98,9 @@ def fixtures(page,state):
   cfg={"event":dict(event,applicationOpen=(slug=="aureva"),routes={"event":event["routes"]["event"],"apply":"/apply/"+slug}),"applicationsReady":True,"turnstileSiteKey":"qa"}
   page.route("**/api/app-config?*",lambda r:fulfill(r,cfg))
  elif state=="passport": page.route("**/api/passport",lambda r:fulfill(r,PASSPORT))
+ elif state=="passport-complete":
+  page.add_init_script("""() => { try { localStorage.setItem('wildones:passport:completion:qa-user', JSON.stringify({aureva:false,halora:false,sunveil:false,nocturne:false})); } catch {} }""")
+  page.route("**/api/passport",lambda r:fulfill(r,PASSPORT_COMPLETE))
  elif state=="passport-login":
   page.route("**/api/passport",lambda r:fulfill(r,{"authenticated":False},401)); page.route("**/api/passport/config",lambda r:fulfill(r,{"turnstileSiteKey":"qa"}))
  elif state=="ticket-access": page.route("**/api/ticket/access?*",lambda r:fulfill(r,ACCESS))
@@ -573,6 +597,34 @@ def source_mode():
  for name,(source,roles) in markup_contracts.items():
   for role in roles:
    if role not in source:fail.append(name+" missing shared typography role "+role)
+ # The shared semantic type scale is authoritative. Legacy component-level font metrics
+ # must not shadow these roles, even when !important currently masks them at runtime.
+ legacy_type_rules={
+  "transactional-hero.css":[
+   r"\.tx-hero-card h1,\s*\.tx-hero-card \.tx-title\s*\{[^}]*\bfont\s*:",
+   r"\.passport-page \.passport-header h1\s*\{[^}]*(?:font-family|font-size|font-weight|line-height|letter-spacing)\s*:",
+   r"\.passport-page \.passport-header \.lede\s*\{[^}]*(?:font-size|font-weight|line-height|letter-spacing)\s*:",
+   r"\.passport-page #login\.panel h2\s*\{[^}]*font-size\s*:",
+   r"\.passport-page \.passport-header>\.eyebrow\s*\{[^}]*letter-spacing\s*:",
+   r"#releaseCountdown\s*\{[^}]*letter-spacing\s*:",
+  ],
+  "workflow-pages.css":[
+   r"\.workflow-title\s*\{[^}]*\bfont\s*:",
+   r"@media\(max-width:700px\)\{[^}]*\.workflow-title\s*\{[^}]*font-size\s*:",
+  ],
+  "ticket-addons.css":[
+   r"\.addon-status-badge\s*\{[^}]*(?:font-size|font-weight|line-height|letter-spacing)\s*:",
+   r"\.addon-status-badge--active\s*\{[^}]*font-size\s*:",
+  ],
+  "guest-transaction-detail.css":[
+   r"\.ticket-page\.tx-page section h2\s*\{[^}]*\bfont\s*:",
+   r"\.ticket-page\.tx-page section label\s*\{[^}]*(?:font-size|line-height)\s*:",
+  ],
+ }
+ css_sources={name:(SITE/"assets/css"/name).read_text(encoding="utf-8") for name in legacy_type_rules}
+ for name,patterns in legacy_type_rules.items():
+  for pattern in patterns:
+   if re.search(pattern,css_sources[name],re.S):fail.append(name+" contains legacy component typography override: "+pattern)
  if "ticket-entitlement-badge" not in tv:fail.append("ticket entitlement badge hook missing")
  if not re.search(r"\.ticket-page\.tx-page \.ticket-support-card>\.button\{[^}]*display:inline-flex;[^}]*align-items:center;[^}]*justify-content:center;[^}]*text-decoration:none",premium,re.S):fail.append("ticket support CTA centering regression guard missing")
  if not re.search(r"@media\(max-width:760px\)\{.*?\.ticket-page\.tx-page \.ticket-support-card\{min-height:0;",premium,re.S):fail.append("mobile ticket support cards must collapse fixed min-height")
