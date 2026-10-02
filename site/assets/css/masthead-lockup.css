@@ -1,15 +1,26 @@
 /* ENTER WILD ONES — canonical guest masthead lockup.
    This is the single source of truth for the emblem + ENTER WILD ONES /
-   THE FOUR REALMS wordmark on every guest-facing surface, including home. */
+   THE FOUR REALMS wordmark on every guest-facing surface, including home.
+
+   Brand geometry is a release contract. The emblem preserves the official
+   960:735 artwork ratio, while one responsive token set controls every route. */
 body.wo-guest-masthead{
-  --wo-masthead-height:128px;
+  --wo-masthead-height:112px;
+  --wo-masthead-brand-height:98px;
+  --wo-masthead-icon-w:124px;
+  --wo-masthead-gap:15px;
+  --wo-masthead-wordmark-size:13px;
+  --wo-masthead-wordmark-tracking:.20em;
+  --wo-masthead-subtitle-size:7.6px;
+  --wo-masthead-subtitle-tracking:.26em;
+  --wo-masthead-subtitle-gap:6px;
   --bar-height:var(--wo-masthead-height);
   --wo-masthead-ease:cubic-bezier(.2,.72,.18,1);
 }
 body.wo-guest-masthead .topbar{
   min-height:var(--wo-masthead-height);
-  padding-top:6px;
-  padding-bottom:8px;
+  padding-top:7px;
+  padding-bottom:7px;
   align-items:center;
   background:rgba(4,5,8,.925);
   border-bottom-color:rgba(255,255,255,.075);
@@ -28,61 +39,61 @@ body.wo-guest-masthead .topbar{
 body.wo-guest-masthead .topbar .brand{
   display:flex!important;
   align-items:center!important;
-  gap:14px!important;
+  align-self:center!important;
+  gap:var(--wo-masthead-gap)!important;
   min-width:0;
-  min-height:114px;
+  min-height:var(--wo-masthead-brand-height);
   overflow:visible!important;
   transition:min-height .34s var(--wo-masthead-ease),gap .34s var(--wo-masthead-ease);
 }
 body.wo-guest-masthead .topbar .brand-icon{
   position:relative!important;
   display:block!important;
-  width:148px!important;
-  height:116px!important;
-  flex:0 0 148px!important;
-  overflow:hidden!important;
+  width:var(--wo-masthead-icon-w)!important;
+  height:auto!important;
+  aspect-ratio:960 / 735;
+  flex:0 0 var(--wo-masthead-icon-w)!important;
+  overflow:visible!important;
   border-radius:0!important;
-  filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 17%,transparent))!important;
+  filter:drop-shadow(0 0 16px color-mix(in srgb,var(--accent) 15%,transparent))!important;
   transition:
     width .34s var(--wo-masthead-ease),
-    height .34s var(--wo-masthead-ease),
     flex-basis .34s var(--wo-masthead-ease),
     filter .34s ease;
 }
 body.wo-guest-masthead .topbar .brand-icon img{
   position:absolute!important;
   display:block!important;
+  inset:0!important;
   width:100%!important;
   height:100%!important;
   max-width:100%!important;
-  left:0!important;
-  top:0!important;
   object-fit:contain!important;
   object-position:center center!important;
+  image-rendering:auto!important;
   mix-blend-mode:normal!important;
   transform:none!important;
   filter:saturate(1.08) contrast(1.06) brightness(1.05)!important;
-  transition:
-    width .34s var(--wo-masthead-ease),
-    height .34s var(--wo-masthead-ease),
-    left .34s var(--wo-masthead-ease),
-    top .34s var(--wo-masthead-ease),
-    filter .34s ease;
+  pointer-events:none;
+  transition:filter .34s ease;
 }
 body.wo-guest-masthead .topbar .brand-label{
   display:flex!important;
+  flex:0 1 auto;
   flex-direction:column!important;
   justify-content:center!important;
+  align-self:center!important;
   min-width:0;
   margin:0!important;
   color:#f8f0e3!important;
-  font-size:11.25px!important;
+  font-size:var(--wo-masthead-wordmark-size)!important;
   font-weight:750!important;
-  line-height:1.15!important;
-  letter-spacing:.22em!important;
+  line-height:1.08!important;
+  letter-spacing:var(--wo-masthead-wordmark-tracking)!important;
   white-space:nowrap!important;
   text-transform:uppercase;
   opacity:1!important;
+  text-shadow:0 1px 14px rgba(240,207,122,.05);
   transition:
     font-size .34s var(--wo-masthead-ease),
     letter-spacing .34s var(--wo-masthead-ease),
@@ -90,11 +101,11 @@ body.wo-guest-masthead .topbar .brand-label{
 }
 body.wo-guest-masthead .topbar .brand-label>span{
   display:block!important;
-  margin-top:7px!important;
-  color:#aa9d88!important;
-  font-size:7px!important;
+  margin-top:var(--wo-masthead-subtitle-gap)!important;
+  color:#b4a58f!important;
+  font-size:var(--wo-masthead-subtitle-size)!important;
   font-weight:550!important;
-  letter-spacing:.30em!important;
+  letter-spacing:var(--wo-masthead-subtitle-tracking)!important;
   line-height:1.1!important;
   opacity:1!important;
   transition:
@@ -107,138 +118,125 @@ body.wo-guest-masthead .topbar .brand-label>span{
 body.wo-guest-masthead.cinematic-home .v2-progress{top:var(--wo-masthead-height)!important}
 body.wo-guest-masthead.cinematic-home .v2-hero{padding-top:var(--wo-masthead-height)!important}
 
-/* Premium compact state after scroll: smaller, never tiny, never wordmark-less. */
+/* Premium compact state after scroll: smaller, still legible, and ratio-safe. */
 body.wo-guest-masthead.masthead-scrolled{
-  --wo-masthead-height:104px;
+  --wo-masthead-height:94px;
+  --wo-masthead-brand-height:82px;
+  --wo-masthead-icon-w:102px;
+  --wo-masthead-gap:12px;
+  --wo-masthead-wordmark-size:11.4px;
+  --wo-masthead-wordmark-tracking:.19em;
+  --wo-masthead-subtitle-size:6.7px;
+  --wo-masthead-subtitle-tracking:.24em;
+  --wo-masthead-subtitle-gap:5px;
 }
 body.wo-guest-masthead.masthead-scrolled .topbar{
-  padding-top:5px;
-  padding-bottom:7px;
+  padding-top:6px;
+  padding-bottom:6px;
   background:rgba(2,3,6,.965);
   border-bottom-color:rgba(240,207,122,.12);
   -webkit-backdrop-filter:blur(22px) saturate(126%);
   backdrop-filter:blur(22px) saturate(126%);
   box-shadow:0 16px 46px rgba(0,0,0,.34),inset 0 -1px rgba(255,255,255,.018);
 }
-body.wo-guest-masthead.masthead-scrolled .topbar .brand{
-  min-height:92px;
-  gap:12px!important;
-}
 body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon{
-  width:118px!important;
-  height:94px!important;
-  flex-basis:118px!important;
-  filter:drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 14%,transparent))!important;
-}
-body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon img{
-  width:100%!important;
-  height:100%!important;
-  left:0!important;
-}
-body.wo-guest-masthead.masthead-scrolled .topbar .brand-label{
-  font-size:10.25px!important;
-  letter-spacing:.205em!important;
-}
-body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
-  margin-top:5px!important;
-  font-size:6.5px!important;
-  letter-spacing:.275em!important;
+  filter:drop-shadow(0 0 13px color-mix(in srgb,var(--accent) 13%,transparent))!important;
 }
 
 @media(max-width:850px){
   body.wo-guest-masthead{
-    --wo-masthead-height:106px;
+    --wo-masthead-height:96px;
+    --wo-masthead-brand-height:82px;
+    --wo-masthead-icon-w:88px;
+    --wo-masthead-gap:10px;
+    --wo-masthead-wordmark-size:9.6px;
+    --wo-masthead-wordmark-tracking:.15em;
+    --wo-masthead-subtitle-size:6.35px;
+    --wo-masthead-subtitle-tracking:.20em;
+    --wo-masthead-subtitle-gap:4.5px;
   }
   body.wo-guest-masthead .topbar{
-    padding-top:6px;
-    padding-bottom:8px;
+    padding-top:7px;
+    padding-bottom:7px;
     gap:10px;
   }
   body.wo-guest-masthead .topbar .brand{
-    min-height:92px;
-    gap:9px!important;
     flex:1 1 auto;
   }
-  body.wo-guest-masthead .topbar .brand-icon{
-    width:84px!important;
-    height:94px!important;
-    flex-basis:84px!important;
-  }
-  body.wo-guest-masthead .topbar .brand-icon img{
-    width:100%!important;
-    height:100%!important;
-    left:0!important;
-    top:0!important;
-  }
   body.wo-guest-masthead .topbar .brand-label{
-    max-width:156px;
-    font-size:9.2px!important;
-    letter-spacing:.16em!important;
-  }
-  body.wo-guest-masthead .topbar .brand-label>span{
-    margin-top:5px!important;
-    font-size:6.15px!important;
-    letter-spacing:.21em!important;
+    max-width:166px;
   }
   body.wo-guest-masthead.masthead-scrolled{
-    --wo-masthead-height:94px;
-  }
-  body.wo-guest-masthead.masthead-scrolled .topbar .brand{
-    min-height:80px;
-    gap:8px!important;
-  }
-  body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon{
-    width:72px!important;
-    height:82px!important;
-    flex-basis:72px!important;
-  }
-  body.wo-guest-masthead.masthead-scrolled .topbar .brand-icon img{
-    width:100%!important;
-    height:100%!important;
-    left:0!important;
-  }
-  body.wo-guest-masthead.masthead-scrolled .topbar .brand-label{
-    font-size:8.6px!important;
-    letter-spacing:.145em!important;
-  }
-  body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
-    font-size:5.9px!important;
-    letter-spacing:.19em!important;
+    --wo-masthead-height:88px;
+    --wo-masthead-brand-height:76px;
+    --wo-masthead-icon-w:76px;
+    --wo-masthead-gap:9px;
+    --wo-masthead-wordmark-size:8.8px;
+    --wo-masthead-wordmark-tracking:.145em;
+    --wo-masthead-subtitle-size:5.9px;
+    --wo-masthead-subtitle-tracking:.19em;
+    --wo-masthead-subtitle-gap:4px;
   }
 }
 
-@media(max-width:390px){
+@media(max-width:430px){
   body.wo-guest-masthead{
-    --wo-masthead-height:100px;
+    --wo-masthead-height:92px;
+    --wo-masthead-brand-height:80px;
+    --wo-masthead-icon-w:80px;
+    --wo-masthead-gap:8px;
+    --wo-masthead-wordmark-size:8.8px;
+    --wo-masthead-wordmark-tracking:.125em;
+    --wo-masthead-subtitle-size:5.9px;
+    --wo-masthead-subtitle-tracking:.17em;
+    --wo-masthead-subtitle-gap:4px;
   }
-  body.wo-guest-masthead .topbar .brand{
-    min-height:86px;
-    gap:7px!important;
-  }
-  body.wo-guest-masthead .topbar .brand-icon{
-    width:76px!important;
-    height:88px!important;
-    flex-basis:76px!important;
-  }
-  body.wo-guest-masthead .topbar .brand-icon img{
-    width:100%!important;
-    height:100%!important;
-    left:0!important;
+  body.wo-guest-masthead .topbar{
+    padding-top:6px;
+    padding-bottom:6px;
   }
   body.wo-guest-masthead .topbar .brand-label{
-    max-width:124px;
-    font-size:8px!important;
-    letter-spacing:.12em!important;
-  }
-  body.wo-guest-masthead .topbar .brand-label>span{
-    font-size:5.7px!important;
-    letter-spacing:.16em!important;
+    max-width:140px;
   }
   body.wo-guest-masthead.masthead-scrolled{
-    --wo-masthead-height:92px;
+    --wo-masthead-height:86px;
+    --wo-masthead-brand-height:74px;
+    --wo-masthead-icon-w:70px;
+    --wo-masthead-gap:7px;
+    --wo-masthead-wordmark-size:8.1px;
+    --wo-masthead-wordmark-tracking:.115em;
+    --wo-masthead-subtitle-size:5.5px;
+    --wo-masthead-subtitle-tracking:.15em;
+    --wo-masthead-subtitle-gap:3.5px;
   }
 }
 
+@media(max-width:350px){
+  body.wo-guest-masthead{
+    --wo-masthead-height:88px;
+    --wo-masthead-brand-height:76px;
+    --wo-masthead-icon-w:68px;
+    --wo-masthead-gap:6.5px;
+    --wo-masthead-wordmark-size:8px;
+    --wo-masthead-wordmark-tracking:.10em;
+    --wo-masthead-subtitle-size:5.4px;
+    --wo-masthead-subtitle-tracking:.13em;
+  }
+  body.wo-guest-masthead .topbar .brand-label{
+    max-width:116px!important;
+  }
+  body.wo-guest-masthead.masthead-scrolled{
+    --wo-masthead-height:82px;
+    --wo-masthead-brand-height:70px;
+    --wo-masthead-icon-w:62px;
+    --wo-masthead-gap:6px;
+    --wo-masthead-wordmark-size:7.5px;
+    --wo-masthead-wordmark-tracking:.09em;
+    --wo-masthead-subtitle-size:5.1px;
+    --wo-masthead-subtitle-tracking:.12em;
+    --wo-masthead-subtitle-gap:3px;
+  }
+}
 
 /* Navbar brand hover is intentionally static.
    The masthead brand is a home link, not an animated card: no lift, scale,
@@ -253,10 +251,10 @@ body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
   }
   body.wo-guest-masthead .topbar .brand:hover .brand-icon{
     transform:none!important;
-    filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 17%,transparent))!important;
+    filter:drop-shadow(0 0 16px color-mix(in srgb,var(--accent) 15%,transparent))!important;
   }
   body.wo-guest-masthead.masthead-scrolled .topbar .brand:hover .brand-icon{
-    filter:drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 14%,transparent))!important;
+    filter:drop-shadow(0 0 13px color-mix(in srgb,var(--accent) 13%,transparent))!important;
   }
   body.wo-guest-masthead .topbar .brand:hover .brand-icon img{
     transform:none!important;
@@ -270,7 +268,7 @@ body.wo-guest-masthead.masthead-scrolled .topbar .brand-label>span{
     filter:none!important;
   }
   body.wo-guest-masthead .topbar .brand:hover .brand-label>span{
-    color:#aa9d88!important;
+    color:#b4a58f!important;
     opacity:1!important;
     transform:none!important;
     filter:none!important;
