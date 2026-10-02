@@ -34,6 +34,7 @@ on:
 concurrency:
   group: production-visual-qa-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+  cancel-in-progress: true
 
 permissions:
   contents: read
