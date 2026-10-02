@@ -110,8 +110,105 @@ def dom(page):
  return {title:document.title,h1:h1?.textContent?.trim()||'',overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,dups,unlabeled,unnamed,broken,missingAlt,tiny,text:(document.querySelector('main')?.innerText||'').trim().length};
  }""")
 
-def state_checks(page,case,width=None):
+
+TRANSACTIONAL_TYPOGRAPHY={
+ "passport-auth":{
+   "tx-card-title":".passport-card .tx-card-title",
+   "tx-body":".passport-card .tx-body",
+   "tx-meta-label":".passport-card .tx-meta-label",
+ },
+ "passport-login":{
+   "tx-section-title":"#login .tx-section-title",
+   "tx-body":"#login .tx-body",
+   "tx-label":".passport-header .tx-label",
+ },
+ "invite":{
+   "tx-display-title":".invite-workflow .tx-display-title",
+   "tx-subheadline":".invite-workflow > .tx-subheadline",
+   "tx-meta-label":"#inviteForm .tx-meta-label",
+ },
+ "ticket-access":{
+   "tx-page-title":".purchase .tx-page-title",
+   "tx-body":"#status.tx-body",
+   "tx-label":".purchase > .tx-label",
+   "tx-meta-label":"#releaseCountdown.tx-meta-label",
+ },
+ "public-tickets":{
+   "tx-page-title":".workflow-shell .tx-page-title",
+   "tx-subheadline":".workflow-shell > .tx-subheadline",
+   "tx-body":"#public-ticket-form .tx-body",
+   "tx-meta-label":"#public-ticket-form .tx-meta-label",
+ },
+ "ticket-addons":{
+   "tx-page-title":".workflow-shell .tx-page-title",
+   "tx-subheadline":".workflow-shell > .tx-subheadline",
+   "tx-card-title":"#addons .card .tx-card-title",
+   "tx-body":"#addons .card .tx-body",
+   "tx-meta-label":"#addons .card .tx-meta-label",
+ },
+}
+
+def typography_contract_checks(page,case):
+ cfg=TRANSACTIONAL_TYPOGRAPHY.get(case.name)
+ if not cfg:return []
+ payload=page.evaluate("""selectors => {
+  const props=e=>{const s=getComputedStyle(e);return {
+   family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,
+   tracking:s.letterSpacing,transform:s.textTransform,background:s.backgroundImage,
+   fill:s.webkitTextFillColor,color:s.color
+  }};
+  const roles=['tx-display-title','tx-page-title','tx-section-title','tx-card-title','tx-subheadline','tx-body','tx-label','tx-meta-label'];
+  const host=document.createElement('div');
+  host.style.cssText='position:fixed;left:-200vw;top:0;visibility:hidden;pointer-events:none';
+  for(const role of roles){const e=document.createElement('div');e.className=role;e.textContent='Typography contract';host.appendChild(e)}
+  document.body.appendChild(host);
+  const sample=Object.fromEntries(roles.map(role=>[role,props(host.querySelector('.'+role))]));
+  const actual={};
+  for(const [role,selector] of Object.entries(selectors)){
+    const e=document.querySelector(selector);
+    actual[role]=e?props(e):null;
+  }
+  host.remove();
+  return {sample,actual};
+ }""",cfg)
  f=[]
+ sample=data=payload["sample"];actual=payload["actual"]
+ def px(value):
+  try:return float(str(value).replace("px",""))
+  except Exception:return 0.0
+ sizes={k:px(v["size"]) for k,v in sample.items()}
+ if not (sizes["tx-display-title"]>sizes["tx-page-title"]>sizes["tx-section-title"]>sizes["tx-card-title"]>sizes["tx-subheadline"]>=sizes["tx-body"]>sizes["tx-label"]):
+  f.append("shared transactional typography hierarchy is out of order")
+ display_families={sample[x]["family"] for x in ("tx-display-title","tx-page-title","tx-section-title","tx-card-title")}
+ ui_families={sample[x]["family"] for x in ("tx-subheadline","tx-body","tx-label","tx-meta-label")}
+ if len(display_families)!=1:f.append("shared transactional display roles do not use one font family")
+ if len(ui_families)!=1:f.append("shared transactional UI roles do not use one font family")
+ for prop in ("family","size","weight","line","tracking","transform"):
+  if sample["tx-label"][prop]!=sample["tx-meta-label"][prop]:f.append("tx-label and tx-meta-label diverged on "+prop)
+ for role,style in actual.items():
+  if style is None:
+   f.append(case.name+" missing visible semantic typography role "+role)
+   continue
+  for prop in ("family","size","weight","line","tracking","transform"):
+   if style[prop]!=sample[role][prop]:f.append(case.name+" "+role+" overrides shared "+prop+" ("+str(style[prop])+" != "+str(sample[role][prop])+")")
+ if case.name.startswith("passport"):
+  hero=page.evaluate("""() => {
+   const h=document.querySelector('.passport-header .tx-display-title'),s=document.querySelector('.passport-header .tx-subheadline');
+   if(!h||!s)return null;
+   const hs=getComputedStyle(h),ss=getComputedStyle(s);
+   return {headlineSize:parseFloat(hs.fontSize),subSize:parseFloat(ss.fontSize),headlineWeight:+hs.fontWeight,subWeight:+ss.fontWeight,subBackground:ss.backgroundImage,subFill:ss.webkitTextFillColor};
+  }""")
+  if not hero:f.append("Passport hero typography contract missing")
+  else:
+   if hero["subSize"]>=hero["headlineSize"]*.45:f.append("Passport subheadline competes with headline size")
+   if hero["subWeight"]>=hero["headlineWeight"]:f.append("Passport subheadline must remain lighter than headline")
+   if hero["subBackground"]!="none":f.append("Passport subheadline must not use a competing text gradient")
+   if hero["subFill"] in ("transparent","rgba(0, 0, 0, 0)"):f.append("Passport subheadline must retain readable solid text fill")
+ return f
+
+
+def state_checks(page,case,width=None):
+ f=typography_contract_checks(page,case)
  guest_header=page.locator(".topbar .brand").count()>0 and not (case.name.startswith("admin-") or case.name in ("check-in","bar"))
  if guest_header:
   metrics=page.evaluate("""() => {
@@ -462,6 +559,8 @@ def source_mode():
  if "realm-gradient-title tx-display-title" not in ph:fail.append("premium Passport title markup missing")
  for s in (".tx-display-title",".tx-page-title",".tx-section-title",".tx-card-title",".tx-subheadline",".tx-body",".tx-label",".tx-meta-label"):
   if s not in css:fail.append("shared typography missing "+s)
+ for s in ("TRANSACTIONAL_TYPOGRAPHY","typography_contract_checks","shared transactional typography hierarchy is out of order","Passport subheadline must not use a competing text gradient"):
+  if s not in Path("scripts/production_visual_qa.py").read_text(encoding="utf-8"):fail.append("permanent transactional typography visual contract missing "+s)
  markup_contracts={
   "passport.html":((SITE/"passport.html").read_text(encoding="utf-8"),("tx-display-title","tx-section-title","tx-subheadline","tx-body","tx-label","tx-meta-label")),
   "invite.html":((SITE/"invite.html").read_text(encoding="utf-8"),("tx-display-title","tx-card-title","tx-subheadline","tx-label","tx-meta-label")),
