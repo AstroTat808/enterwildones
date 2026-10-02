@@ -29,7 +29,6 @@
 .waiver-page.tx-page .panel{text-align:left}
 .waiver-page.tx-page .panel h1{max-width:15ch}
 .waiver-page.tx-page .status{background:rgba(255,255,255,.02)}
-.waiver-page.tx-page .meta{}
 .waiver-page.tx-page .actions .button{min-height:48px;display:inline-flex;align-items:center;justify-content:center}
 
 @media(max-width:620px){

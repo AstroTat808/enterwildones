@@ -235,6 +235,11 @@ def state_checks(page,case,width=None):
  f=typography_contract_checks(page,case)
  guest_header=page.locator(".topbar .brand").count()>0 and not (case.name.startswith("admin-") or case.name in ("check-in","bar"))
  if guest_header:
+  # Wait for the canonical branding initializer before measuring geometry, then
+  # force a known expanded starting state. This prevents route/load timing from
+  # contaminating the compact-state assertion in the broader browser matrix.
+  page.wait_for_function("document.body.classList.contains('wo-guest-masthead')",timeout=10000)
+  page.evaluate("document.body.classList.remove('masthead-scrolled')");page.wait_for_timeout(90)
   metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
    const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');

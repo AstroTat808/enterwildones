@@ -533,17 +533,13 @@
   .passport-page #realms.passport-grid>.passport-card{min-height:0;padding:24px 20px 26px!important;border-radius:24px!important}
   .passport-page #realms.passport-grid>.passport-card::after{inset:8px;border-radius:18px}
   .passport-page #realms.passport-grid>.passport-card>.passport-card-logo{width:min(66%,270px);margin-top:18px}
-  .passport-page #realms.passport-grid>.passport-card>h2.realm-key{}
 }
 @media(max-width:520px){
   .passport-page .passport-member-main{grid-template-columns:68px minmax(0,1fr);gap:15px}
   .passport-page .passport-member-mark{width:64px;height:64px;font-size:30px}
-  
-  .passport-page .passport-account-copy #progress{}
   .passport-page .passport-cycle-nodes{grid-template-columns:1fr 1fr}
   .passport-page .passport-cycle-node{padding:9px 10px}
   .passport-page .passport-card-topline{grid-template-columns:auto minmax(0,1fr) auto;gap:8px}
-  .passport-page .passport-credential-label{}
   .passport-page .passport-roman{width:36px;height:36px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -716,7 +712,6 @@
   border-radius:22px;
   box-shadow:0 0 36px var(--realm-glow),inset 0 0 36px color-mix(in srgb,var(--realm-fallback) 6%,transparent);
 }
-.passport-page .realm-complete-overlay strong{}
 .passport-page .realm-complete-overlay span{
   color:color-mix(in srgb,var(--realm-fallback) 64%,#f2e9dc);
   text-transform:uppercase;
@@ -1161,10 +1156,8 @@
 }
 @media(max-width:480px){
   .ticket-page.tx-page .ticket-credential-topline{grid-template-columns:auto minmax(0,1fr) auto;gap:7px}
-  .ticket-page.tx-page .ticket-credential-label{}
   .ticket-page.tx-page .ticket-roman{width:36px;height:36px}
   .ticket-page.tx-page .realm-chip{max-width:108px;padding-inline:8px}
-  .ticket-page.tx-page .ticket-event-name{}
   .ticket-page.tx-page .ticket-collector-rail span:nth-child(2){display:none}
   .ticket-page.tx-page .ticket-collector-rail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .ticket-page.tx-page .ticket-pass-footnote{font-size:5.8px;letter-spacing:.15em}

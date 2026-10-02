@@ -454,7 +454,11 @@ def capture(base_url:str,dest:Path):
           page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
           page.wait_for_timeout(140)
           page.evaluate("window.scrollTo(0,0)")
-          page.wait_for_timeout(140)
+          if case["name"].startswith("masthead-"):
+            page.evaluate("document.body.classList.remove('masthead-scrolled')")
+            page.wait_for_timeout(520)
+          else:
+            page.wait_for_timeout(140)
         raw=dest/(case["name"]+"-raw.png")
         final=dest/(case["name"]+".png")
         if case.get("target"):
