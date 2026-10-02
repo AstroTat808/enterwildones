@@ -49,19 +49,20 @@ jobs:
               browser=getattr(p,engine).launch()
               for width in [375,390,430,1440]:
                 height=844 if width<900 else 1000
-                context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,is_mobile=width<900,has_touch=width<900)
+                context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,is_mobile=width<900,has_touch=width<900,reduced_motion='reduce')
                 page=context.new_page();errors=[]
                 page.on('pageerror',lambda error:errors.append(str(error)))
                 page.route('**/api/passport',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps(fixture)))
                 response=page.goto('https://enterwildones.com/passport',wait_until='domcontentloaded',timeout=45000)
                 page.wait_for_selector('#account:not([hidden])',timeout=15000)
-                page.wait_for_selector('#realms .passport-card:nth-child(4)',timeout=15000)
-                page.locator('#realms .passport-card').last.scroll_into_view_if_needed()
+                page.wait_for_selector('#realms .passport-card:nth-child(5)',timeout=15000)
+                page.evaluate("document.querySelector('#realms .passport-card:last-child')?.scrollIntoView({block:'center'})")
                 page.wait_for_timeout(1200)
                 page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(400)
                 report=page.evaluate('''() => ({
                   overflow:document.documentElement.scrollWidth>innerWidth+1,
                   cards:document.querySelectorAll('#realms .passport-card').length,
+                  masterCycle:!!document.querySelector('#realms [data-master-cycle]'),
                   accountVisible:!!document.querySelector('#account:not([hidden])'),
                   brokenImages:[...document.querySelectorAll('#realms .passport-card-logo')].filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.getAttribute('src')),
                   memberWidth:Math.round(document.querySelector('.passport-member-card')?.getBoundingClientRect().width||0),
@@ -73,11 +74,12 @@ jobs:
                 context.close()
               browser.close()
           (root/'report.json').write_text(json.dumps(results,indent=2))
-          failures=[r for r in results if r['status']>=400 or r['overflow'] or r['cards']!=4 or not r['accountVisible'] or r['brokenImages'] or r['errors']]
+          failures=[r for r in results if r['status']>=400 or r['overflow'] or r['cards']!=5 or not r['masterCycle'] or not r['accountVisible'] or r['brokenImages'] or r['errors']]
           print(json.dumps({'checks':len(results),'failures':failures},indent=2))
           assert not failures,'Passport visual QA failed'
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: passport-visual-qa
           path: passport-visual-results
