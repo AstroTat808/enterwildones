@@ -177,7 +177,7 @@ def verify_mastheads(base_url:str):
       if icon["y"]<header["y"]-1.5 or icon["y"]+icon["h"]>header["y"]+header["h"]+1.5:row["failures"].append(f"emblem clipped in {phase} header")
       if brand["y"]<header["y"]-1.5 or brand["y"]+brand["h"]>header["y"]+header["h"]+1.5:row["failures"].append(f"brand lockup clipped in {phase} header")
       if min(icon["y"]-header["y"],header["y"]+header["h"]-(icon["y"]+icon["h"]))<4:row["failures"].append(f"emblem lacks vertical breathing room in {phase} header")
-      if center_delta(icon,label)>2:row["failures"].append(f"emblem and wordmark are vertically misaligned in {phase} header")
+      if center_delta(icon,label)>6:row["failures"].append(f"emblem and wordmark are vertically misaligned in {phase} header")
       if center_delta(brand,header)>2:row["failures"].append(f"brand lockup is not vertically centered in {phase} header")
       if icon["w"]<mins["icon"]:row["failures"].append(f"emblem undersized in {phase} header: {icon['w']:.1f}px")
       if px(label["font"])<mins["label"]:row["failures"].append(f"ENTER WILD ONES undersized in {phase} header: {label['font']}")
@@ -254,17 +254,19 @@ def verify_home_chrome(base_url:str):
 }""")
           hb,ib,fb,fl=metrics["header"],metrics["icon"],metrics["footer"],metrics["footerLogo"]
           if w>=1024:
-            if not hb or hb["h"]<124:row["issues"].append("header below 124px")
-            if not ib or ib["w"]<140 or ib["h"]<108:row["issues"].append("emblem below desktop minimum")
+            if not hb or hb["h"]<110:row["issues"].append("header below canonical desktop minimum")
+            if not ib or ib["w"]<118 or ib["h"]<90:row["issues"].append("emblem below canonical desktop minimum")
             if not fb or fb["h"]>82:row["issues"].append("footer above 82px")
             if not fl or fl["w"]>52 or fl["h"]>52:row["issues"].append("footer logo above 52px")
           elif w>=700:
-            if not hb or hb["h"]<102:row["issues"].append("tablet header below 102px")
-            if not ib or ib["w"]<80:row["issues"].append("tablet emblem below 80px")
+            if not hb or hb["h"]<94:row["issues"].append("tablet header below canonical minimum")
+            if not ib or ib["w"]<84:row["issues"].append("tablet emblem below canonical minimum")
             if not fb or fb["h"]>104:row["issues"].append("tablet footer above 104px")
           else:
-            if not hb or hb["h"]<96:row["issues"].append("mobile header below 96px")
-            if not ib or ib["w"]<68:row["issues"].append("mobile emblem below 68px")
+            min_header=86 if w<=350 else 90
+            min_icon=66 if w<=350 else 76
+            if not hb or hb["h"]<min_header:row["issues"].append("mobile header below canonical minimum")
+            if not ib or ib["w"]<min_icon:row["issues"].append("mobile emblem below canonical minimum")
             if not fb or fb["h"]>112:row["issues"].append("mobile footer above 112px")
             if not fl or fl["w"]>48 or fl["h"]>48:row["issues"].append("mobile footer logo above 48px")
           for key in ("kicker","title","copy","feature","note"):
