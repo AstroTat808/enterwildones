@@ -363,27 +363,8 @@ body.cinematic-home.wo-guest-masthead .site-footer>span{
   }
 }
 @media(max-width:350px){
-  body.wo-guest-masthead{
-    --wo-masthead-height:96px;
-  }
-  body.wo-guest-masthead .topbar .brand{
-    min-height:82px;
-    gap:6px!important;
-  }
-  body.wo-guest-masthead .topbar .brand-icon{
-    width:68px!important;
-    height:82px!important;
-    flex-basis:68px!important;
-  }
-  body.wo-guest-masthead .topbar .brand-label{
-    max-width:102px!important;
-    font-size:7.5px!important;
-    letter-spacing:.10em!important;
-  }
-  body.wo-guest-masthead .topbar .brand-label>span{
-    font-size:5.3px!important;
-    letter-spacing:.13em!important;
-  }
+  /* Masthead geometry is defined above. Keep this trailing block footer-only so
+     legacy footer overrides can never silently distort the shared header. */
   body.cinematic-home.wo-guest-masthead .site-footer{
     grid-template-columns:40px minmax(0,1fr)!important;
     padding-left:9px!important;
