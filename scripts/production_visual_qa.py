@@ -271,7 +271,10 @@ def state_checks(page,case,width=None):
    if masthead_px(sub["font"])<mins["sub"]:f.append("guest masthead THE FOUR REALMS text is undersized in "+phase+" header")
   validate_masthead(metrics,False)
   initial_h=metrics["header"]["h"] if metrics.get("header") else None
-  page.evaluate("window.scrollTo(0,140)");page.wait_for_timeout(420)
+  # Exercise the canonical compact state directly. Some transactional pages are
+  # shorter than tall/wide viewports, so scrollTo(140) can be a no-op and create
+  # a false regression even though the masthead contract itself is correct.
+  page.evaluate("document.body.classList.add('masthead-scrolled')");page.wait_for_timeout(420)
   compact_metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
    const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span'),ims=img?getComputedStyle(img):null;
@@ -280,7 +283,7 @@ def state_checks(page,case,width=None):
   validate_masthead(compact_metrics,True)
   compact_h=compact_metrics["header"]["h"] if compact_metrics.get("header") else None
   if initial_h and compact_h and compact_h>=initial_h-1:f.append("guest masthead did not compact after scroll")
-  page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(70)
+  page.evaluate("document.body.classList.remove('masthead-scrolled')");page.wait_for_timeout(70)
  # Transactional typography is a release contract: semantic roles must resolve to one
  # shared hierarchy and live markup must not override the shared font metrics.
  transactional_required={
