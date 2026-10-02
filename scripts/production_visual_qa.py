@@ -578,7 +578,7 @@ def source_mode():
  for s in ("wo-guest-masthead","ENTER WILD ONES","THE FOUR REALMS","mastheadScrollState","/assets/images/realms/enter-wild-ones-emblem.svg"):
   if s not in branding:fail.append("branding masthead contract missing "+s)
  visual_regression=Path("scripts/visual_regression.py").read_text(encoding="utf-8")
- for s in ('("430",430,932,3)','("1366",1366,768,1)','("1920",1920,1080,1)','("realm-aureva","/events/aureva","plain")','("realm-halora","/events/halora","plain")','("realm-sunveil","/events/sunveil","plain")','("realm-nocturne","/events/nocturne","plain")',"aspect ratio distorted","vertically misaligned","dimensions differ across routes"):
+ for s in ('("430",430,932,3)','("1366",1366,768,1)','("1920",1920,1080,1)','("realm-aureva","/events/aureva","plain")','("realm-halora","/events/halora","plain")','("realm-sunveil","/events/sunveil","plain")','("realm-nocturne","/events/nocturne","plain")',"master-cycle-card-320","master-cycle-card-390","master-cycle-card-430","master-cycle-card-pro-max","master-cycle-card-desktop","master-cycle-ceremony-320","master-cycle-ceremony-390","master-cycle-ceremony-430","master-cycle-ceremony-pro-max","master-cycle-ceremony-desktop","passport-complete","aspect ratio distorted","vertically misaligned","dimensions differ across routes"):
   if s not in visual_regression:fail.append("permanent masthead visual regression contract missing "+s)
  if "realm-gradient-title tx-display-title" not in ph:fail.append("premium Passport title markup missing")
  for s in (".tx-display-title",".tx-page-title",".tx-section-title",".tx-card-title",".tx-subheadline",".tx-body",".tx-label",".tx-meta-label"):
@@ -593,6 +593,7 @@ def source_mode():
   "ticket-addons.js":((SITE/"assets/js/ticket-addons.js").read_text(encoding="utf-8"),("tx-card-title","tx-body","tx-meta-label")),
   "passport.js":(passport,("tx-card-title","tx-body","tx-meta-label")),
   "ticket-view.mjs":(tv,("tx-page-title","tx-card-title","tx-subheadline","tx-body","tx-label","tx-meta-label")),
+  "ticket-waiver.mjs":(Path("netlify/functions/ticket-waiver.mjs").read_text(encoding="utf-8"),("tx-page-title","tx-body","tx-label","tx-meta-label")),
  }
  for name,(source,roles) in markup_contracts.items():
   for role in roles:
@@ -619,6 +620,18 @@ def source_mode():
   "guest-transaction-detail.css":[
    r"\.ticket-page\.tx-page section h2\s*\{[^}]*\bfont\s*:",
    r"\.ticket-page\.tx-page section label\s*\{[^}]*(?:font-size|line-height)\s*:",
+  ],
+  "transactional-premium.css":[
+   r"\.passport-page \.passport-filter button\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
+   r"\.passport-page \.passport-master-realms>span\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
+   r"\.passport-page \.realm-complete-overlay strong\s*\{[^}]*\bfont\s*:",
+   r"\.passport-page \.realm-complete-overlay span\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
+   r"\.ticket-page\.tx-page \.ticket-qr-title\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
+   r"\.ticket-page\.tx-page \.ticket-qr-panel \.muted\s*\{[^}]*(?:font-size|line-height)\s*:",
+   r"\.master-cycle-kicker\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
+   r"\.master-cycle-copy h2\s*\{[^}]*(?:font-family|font-size|font-weight|line-height|letter-spacing)\s*:",
+   r"\.master-cycle-copy p\s*\{[^}]*(?:font-size|line-height)\s*:",
+   r"\.master-cycle-motto\s*\{[^}]*(?:font-size|font-weight|letter-spacing)\s*:",
   ],
  }
  css_sources={name:(SITE/"assets/css"/name).read_text(encoding="utf-8") for name in legacy_type_rules}
