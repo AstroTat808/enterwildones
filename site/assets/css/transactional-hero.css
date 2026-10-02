@@ -565,10 +565,6 @@
   margin:0 auto;
   padding-top:19px;
   color:rgba(242,234,222,.80);
-  font-size:clamp(1rem,1.28vw,1.125rem)!important;
-  font-weight:var(--tx-subheadline-weight)!important;
-  line-height:1.62!important;
-  letter-spacing:.02em!important;
   text-shadow:0 2px 18px rgba(0,0,0,.44);
 }
 .passport-page .passport-header .tx-subheadline::before{
@@ -611,8 +607,6 @@
   .passport-page .passport-header .tx-subheadline{
     max-width:32rem;
     padding-top:18px;
-    font-size:clamp(.98rem,4vw,1.1rem)!important;
-    line-height:1.62!important;
   }
 }
 @media(max-width:420px){
