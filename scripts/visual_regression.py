@@ -114,7 +114,7 @@ class Handler(SimpleHTTPRequestHandler):
         if SITE.resolve() not in target.parents and target!=SITE.resolve():return str(SITE/"index.html")
         return str(target)
 
-def verify_mastheads(base_url:str):
+def verify_mastheads(base_url:str,browser_name:str="chromium"):
     OUT.mkdir(exist_ok=True)
     rows=[];failures=[]
     viewport_reference={}
@@ -185,7 +185,7 @@ def verify_mastheads(base_url:str):
       if label["w"]<=0 or sub["w"]<=0:row["failures"].append(f"wordmark not visible in {phase} header")
 
     with sync_playwright() as p:
-      browser=p.chromium.launch()
+      browser=getattr(p,browser_name).launch()
       for vp,w,h,dpr in MASTHEAD_VIEWPORTS:
         for name,path,state in MASTHEAD_ROUTES:
           context=browser.new_context(viewport={"width":w,"height":h},device_scale_factor=dpr,is_mobile=w<900,has_touch=w<900,color_scheme="dark",reduced_motion="reduce")
@@ -222,8 +222,8 @@ def verify_mastheads(base_url:str):
           rows.append(row);page.close();context.close()
       browser.close()
     serialized_reference={f"{vp}-{phase}":sig for (vp,phase),sig in viewport_reference.items()}
-    report={"viewports":[x[0] for x in MASTHEAD_VIEWPORTS],"routes":[x[0] for x in MASTHEAD_ROUTES],"routeDimensionReference":serialized_reference,"failures":failures,"checks":len(rows)}
-    (OUT/"masthead-geometry.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
+    report={"browser":browser_name,"viewports":[x[0] for x in MASTHEAD_VIEWPORTS],"routes":[x[0] for x in MASTHEAD_ROUTES],"routeDimensionReference":serialized_reference,"failures":failures,"checks":len(rows)}
+    (OUT/f"masthead-geometry-{browser_name}.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
     return report
 
 def verify_home_chrome(base_url:str):
@@ -503,11 +503,12 @@ def compare(current_dir:Path,baseline_dir:Path):
 
 def main():
     ap=argparse.ArgumentParser()
-    ap.add_argument("--mode",choices=("capture-production","seed-approved-preview","compare-preview"),required=True)
+    ap.add_argument("--mode",choices=("capture-production","seed-approved-preview","compare-preview","verify-masthead"),required=True)
     ap.add_argument("--baseline-dir",default=".visual-baselines")
     ap.add_argument("--production-baseline-dir",default=".visual-baselines-production")
     ap.add_argument("--approved-cases",default="")
     ap.add_argument("--production-base",default="https://enterwildones.com")
+    ap.add_argument("--browser",choices=("chromium","webkit"),default="chromium")
     args=ap.parse_args()
     baseline=Path(args.baseline_dir)
     if args.mode=="capture-production":
@@ -528,7 +529,15 @@ def main():
       finally:
         server.shutdown();server.server_close()
 
-    masthead=verify_mastheads(base_url)
+    if args.mode=="verify-masthead":
+      try:
+        masthead=verify_mastheads(base_url,args.browser)
+        print(json.dumps({"mastheadVerification":masthead},indent=2))
+        return 1 if masthead["failures"] else 0
+      finally:
+        server.shutdown();server.server_close()
+
+    masthead=verify_mastheads(base_url,"chromium")
     home_chrome=verify_home_chrome(base_url)
     ticket_credential=verify_ticket_credential_geometry(base_url)
     if masthead["failures"] or home_chrome["failures"] or ticket_credential["failures"]:
