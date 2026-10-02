@@ -69,6 +69,7 @@ jobs:
         run: python scripts/production_visual_qa.py --mode source
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: production-visual-source-audit
           path: visual-results/source-audit.json
@@ -125,6 +126,7 @@ jobs:
         run: python scripts/visual_regression.py --mode compare-preview --baseline-dir .visual-baselines
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: approved-visual-regression-${{ github.run_id }}
           path: visual-regression-results
@@ -150,6 +152,7 @@ jobs:
         run: npx -y @lhci/cli@0.14.0 autorun --config=./lighthouserc.cjs
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: lighthouse-release-results
           path: lighthouse-results
@@ -215,6 +218,7 @@ jobs:
         run: python scripts/production_visual_qa.py --mode smoke
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: production-runtime-smoke
           path: visual-results/production-smoke.json
@@ -251,6 +255,7 @@ jobs:
         run: python scripts/production_visual_qa.py --mode browser --suite ${{ matrix.suite }} --browser ${{ matrix.browser }}
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: production-visual-${{ matrix.suite }}-${{ matrix.browser }}
           path: visual-results/${{ matrix.suite }}-${{ matrix.browser }}
