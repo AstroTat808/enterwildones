@@ -138,7 +138,6 @@ def state_checks(page,case,width=None):
    if m["subText"]!="THE FOUR REALMS":f.append("guest masthead THE FOUR REALMS label missing in "+phase+" header")
    if m["imageSrc"]!="/assets/images/realms/enter-wild-ones-emblem.svg":f.append("guest masthead uses wrong emblem asset in "+phase+" header")
    if m["objectFit"]!="contain":f.append("guest masthead emblem must use object-fit contain in "+phase+" header")
-   if m["naturalW"]<900 or m["naturalH"]<700:f.append("guest masthead emblem source is undersized in "+phase+" header")
    if icon["h"]<=0 or abs((icon["w"]/icon["h"])-(960/735))>.015:f.append("guest masthead emblem is stretched in "+phase+" header")
    if abs(image["w"]-icon["w"])>1 or abs(image["h"]-icon["h"])>1:f.append("guest masthead image does not fill its ratio-safe box in "+phase+" header")
    if icon["y"]<header["y"]-1.5 or icon["y"]+icon["h"]>header["y"]+header["h"]+1.5:f.append("guest masthead emblem is clipped in "+phase+" header")
@@ -450,6 +449,9 @@ def source_mode():
   if s not in passport:fail.append("passport regression guard missing "+s)
  masthead=(SITE/"assets/css/masthead-lockup.css").read_text(encoding="utf-8") if (SITE/"assets/css/masthead-lockup.css").exists() else ""
  branding=(SITE/"assets/js/branding.js").read_text(encoding="utf-8")
+ emblem_svg=(SITE/"assets/images/realms/enter-wild-ones-emblem.svg").read_text(encoding="utf-8")
+ for s in ('viewBox="120 0 960 735"','width="960"','height="735"'):
+  if s not in emblem_svg:fail.append("canonical masthead SVG dimension contract missing "+s)
  for s in (".wo-guest-masthead",".brand-icon",".brand-label","masthead-scrolled","--wo-masthead-icon-w","aspect-ratio:960 / 735","object-fit:contain","align-self:center"):
   if s not in masthead:fail.append("shared masthead regression guard missing "+s)
  for s in ("wo-guest-masthead","ENTER WILD ONES","THE FOUR REALMS","mastheadScrollState","/assets/images/realms/enter-wild-ones-emblem.svg"):
