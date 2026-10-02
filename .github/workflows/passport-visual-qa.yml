@@ -172,9 +172,76 @@ jobs:
           print(json.dumps({'checks':len(results),'failures':failures},indent=2))
           assert not failures,'Live Passport / digital credential visual QA failed'
       - uses: actions/upload-artifact@v4
+        id: passport_artifact
         if: always()
         continue-on-error: true
         with:
           name: passport-visual-qa
           path: passport-visual-results
           retention-days: 7
+      - name: Emit compact visual-review fallback when artifact storage is unavailable
+        if: always() && steps.passport_artifact.outcome == 'failure'
+        shell: bash
+        run: |
+          pip install --quiet pillow==11.3.0
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageDraw, ImageOps
+          import base64
+
+          root=Path('passport-visual-results')
+          picks=[
+            'chromium-390-passport.png',
+            'chromium-1440-passport.png',
+            'webkit-390-passport.png',
+            'webkit-1440-passport.png',
+            'chromium-390-digital-ticket.png',
+            'webkit-390-digital-ticket.png',
+          ]
+          tiles=[]
+          tile_w=320
+          label_h=24
+          for name in picks:
+            p=root/name
+            if not p.exists():
+              continue
+            im=Image.open(p).convert('RGB')
+            crop_h=min(im.height,max(900,int(im.width*1.55)))
+            starts=[('TOP',0),('BOTTOM',max(0,im.height-crop_h))]
+            for suffix,y in starts:
+              crop=im.crop((0,y,im.width,min(im.height,y+crop_h)))
+              target_h=max(1,round(crop.height*tile_w/crop.width))
+              crop=crop.resize((tile_w,target_h),Image.Resampling.LANCZOS)
+              label=Image.new('RGB',(tile_w,label_h),'white')
+              ImageDraw.Draw(label).text((6,5),f'{name} · {suffix}',fill='black')
+              tile=Image.new('RGB',(tile_w,label_h+target_h),'white')
+              tile.paste(label,(0,0));tile.paste(crop,(0,label_h))
+              tiles.append(tile)
+
+          if not tiles:
+            raise SystemExit('No Passport screenshots were available for fallback preview.')
+
+          cols=3
+          gap=12
+          rows=(len(tiles)+cols-1)//cols
+          row_heights=[]
+          for r in range(rows):
+            row_heights.append(max(t.height for t in tiles[r*cols:(r+1)*cols]))
+          sheet_w=cols*tile_w+(cols-1)*gap
+          sheet_h=sum(row_heights)+(rows-1)*gap
+          sheet=Image.new('RGB',(sheet_w,sheet_h),(18,18,20))
+          y=0
+          for r in range(rows):
+            x=0
+            for t in tiles[r*cols:(r+1)*cols]:
+              sheet.paste(t,(x,y))
+              x+=tile_w+gap
+            y+=row_heights[r]+gap
+          out=root/'passport-visual-contact-sheet.jpg'
+          sheet.save(out,'JPEG',quality=55,optimize=True,progressive=True)
+          data=base64.b64encode(out.read_bytes()).decode('ascii')
+          print('PASSPORT_CONTACT_SHEET_BASE64_BEGIN')
+          for i in range(0,len(data),120):
+            print(data[i:i+120])
+          print('PASSPORT_CONTACT_SHEET_BASE64_END')
+          PY
