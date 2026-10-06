@@ -42,7 +42,7 @@ permissions:
   actions: read
 
 env:
-  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v12
+  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v13
   APPROVED_REALM_VISUAL_CASES: home-desktop,home-passport-close-desktop,home-footer-desktop,home-footer-phone,home-footer-wide,masthead-home-320,masthead-home-phone,masthead-home-430,masthead-home-768,masthead-home-1024,masthead-home-1366,masthead-home-1440,masthead-home-1920,masthead-event-phone,masthead-quiz-phone,masthead-passport-phone,masthead-invite-phone,masthead-apply-phone,realm-quiz-intro-desktop,realm-quiz-result-desktop,realm-quiz-intro-1366,realm-quiz-question-1366,realm-quiz-aureva-result-1366,realm-quiz-halora-result-1366,realm-quiz-sunveil-result-1366,realm-quiz-nocturne-result-1366,application-open-desktop,application-gated-desktop,passport-auth-desktop,passport-login-phone,master-cycle-card-320,master-cycle-card-390,master-cycle-card-430,master-cycle-card-pro-max,master-cycle-card-desktop,master-cycle-ceremony-320,master-cycle-ceremony-390,master-cycle-ceremony-430,master-cycle-ceremony-pro-max,master-cycle-ceremony-desktop,invite-desktop,ticket-access-desktop,public-ticket-desktop,ticket-addons-desktop,admin-applications-desktop,admin-packages-desktop,admin-operations-desktop,admin-event-day-desktop,admin-live-desktop,admin-launch-desktop,admin-rehearsal-desktop
 
 jobs:
