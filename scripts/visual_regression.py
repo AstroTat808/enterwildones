@@ -461,7 +461,9 @@ def capture(base_url:str,dest:Path):
             page.wait_for_timeout(140)
         raw=dest/(case["name"]+"-raw.png")
         final=dest/(case["name"]+".png")
-        if case.get("target"):
+        if case["name"].startswith("masthead-"):
+          page.locator(".topbar").screenshot(path=str(raw),animations="disabled",caret="hide")
+        elif case.get("target"):
           page.locator(case["target"]).screenshot(path=str(raw),animations="disabled",caret="hide")
         else:
           page.screenshot(path=str(raw),full_page=case.get("full_page",True),animations="disabled",caret="hide")
