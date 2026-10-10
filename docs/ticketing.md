@@ -4,7 +4,7 @@
 
 Every admission path is scoped by `eventId`. The event identity must agree across the invitation or access grant, Stripe Checkout metadata, payment record, ticket record, signed ticket token, waiver, Apple Wallet pass, private venue lookup, and staff check-in session.
 
-Ticket prices are never hard-coded. Each event requires its own `WILDONES_<EVENT_ID>_TICKET_PRICE_CENTS` environment variable and `ticketSalesOpen=true` before checkout can start.
+Ticket prices are never hard-coded. Each event requires a valid single-price configuration (`WILDONES_<EVENT_ID>_TICKET_PRICE_CENTS`) or a complete phased-price schedule (`TICKET_PHASE1_*`, `TICKET_PHASE2_*`, optional `TICKET_PHASE3_*`). Ordinary public checkout requires `ticketSalesOpen=true` (only explicitly allowlisted commissioning identities may transact while closed). All paid **and complimentary** admissions require an approved positive `WILDONES_<EVENT_ID>_TICKET_CAPACITY` and deployed admission-inventory database migration.
 
 The current invitation flow intentionally supports one named ticket per invitation. Invitations with `maxTickets > 1` fail closed until a separate group-attendee identity flow is implemented, because every admitted participant needs an independently attributable ticket and waiver.
 
@@ -43,3 +43,23 @@ One Wild Ones Pass Type identity can serve all realms. Passes use event-specific
 ## Public-sale events
 
 The current admission implementation is invitation-authenticated. Events configured for direct public sale, such as a future public SUNVEIL release, need the dedicated public-buyer identity step before `ticketSalesOpen` is enabled. Do not bypass identity by removing the invitation checks from checkout.
+
+## Capacity and concurrency controls
+
+The server must reserve seats in Postgres before creating Stripe Checkout.
+The transaction locks one event-capacity row using `FOR UPDATE`. It counts
+both `held` and `issued` reservations and rejects SOLD_OUT and duplicate
+user/invitation activity. This is independent of front-end counts and applies
+also to complimentary tickets. Issuance is idempotent for the same session.
+
+An unresolved Checkout session continues occupying inventory; elapsed time
+alone cannot release inventory because an asynchronous charge might succeed.
+Only Stripe-confirmed expiry/failure and full refunds release inventory.
+Manual reconciliation is required for orphaned or historical checkouts.
+Disputed admissions retain their capacity until the payment outcome is settled.
+Launch Control must reconcile the count of issued reservations against active
+and disputed tickets before enabling admission sales.
+
+**Migration:** `netlify/database/migrations/003_admission-capacity/migration.sql`.
+Testing must include a 1-seat two-buyer race, comp admission races, webhook
+replay, refund/rebuy, Stripe expiry, and reconciliation of any legacy tickets.
