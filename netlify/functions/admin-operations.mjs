@@ -177,11 +177,15 @@ export default async (req) => {
     const paymentKey = eventKey(eventId, ticket.paymentId), payments = blobStore(STORES.payments), payment = await payments.get(paymentKey, { type: 'json' }).catch(() => null);
     if (!payment?.stripePaymentIntentId || payment.status !== 'paid') return json({ error: 'A refundable paid Stripe payment was not found.' }, 409);
     const refund = await stripePost('refunds', { payment_intent: payment.stripePaymentIntentId, reason: 'requested_by_customer', 'metadata[event_id]': eventId, 'metadata[admin_action]': 'admission_refund' }, `wildones-admin-admission-refund-${payment.paymentId}`);
-    await blobStore(STORES.tickets).setJSON(eventKey(eventId, ticket.ticketId), { ...ticket, status: 'refunded', refundedAt: now, refundId: refund.id, updatedAt: now });
-    await payments.setJSON(paymentKey, { ...payment, status: 'refunded', refundedAt: now, refundId: refund.id, updatedAt: now });
-    await releaseAdmission({eventId,invitationId:ticket.invitationId,sessionId:ticket.paymentId,issued:true});
-    await writeAudit({ eventId, action: 'ticket.refunded', actor: 'admin', targetType: 'ticket', targetId: ticket.ticketId, detail: { paymentId: payment.paymentId, refundId: refund.id } });
-    return json({ ok: true, refundId: refund.id });
+    if (!['succeeded','pending'].includes(refund.status)) return json({error:'Refund needs manual reconciliation before ticket state changes.',refundId:refund.id},409);
+    const settled = refund.status === 'succeeded';
+    const nextStatus = settled ? 'refunded' : 'refund_pending';
+    await blobStore(STORES.tickets).setJSON(eventKey(eventId, ticket.ticketId), { ...ticket, status: nextStatus, ...(settled ? {refundedAt:now} : {}), refundId: refund.id, updatedAt: now });
+    await payments.setJSON(paymentKey, { ...payment, status: nextStatus, ...(settled ? {refundedAt:now} : {}), refundId: refund.id, updatedAt: now });
+    // Stripe's pending refund must keep occupying a seat until final settlement.
+    if (settled) await releaseAdmission({eventId,invitationId:ticket.invitationId,sessionId:ticket.paymentId,issued:true});
+    await writeAudit({ eventId, action: settled ? 'ticket.refunded' : 'ticket.refund_pending', actor: 'admin', targetType: 'ticket', targetId: ticket.ticketId, detail: { paymentId: payment.paymentId, refundId: refund.id } });
+    return json({ ok: true, refundId: refund.id, status: nextStatus });
   }
 
   if (action === 'refund_addon') {
