@@ -76,6 +76,7 @@ jobs:
         run: |
           node scripts/validate-ticketing.mjs
           node scripts/validate-addons-public.mjs
+          node scripts/validate-admission-inventory.mjs
 
   launch-readiness:
     name: Release · Launch Readiness
