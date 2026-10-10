@@ -11,6 +11,7 @@ import { sameOrigin } from './_security.mjs';
 import { stripePost } from './_stripe.mjs';
 import { STORES, eventKey } from './_stores.mjs';
 import { writeAudit } from './_audit.mjs';
+import { issueCompAdmission, releaseAdmission } from './_admission-inventory.mjs';
 
 const ACTIVE_TICKET = new Set(['paid', 'checked_in']);
 const SAFE_INVITE = new Set(['active', 'redeemed', 'fulfilled', 'revoked']);
@@ -154,7 +155,10 @@ export default async (req) => {
     if (!app || app.eventId !== eventId || !app.userId) return json({ error: 'Application with Wild Ones identity is required.' }, 404);
     const existing = await existingTicketForUser(eventId, app.userId);
     if (existing && ACTIVE_TICKET.has(existing.status)) return json({ error: 'This guest already has an active ticket.' }, 409);
-    const invitationId = randomUUID(), ticketId = makeTicketId(event, invitationId), ticket = { ticketId, eventId, userId: app.userId, applicationId, invitationId, paymentId: null, status: 'paid', ticketSource: 'comp', issuedAt: now, updatedAt: now, checkedInAt: null, waiverSignedAt: null, waiverVersion: null, waiverTextHash: null };
+    const invitationId = randomUUID();
+    try { await issueCompAdmission({eventId,invitationId,userId:app.userId,expiresAt:event.endsAt}); }
+    catch(error){ return json({error:error.message||'Comp capacity unavailable.',code:error.code||'INVENTORY_UNAVAILABLE'},error.status||503); }
+    const ticketId = makeTicketId(event, invitationId), ticket = { ticketId, eventId, userId: app.userId, applicationId, invitationId, paymentId: null, status: 'paid', ticketSource: 'comp', issuedAt: now, updatedAt: now, checkedInAt: null, waiverSignedAt: null, waiverVersion: null, waiverTextHash: null };
     await blobStore(STORES.invitations).setJSON(eventKey(eventId, invitationId), { invitationId, eventId, applicationId, userId: app.userId, email: app.email, label: `Comp - ${app.fullName}`, createdAt: now, expiresAt: event.startsAt, maxTickets: 1, codeHash: null, status: 'fulfilled', redeemedAt: null, revokedAt: null, purchaseCount: 1, fulfilledAt: now, comp: true });
     await blobStore(STORES.tickets).setJSON(eventKey(eventId, ticketId), ticket);
     await Promise.all([blobStore(STORES.ticketIndexes).setJSON(eventKey(eventId, `invitation/${invitationId}`), { ticketId, eventId, createdAt: now }), blobStore(STORES.ticketIndexes).setJSON(eventKey(eventId, `user/${app.userId}`), { ticketId, eventId, userId: app.userId, createdAt: now })]);
@@ -175,6 +179,7 @@ export default async (req) => {
     const refund = await stripePost('refunds', { payment_intent: payment.stripePaymentIntentId, reason: 'requested_by_customer', 'metadata[event_id]': eventId, 'metadata[admin_action]': 'admission_refund' }, `wildones-admin-admission-refund-${payment.paymentId}`);
     await blobStore(STORES.tickets).setJSON(eventKey(eventId, ticket.ticketId), { ...ticket, status: 'refunded', refundedAt: now, refundId: refund.id, updatedAt: now });
     await payments.setJSON(paymentKey, { ...payment, status: 'refunded', refundedAt: now, refundId: refund.id, updatedAt: now });
+    await releaseAdmission({eventId,invitationId:ticket.invitationId,sessionId:ticket.paymentId,issued:true});
     await writeAudit({ eventId, action: 'ticket.refunded', actor: 'admin', targetType: 'ticket', targetId: ticket.ticketId, detail: { paymentId: payment.paymentId, refundId: refund.id } });
     return json({ ok: true, refundId: refund.id });
   }
