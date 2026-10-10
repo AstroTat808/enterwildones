@@ -128,7 +128,7 @@ async function snapshot(event) {
       invitations: invites.length,
       invitationEmailsSent: apps.filter((app) => app.invitationEmailSentAt).length,
       activeTickets: activeTickets.length,
-      inventoryOccupiedTickets: tickets.filter((ticket) => ['paid', 'checked_in', 'disputed'].includes(ticket.status)).length,
+      inventoryOccupiedTickets: tickets.filter((ticket) => ['paid', 'checked_in', 'disputed', 'refund_pending'].includes(ticket.status)).length,
       checkedIn: checked,
       unsignedWaivers: Math.max(0, activeTickets.length - signed),
       signedWaivers: signed,
