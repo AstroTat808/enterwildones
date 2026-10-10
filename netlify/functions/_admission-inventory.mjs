@@ -4,7 +4,6 @@ import { requireEvent } from './_events.mjs';
 
 // A relational row lock serializes every seat mutation for the same realm.
 // Netlify Blobs and read-then-write counters cannot guarantee no overselling.
-const VALID_STATES = new Set(['held', 'issued', 'released']);
 const MAX_CAPACITY = 100000;
 
 export class AdmissionInventoryError extends Error {
@@ -91,10 +90,9 @@ export async function reserveAdmission({ eventId, invitationId, userId, expiresA
     const row = existing.rows[0];
     if (row && row.user_id !== userId) throw new AdmissionInventoryError('RESERVATION_IDENTITY_MISMATCH', 'Reservation identity does not match.');
     if (row?.status === 'issued') throw new AdmissionInventoryError('ADMISSION_ALREADY_ISSUED', 'This invitation already has admission.');
-    if (row?.status === 'held' && row.session_id) {
-      throw new AdmissionInventoryError('CHECKOUT_IN_PROGRESS', 'An earlier checkout must finish or expire before retrying.');
+    if (row?.status === 'held') {
+      throw new AdmissionInventoryError('CHECKOUT_IN_PROGRESS', 'An earlier checkout must be verified or expire before trying again.');
     }
-    if (row?.status === 'held') return { reused: true, capacity, available: Math.max(0, capacity - used) };
     if (used >= capacity) throw new AdmissionInventoryError('SOLD_OUT', 'All admission places are reserved or sold.');
     if (row) {
       await client.query(
@@ -118,7 +116,7 @@ export async function attachAdmissionSession({ eventId, invitationId, userId, se
   if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId || '')) throw new AdmissionInventoryError('INVALID_SESSION', 'Invalid Stripe session.', 400);
   return withLockedEvent(eventId, false, async (client) => {
     const rows = await client.query(
-      "UPDATE wildones_admission_reservations SET session_id=$4, updated_at=NOW() WHERE event_id=$1 AND invitation_id=$2 AND user_id=$3 AND status='held' AND (session_id IS NULL OR session_id=$4) RETURNING invitation_id",
+      "UPDATE wildones_admission_reservations SET session_id=$4, updated_at=NOW() WHERE event_id=$1 AND invitation_id=$2 AND user_id=$3 AND (status='held' OR (status='issued' AND session_id=$4)) AND (session_id IS NULL OR session_id=$4) RETURNING invitation_id",
       [eventId, invitationId, userId, sessionId]
     );
     if (!rows.rowCount) throw new AdmissionInventoryError('RESERVATION_MISSING', 'Reservation no longer matches checkout.');
@@ -139,7 +137,10 @@ export async function issueAdmission({ eventId, invitationId, userId, sessionId 
     if (!row || row.user_id !== userId || row.status === 'released' || (row.session_id && row.session_id !== sessionId)) {
       throw new AdmissionInventoryError('RESERVATION_MISSING', 'Paid checkout has no matching active admission reservation.');
     }
-    if (row.status === 'issued') return { alreadyIssued: true };
+    if (row.status === 'issued') {
+      if (row.session_id !== sessionId) throw new AdmissionInventoryError('ADMISSION_ALREADY_ISSUED', 'This admission belongs to another checkout.');
+      return { alreadyIssued: true };
+    }
     await client.query(
       "UPDATE wildones_admission_reservations SET status='issued',session_id=$3,updated_at=NOW() WHERE event_id=$1 AND invitation_id=$2",
       [eventId, invitationId, sessionId]
@@ -155,10 +156,45 @@ export async function releaseAdmission({ eventId, invitationId, sessionId = null
   return withLockedEvent(eventId, false, async (client) => {
     const state = issued ? 'issued' : 'held';
     const rows = await client.query(
-      "UPDATE wildones_admission_reservations SET status='released',updated_at=NOW() WHERE event_id=$1 AND invitation_id=$2 AND status=$3 AND (($4::text IS NULL AND session_id IS NULL) OR session_id=$4 OR $5::boolean) RETURNING invitation_id",
-      [eventId, invitationId, state, sessionId, issued]
+      "UPDATE wildones_admission_reservations SET status='released',updated_at=NOW() WHERE event_id=$1 AND invitation_id=$2 AND status=$3 AND (($4::text IS NULL AND session_id IS NULL) OR session_id=$4) RETURNING invitation_id",
+      [eventId, invitationId, state, sessionId]
     );
     return rows.rowCount > 0;
+  });
+}
+
+
+/** Allocate a complementary admission in the same inventory as paid checkout. */
+export async function issueCompAdmission({ eventId, invitationId, userId, expiresAt }) {
+  if (!invitationId || !userId || !Number.isFinite(Date.parse(expiresAt))) {
+    throw new AdmissionInventoryError('INVALID_COMP', 'Invalid comp admission identity.', 400);
+  }
+  return withLockedEvent(eventId, true, async (client, { capacity, used }) => {
+    const found = await client.query(
+      'SELECT status,user_id FROM wildones_admission_reservations WHERE event_id=$1 AND invitation_id=$2 FOR UPDATE',
+      [eventId, invitationId]
+    );
+    const row = found.rows[0];
+    if (row?.user_id !== undefined && row.user_id !== userId) {
+      throw new AdmissionInventoryError('RESERVATION_IDENTITY_MISMATCH', 'The comp identity does not match.');
+    }
+    if (row?.status === 'issued') return { alreadyIssued: true };
+    if (row?.status === 'held') {
+      throw new AdmissionInventoryError('CHECKOUT_IN_PROGRESS', 'A paid reservation must finish before granting a comp.');
+    }
+    if (used >= capacity) throw new AdmissionInventoryError('SOLD_OUT', 'No admissions remain, including complimentary admission.');
+    if (row) {
+      await client.query(
+        "UPDATE wildones_admission_reservations SET status='issued',session_id=NULL,user_id=$3,expires_at=$4,updated_at=NOW() WHERE event_id=$1 AND invitation_id=$2",
+        [eventId, invitationId, userId, expiresAt]
+      );
+    } else {
+      await client.query(
+        "INSERT INTO wildones_admission_reservations(event_id,invitation_id,user_id,status,expires_at) VALUES ($1,$2,$3,'issued',$4)",
+        [eventId, invitationId, userId, expiresAt]
+      );
+    }
+    return { alreadyIssued: false };
   });
 }
 
@@ -173,6 +209,9 @@ export async function getAdmissionInventory(eventId) {
   if (!configuredCapacity) return { ...empty, error: 'Ticket capacity has not been approved.' };
   let pool;
   try {
+    // Initialize the capacity row only after migration 003 is installed.
+    // This does not issue a ticket or open sales.
+    await withLockedEvent(eventId, true, async () => true);
     pool = connection();
     const r = await pool.query(
       "SELECT c.capacity, COUNT(r.invitation_id) FILTER (WHERE r.status='held')::integer AS held, COUNT(r.invitation_id) FILTER (WHERE r.status='issued')::integer AS issued FROM wildones_event_capacity c LEFT JOIN wildones_admission_reservations r ON r.event_id=c.event_id WHERE c.event_id=$1 GROUP BY c.event_id,c.capacity",
