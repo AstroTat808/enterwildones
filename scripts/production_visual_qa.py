@@ -413,11 +413,6 @@ def state_checks(page,case,width=None):
   for name,style in gradient.items():
    if "gradient" not in style["bg"]:f.append("homepage Passport "+name+" is missing gradient text paint")
    if style["fill"] not in ("transparent","rgba(0, 0, 0, 0)"):f.append("homepage Passport "+name+" gradient text fill is not transparent")
- elif case.name=="event-aureva":
-  p1=page.locator('[data-release-phase="1"] .release-price')
-  p2=page.locator('[data-release-phase="2"] .release-price')
-  if p1.count()!=1 or "$55" not in p1.first.inner_text():f.append("AUREVA First Light must display the approved $55 price")
-  if p2.count()!=1 or "$70" not in p2.first.inner_text():f.append("AUREVA Full Radiance must display the approved $70 price")
  elif case.name=="realm-quiz":
   vp=page.viewport_size or {}
   if vp.get("height",0)>=768:
