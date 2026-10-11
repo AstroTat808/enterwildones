@@ -2,7 +2,7 @@
 
 **Campaign status:** APPROVED COPY; NOT PUBLISHED / NOT SENT. Requires release-owner approval and live launch certification before sales-specific materials are scheduled.
 
-**Production event information:** Saturday, December 12, 2026, 3:00 PM HST through Sunday, December 13, 2026, 3:00 AM HST. 21+. Hawaiʻi Island. Location undisclosed to the public; provided only through authorized ticket access. AUREVA is application / approved-invitation access, not general public checkout.
+**Production event information:** Saturday, December 19, 2026, 3:00 PM HST through Sunday, December 20, 2026, 3:00 AM HST. 21+. Hawaiʻi Island. Location undisclosed to the public; provided only through authorized ticket access. AUREVA is application / approved-invitation access, not general public checkout.
 
 **Owner-approved ticket prices (not all-in totals):**
 
@@ -46,7 +46,7 @@ AUREVA is awakening. ✨
 
 **REALM I · LIGHT**
 
-December 12, 2026 · Hawaiʻi Island.
+December 19, 2026 · Hawaiʻi Island.
 
 A world of luminous sound, immersive energy and the first chapter of the Four Realms cycle.
 
@@ -63,7 +63,7 @@ The admission journey begins with an application. **FIRST LIGHT — $55** and **
 **THE FIRST REALM IS OPENING.**
 
 AUREVA · REALM I / LIGHT  
-December 12, 2026 · Hawaiʻi Island
+December 19, 2026 · Hawaiʻi Island
 
 **FIRST LIGHT RELEASE — $55**  
 Available to approved guests through **October 15, 11:59 PM HST**.
@@ -86,7 +86,7 @@ Approved and holding an invitation? Redeem it before the price transition.
 
 → EnterWildOnes.com/invite
 
-December 12, 2026 · Hawaiʻi Island · 21+ · Private venue details after authorized ticket access.
+December 19, 2026 · Hawaiʻi Island · 21+ · Private venue details after authorized ticket access.
 
 Do not publish if First Light sales never opened or capacity has sold out.
 
@@ -95,7 +95,7 @@ Do not publish if First Light sales never opened or capacity has sold out.
 **THE LIGHT GROWS STRONGER.**
 
 AUREVA · REALM I / LIGHT  
-December 12, 2026 · Hawaiʻi Island
+December 19, 2026 · Hawaiʻi Island
 
 **FULL RADIANCE — $70** admission for approved guests.
 
@@ -107,7 +107,7 @@ Already invited? Redeem your pass. Not yet approved? Request Passage at EnterWil
 
 ### Compact caption — X / Threads / venue-partner repost (STATE A)
 
-AUREVA · Realm I / Light · Dec 12, Hawaiʻi Island. FIRST LIGHT $55 / FULL RADIANCE $70 planned admission releases. Applications open; paid checkout has not opened. 21+ · Private location · Request Passage: https://enterwildones.com/apply/aureva
+AUREVA · Realm I / Light · Dec 19, Hawaiʻi Island. FIRST LIGHT $55 / FULL RADIANCE $70 planned admission releases. Applications open; paid checkout has not opened. 21+ · Private location · Request Passage: https://enterwildones.com/apply/aureva
 
 ---
 
@@ -119,11 +119,11 @@ AUREVA · Realm I / Light · Dec 12, Hawaiʻi Island. FIRST LIGHT $55 / FULL RAD
 | --- | --- | --- | --- |
 | 00–04 | A lone silhouette moves toward a distant white-gold gate; slow push in | ENTER WILD ONES | Airy cinematic pulse |
 | 04–08 | AUREVA gate grows; luminous particles emerge | REALM I · LIGHT | Rising harmonic layers |
-| 08–12 | The figure approaches and the portal washes the frame in light | AUREVA · DECEMBER 12 | Bass swell |
+| 08–12 | The figure approaches and the portal washes the frame in light | AUREVA · DECEMBER 19 | Bass swell |
 | 12–16 | White-gold burst, then elegant logo reveal, no rapid strobing | FIRST LIGHT $55 / FULL RADIANCE $70 | Impact and resolved melody |
 | 16–20 | Event web address and CTA, ample safe-zone margin | APPLICATIONS OPEN · REQUEST PASSAGE · ENTERWILDONES.COM | Sound tail / brand sting |
 
-Voiceover option: "The first gate opens in light. AUREVA. December twelfth. The first realm of Enter Wild Ones. Request your passage."
+Voiceover option: "The first gate opens in light. AUREVA. December nineteenth. The first realm of Enter Wild Ones. Request your passage."
 
 **18-second approved-sales variation — STATE B ONLY:** Use the same first 13 seconds. Final 5 seconds: "FIRST LIGHT $55 · ENDS OCT 15, 11:59 PM HST" and "APPROVED INVITATIONS · ENTERWILDONES.COM." Never use the sales variation unless checkout is actually GO and First Light is still active.
 
@@ -137,13 +137,13 @@ Artist/DJ footage must be licensed or approved; no invented lineup. Favor reduce
 
 ### Applications open / sales closed (STATE A)
 
-**Frame 1:** AUREVA · REALM I / LIGHT / DEC 12 · HAWAIʻI ISLAND  
+**Frame 1:** AUREVA · REALM I / LIGHT / DEC 19 · HAWAIʻI ISLAND  
 **Frame 2:** FIRST LIGHT **$55** → FULL RADIANCE **$70** / Planned admission releases  
 **Frame 3:** APPLICATIONS OPEN / REQUEST PASSAGE / EnterWildOnes.com/apply/aureva / 21+ · Approved invitations
 
 ### First Light launch (STATE B ONLY)
 
-**Frame 1:** THE GATE IS OPENING / AUREVA · DEC 12  
+**Frame 1:** THE GATE IS OPENING / AUREVA · DEC 19  
 **Frame 2:** FIRST LIGHT **$55** / ENDS OCT 15 · 11:59 PM HST  
 **Frame 3:** APPROVED INVITATIONS / REDEEM YOUR INVITE / EnterWildOnes.com/invite
 
@@ -162,11 +162,11 @@ Use a verified Enter Wild Ones sending domain; do not send from an unrelated Koa
 ### Email A — Applications open; sales not live (STATE A)
 
 **Subject:** AUREVA | The First Realm Awaits  
-**Preheader:** December 12 on Hawaiʻi Island. First Light $55; Full Radiance $70.
+**Preheader:** December 19 on Hawaiʻi Island. First Light $55; Full Radiance $70.
 
 AUREVA is the beginning.
 
-On December 12, the first realm of Enter Wild Ones emerges on Hawaiʻi Island—a gathering shaped by luminous sound, connection and a world beyond the ordinary.
+On December 19, the first realm of Enter Wild Ones emerges on Hawaiʻi Island—a gathering shaped by luminous sound, connection and a world beyond the ordinary.
 
 **FIRST LIGHT RELEASE — $55**  
 **FULL RADIANCE — $70**
@@ -176,7 +176,7 @@ These are the planned admission releases. **Ticket checkout has not opened yet.*
 **REQUEST PASSAGE:** https://enterwildones.com/apply/aureva
 
 AUREVA · Realm I / Light  
-Saturday, December 12, 2026 · 3:00 PM–3:00 AM HST  
+Saturday, December 19, 2026 · 3:00 PM–3:00 AM HST  
 Hawaiʻi Island · Ages 21+  
 Venue address shared through authorized ticket access.
 
@@ -192,7 +192,7 @@ Include the platform's working unsubscribe and sender-address footer before any 
 The first light has arrived.
 
 **AUREVA · REALM I / LIGHT**  
-**December 12, 2026 · Hawaiʻi Island**
+**December 19, 2026 · Hawaiʻi Island**
 
 First Light admission is now **$55** for approved guests through **Thursday, October 15 at 11:59 PM HST**. Full Radiance follows at **$70**, beginning Friday, October 16.
 
@@ -215,19 +215,19 @@ If you are approved and have an active AUREVA invitation, **$55 admission ends t
 
 **REDEEM YOUR INVITATION:** https://enterwildones.com/invite
 
-AUREVA · December 12 · Hawaiʻi Island · 21+  
+AUREVA · December 19 · Hawaiʻi Island · 21+  
 Do not send if sales were never opened or if First Light has sold out.
 
 ### Email D — Full Radiance now available (STATE C ONLY)
 
 **Subject:** AUREVA | Full Radiance Has Begun — $70  
-**Preheader:** Realm I opens December 12. Request passage or redeem your approved invitation.
+**Preheader:** Realm I opens December 19. Request passage or redeem your approved invitation.
 
 The light is growing.
 
 **FULL RADIANCE admission is now $70** for approved AUREVA guests. First Light has closed.
 
-AUREVA brings Realm I to life on December 12, on Hawaiʻi Island. To join, request passage; approved applicants receive access to the secure invitation checkout.
+AUREVA brings Realm I to life on December 19, on Hawaiʻi Island. To join, request passage; approved applicants receive access to the secure invitation checkout.
 
 **REQUEST PASSAGE:** https://enterwildones.com/apply/aureva  
 **REDEEM INVITATION:** https://enterwildones.com/invite
@@ -238,11 +238,11 @@ AUREVA brings Realm I to life on December 12, on Hawaiʻi Island. To join, reque
 
 ## 5. SMS / direct message (only to opted-in recipients)
 
-**STATE A:** "AUREVA · Dec 12, Hawaiʻi Island (21+). Planned admission: First Light $55 / Full Radiance $70. Applications open; tickets not yet on sale. Request Passage: enterwildones.com/apply/aureva"
+**STATE A:** "AUREVA · Dec 19, Hawaiʻi Island (21+). Planned admission: First Light $55 / Full Radiance $70. Applications open; tickets not yet on sale. Request Passage: enterwildones.com/apply/aureva"
 
 **STATE B ONLY:** "AUREVA First Light is live for approved guests: $55 until Oct 15, 11:59 PM HST; Full Radiance is $70 Oct 16. Redeem your invite: enterwildones.com/invite"
 
-**STATE C ONLY:** "AUREVA Full Radiance $70 is now available for approved guests. Dec 12, Hawaiʻi Island (21+). Request Passage: enterwildones.com/apply/aureva"
+**STATE C ONLY:** "AUREVA Full Radiance $70 is now available for approved guests. Dec 19, Hawaiʻi Island (21+). Request Passage: enterwildones.com/apply/aureva"
 
 Always comply with opt-in, consent withdrawal and applicable text-messaging rules. These are drafts, not an authorization to send.
 
@@ -254,9 +254,9 @@ Existing repository source art: high-resolution AUREVA logo under site/assets/im
 | --- | --- | --- | --- | --- |
 | Instagram feed portrait | 1080 × 1350 | AUREVA / REALM I · LIGHT | FIRST LIGHT $55 · FULL RADIANCE $70 | APPLICATIONS OPEN · REQUEST PASSAGE |
 | Instagram / Facebook square | 1080 × 1080 | ENTER THE LIGHT | $55 → $70 | ENTERWILDONES.COM |
-| Reel / TikTok story | 1080 × 1920 | AUREVA · DEC 12 | $55 / $70 (not a live buy signal) | REQUEST PASSAGE · 21+ |
-| Landscape social / teaser | 1920 × 1080 | REALM I · LIGHT | FIRST LIGHT $55 · FULL RADIANCE $70 | DEC 12 · HAWAIʻI ISLAND |
-| Open Graph card | 1200 × 630 | AUREVA · ENTER WILD ONES | Avoid current-phase badge that will expire Oct 15 | DEC 12 · 21+ |
+| Reel / TikTok story | 1080 × 1920 | AUREVA · DEC 19 | $55 / $70 (not a live buy signal) | REQUEST PASSAGE · 21+ |
+| Landscape social / teaser | 1920 × 1080 | REALM I · LIGHT | FIRST LIGHT $55 · FULL RADIANCE $70 | DEC 19 · HAWAIʻI ISLAND |
+| Open Graph card | 1200 × 630 | AUREVA · ENTER WILD ONES | Avoid current-phase badge that will expire Oct 15 | DEC 19 · 21+ |
 
 Use the approved logo, authentic source footage only with permission, generous title/logo safe areas, legible 21+ notes, and consistent capitalization. **No false "TICKETS ON SALE" badge** on any prelaunch graphic. Treat the graphic overlays above as production copy specifications, not as already-created images.
 
