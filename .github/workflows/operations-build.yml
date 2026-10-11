@@ -12,6 +12,11 @@ on:
       - '.github/workflows/operations-build.yml'
 permissions:
   contents: read
+# Preserve the latest operations QA per PR without wasting runner minutes.
+concurrency:
+  group: operations-build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
