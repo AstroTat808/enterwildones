@@ -1,7 +1,7 @@
 # AUREVA 2026 — Launch certification and first-sales campaign
 
 **Realm:** AUREVA · Realm I / Light  
-**Event:** Saturday December 12, 2026, 3:00 PM HST to Sunday December 13, 3:00 AM HST  
+**Event:** Saturday December 19, 2026, 3:00 PM HST to Sunday December 20, 3:00 AM HST  
 **Decision:** NO-GO until every hard gate has been independently verified; never enable paid admission to bypass an incomplete gate.
 
 ## 1. Release ownership and invariants
@@ -120,7 +120,7 @@
 ### Copy starter (edit after pricing and GO)
 > **AUREVA · REALM I / LIGHT**
 > 
-> The first realm begins December 12 on Hawai‘i Island. Twelve hours of sound, light and the Wild Ones universe. Ages 21+. Location disclosed to eligible ticket holders. Request passage at EnterWildOnes.com.
+> The first realm begins December 19 on Hawai‘i Island. Twelve hours of sound, light and the Wild Ones universe. Ages 21+. Location disclosed to eligible ticket holders. Request passage at EnterWildOnes.com.
 >
 > **Approved invitations only.** First Light admission is $55 through October 15, 11:59 PM HST **if** certification is complete and sales are open; Full Radiance is $70 afterward.
 
