@@ -10,13 +10,15 @@
 - [ ] Confirm the approved attendee-only capacity for AUREVA, separate from staff, performers, vendors and production crew. The broader Wild Ones venue target of 350 is **not** automatically AUREVA's authorized ticket capacity.
 - [ ] Set `WILDONES_AUREVA_2026_TICKET_CAPACITY` to that approved integer in **Netlify production Functions**, not in source code.
 - [ ] Apply `netlify/database/migrations/003_admission-capacity/migration.sql` on a disposable Neon branch first; test all constraints and transaction behavior, then apply it to production Neon, retaining a rollback/recovery plan.
-- [ ] Reconcile all existing paid, comp and disputed tickets into the new inventory before opening admission. Launch Control must show **Issued = active + disputed ticket records**; investigate any divergence.
+- [ ] In the authenticated `/admin/launch` dashboard, enter the approved event capacity and run **Commission admission inventory**. This is an explicit, audited, one-time server-side operation; it atomically backfills matching paid, comp, disputed and pending-refund tickets. Sales must still be closed.
+- [ ] Do not attempt to force `commissioned=true` manually: the commissioning endpoint rejects outstanding checkout holds, mismatched payment/guest IDs, duplicate active user records, and unreconciled previously issued seats.
+- [ ] Reconcile all existing paid, comp, pending-refund and disputed tickets into the new inventory before opening admission. Launch Control must show **Issued = active + disputed + pending-refund ticket records**; investigate any divergence.
 - [ ] Preserve `ticketSalesOpen:false` until all sections below pass and the formal GO decision is recorded.
 - [ ] Keep HALORA, SUNVEIL and NOCTURNE admission gates closed.
 
 ### Admission and inventory acceptance criteria
 
-- [ ] Capacity is **database enforced**, not a UI counter. Every checkout reserves a seat inside a Postgres transaction with an event row lock.
+- [ ] Capacity is **database enforced**, not a UI counter. Every checkout reserves a seat inside a Postgres transaction with an event row lock. The inventory starts uncommissioned and blocks every paid and comp reservation until an explicit historical ticket reconciliation succeeds.
 - [ ] Paid checkouts, approval-only invitations and complimentary tickets all consume the same event capacity. Holding a place never itself issues a ticket.
 - [ ] Concurrent requests for the last place produce exactly one reservation; the others receive SOLD_OUT or CHECKOUT_IN_PROGRESS.
 - [ ] A valid pending Stripe session keeps its seat; time passing alone never releases a hold. Verified `checkout.session.expired`, definitive asynchronous payment failure, or a completed refund safely releases it.
