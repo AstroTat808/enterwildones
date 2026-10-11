@@ -57,7 +57,7 @@ try {
   for (const token of ['CREATE TABLE IF NOT EXISTS wildones_event_capacity','wildones_admission_reservations','UNIQUE INDEX','status IN (\'held\',\'issued\')']) {
     assert.ok(migration.includes(token),`Missing relational safety contract: ${token}`);
   }
-  for (const token of ['FOR UPDATE','reserveAdmission','issueAdmission','issueCompAdmission','releaseAdmission','CAPACITY_UNCONFIGURED','SOLD_OUT','DUPLICATE_ADMISSION']) {
+  for (const token of ['FOR UPDATE','reserveAdmission','issueAdmission','issueCompAdmission','releaseAdmission','commissionAdmissionInventory','INVENTORY_NOT_COMMISSIONED','CAPACITY_UNCONFIGURED','SOLD_OUT','DUPLICATE_ADMISSION']) {
     assert.ok(inventory.includes(token),`Missing inventory contract: ${token}`);
   }
   for (const token of ['reserveAdmission(','attachAdmissionSession(','releaseAdmission(']) {
@@ -69,7 +69,10 @@ try {
   assert.ok(operations.includes('await issueCompAdmission('),'Complimentary tickets must consume capacity');
   assert.ok(operations.includes('await releaseAdmission('),'Admin refunds must release capacity');
   assert.ok(readiness.includes('inventoryReconciled')&&readiness.includes('ticketPricingSchedule(eventId)'),'Launch must fail closed for capacity or incomplete tiers');
-  assert.ok(dashboard.includes('Ticket capacity')&&dashboard.includes('Available seats'),'Admin dashboard must present inventory');
+  assert.ok(dashboard.includes('Ticket capacity')&&dashboard.includes('Available seats')&&dashboard.includes('commission_inventory'),'Admin dashboard must present inventory and audited commissioning');
+  assert.ok(readiness.includes('commissionAdmissionInventory')&&readiness.includes('commission_inventory')&&readiness.includes('COMMISSION '),'Admin commissioning requires explicit authorization and reconciliation');
+  assert.ok(migration.includes('commissioned BOOLEAN NOT NULL DEFAULT FALSE'),'Inventory must be uncommissioned by default');
+  assert.ok(checkout.includes('pricing_incomplete'),'Incomplete price phases must fail checkout closed');
   console.log('AUREVA admission/price contract checks passed. Requires Neon concurrency/integration certification before production GO.');
 } finally {
   for (const [key,value] of original) { if (value === undefined) delete process.env[key]; else process.env[key]=value; }
