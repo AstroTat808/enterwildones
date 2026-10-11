@@ -46,9 +46,13 @@ jobs:
           set -euo pipefail
           echo "Waiting for Production QA Gate on $TARGET_SHA"
           for attempt in $(seq 1 120); do
-            payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100")"
-            status="$(jq -r '[.check_runs[] | select(.name=="Production QA Gate")] | sort_by(.started_at) | last | .status // "missing"' <<<"$payload")"
-            conclusion="$(jq -r '[.check_runs[] | select(.name=="Production QA Gate")] | sort_by(.started_at) | last | .conclusion // "pending"' <<<"$payload")"
+            if ! payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100" 2>/dev/null)"; then
+              echo "::warning::GitHub Checks API temporarily unavailable, retrying attempt $attempt."
+              sleep 10
+              continue
+            fi
+            status="$(jq -r '[.check_runs[] | select(.name=="Production QA Gate")] | max_by(.id) | .status // "missing"' <<<"$payload")"
+            conclusion="$(jq -r '[.check_runs[] | select(.name=="Production QA Gate")] | max_by(.id) | .conclusion // "pending"' <<<"$payload")"
             echo "Production QA Gate: $status / $conclusion"
             if [ "$status" = "completed" ]; then
               test "$conclusion" = "success"
@@ -139,9 +143,13 @@ jobs:
           set -euo pipefail
           echo "Waiting for hosted security smoke on $TARGET_SHA"
           for attempt in $(seq 1 120); do
-            payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100")"
-            status="$(jq -r '[.check_runs[] | select(.name=="Production HTTP + security smoke")] | sort_by(.started_at) | last | .status // "missing"' <<<"$payload")"
-            conclusion="$(jq -r '[.check_runs[] | select(.name=="Production HTTP + security smoke")] | sort_by(.started_at) | last | .conclusion // "pending"' <<<"$payload")"
+            if ! payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100" 2>/dev/null)"; then
+              echo "::warning::GitHub Checks API temporarily unavailable, retrying attempt $attempt."
+              sleep 10
+              continue
+            fi
+            status="$(jq -r '[.check_runs[] | select(.name=="Production HTTP + security smoke")] | max_by(.id) | .status // "missing"' <<<"$payload")"
+            conclusion="$(jq -r '[.check_runs[] | select(.name=="Production HTTP + security smoke")] | max_by(.id) | .conclusion // "pending"' <<<"$payload")"
             echo "Production security smoke: $status / $conclusion"
             if [ "$status" = "completed" ]; then
               test "$conclusion" = "success"
@@ -176,13 +184,17 @@ jobs:
             "staff · webkit"
           )
           for attempt in $(seq 1 180); do
-            payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100")"
+            if ! payload="$(gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/check-runs?per_page=100" 2>/dev/null)"; then
+              echo "::warning::GitHub Checks API temporarily unavailable, retrying attempt $attempt."
+              sleep 10
+              continue
+            fi
             all_complete=true
             any_failed=false
             echo "Hosted browser matrix status:"
             for name in "${expected[@]}"; do
-              status="$(jq -r --arg name "$name" '[.check_runs[] | select(.name==$name)] | sort_by(.started_at) | last | .status // "missing"' <<<"$payload")"
-              conclusion="$(jq -r --arg name "$name" '[.check_runs[] | select(.name==$name)] | sort_by(.started_at) | last | .conclusion // "pending"' <<<"$payload")"
+              status="$(jq -r --arg name "$name" '[.check_runs[] | select(.name==$name)] | max_by(.id) | .status // "missing"' <<<"$payload")"
+              conclusion="$(jq -r --arg name "$name" '[.check_runs[] | select(.name==$name)] | max_by(.id) | .conclusion // "pending"' <<<"$payload")"
               echo "  $name: $status / $conclusion"
               if [ "$status" != "completed" ]; then all_complete=false; fi
               if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then any_failed=true; fi
