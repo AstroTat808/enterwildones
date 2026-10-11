@@ -3,6 +3,11 @@ on:
   pull_request:
   push:
     branches: [main]
+# Cancel superseded PR/push builds; never cancel unrelated branches.
+concurrency:
+  group: build-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -8,6 +8,11 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/production-visual-qa.yml'
+      - '.github/workflows/build-check.yml'
+      - '.github/workflows/launch-certification.yml'
+      - '.github/workflows/operations-build.yml'
+      - '.github/workflows/runner-dispatch-diagnostic.yml'
+      - '.github/workflows/release-certification.yml'
       - 'site/**'
       - 'netlify/functions/**'
       - 'netlify.toml'
@@ -21,6 +26,11 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/production-visual-qa.yml'
+      - '.github/workflows/build-check.yml'
+      - '.github/workflows/launch-certification.yml'
+      - '.github/workflows/operations-build.yml'
+      - '.github/workflows/runner-dispatch-diagnostic.yml'
+      - '.github/workflows/release-certification.yml'
       - 'site/**'
       - 'netlify/functions/**'
       - 'netlify.toml'

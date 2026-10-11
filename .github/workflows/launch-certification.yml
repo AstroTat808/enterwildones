@@ -22,6 +22,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# Older certification runs become obsolete when the same branch is updated.
+concurrency:
+  group: launch-certification-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   certify:
     runs-on: ubuntu-latest

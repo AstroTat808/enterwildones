@@ -238,9 +238,9 @@ def state_checks(page,case,width=None):
   # Wait for the canonical branding initializer before measuring geometry, then
   # force a known expanded starting state. This prevents route/load timing from
   # contaminating the compact-state assertion in the broader browser matrix.
-  page.wait_for_function("document.body.classList.contains('wo-guest-masthead')",timeout=10000)
-  page.evaluate("window.scrollTo(0,0);document.body.classList.remove('masthead-scrolled')")
-  page.wait_for_function("window.scrollY < 2 && !document.body.classList.contains('masthead-scrolled')",timeout=5000)
+  page.locator("body.wo-guest-masthead").wait_for(state="attached",timeout=10000)
+  page.evaluate("window.scrollTo({top:0,behavior:'instant'});document.body.classList.remove('masthead-scrolled')")
+  page.locator("body.wo-guest-masthead:not(.masthead-scrolled)").wait_for(state="attached",timeout=5000)
   page.wait_for_timeout(220)
   metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
@@ -285,7 +285,7 @@ def state_checks(page,case,width=None):
    if(max>90)window.scrollTo(0,Math.min(160,max));
    else document.body.classList.add('masthead-scrolled');
   }""")
-  page.wait_for_function("document.body.classList.contains('masthead-scrolled')",timeout=5000)
+  page.locator("body.masthead-scrolled").wait_for(state="attached",timeout=5000)
   page.wait_for_timeout(360)
   compact_metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
@@ -519,13 +519,17 @@ def browser_mode(suite,browser_name):
      height=page.evaluate("document.documentElement.scrollHeight")
      for y in range(0,int(height),700):page.evaluate("y=>window.scrollTo(0,y)",y);page.wait_for_timeout(25)
      page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(100)
-     images_ready=True
-     try:
-      page.wait_for_function("""() => {
+     # Keep the deployed strict CSP intact. Browser-side predicate compilation
+     # requires unsafe-eval; protocol-backed page.evaluate does not.
+     images_ready=False
+     ready_deadline=time.monotonic()+10.0
+     while time.monotonic()<ready_deadline:
+      images_ready=bool(page.evaluate("""() => {
  const vis=e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&+s.opacity!==0&&r.width>0&&r.height>0};
  return [...document.images].filter(vis).every(i=>i.complete&&i.naturalWidth>0);
-}""",timeout=10000)
-     except Exception:images_ready=False
+}"""))
+      if images_ready:break
+      page.wait_for_timeout(160)
      checks=state_checks(page,case,w)
      if not images_ready:checks.append("visible images did not finish decoding within 10 seconds")
      audit=dom(page);menu=mobile_menu(page,w)
