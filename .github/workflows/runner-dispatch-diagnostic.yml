@@ -1,0 +1,39 @@
+name: Runner Dispatch Diagnostic
+
+# Isolates GitHub-hosted runner allocation from application build, checkout,
+# dependencies, secrets, browser installations and Netlify.
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/runner-dispatch-diagnostic.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runner-dispatch-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    name: Runner allocation - ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 2
+    steps:
+      - name: Prove GitHub assigned a runner and executed a step
+        shell: bash
+        run: |
+          printf 'RUNNER_OK os=%s runner=%s job=%s\n' "$RUNNER_OS" "$RUNNER_NAME" "$GITHUB_JOB"
+          printf 'github_run_id=%s\n' "$GITHUB_RUN_ID"
+          {
+            echo "### Runner assignment proven"
+            echo "Platform: $RUNNER_OS"
+            echo "Runner name: $RUNNER_NAME"
+            echo "This job requires no checkout, secrets, package installation, or external API."
+          } >> "$GITHUB_STEP_SUMMARY"
