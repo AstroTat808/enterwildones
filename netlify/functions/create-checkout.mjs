@@ -4,7 +4,7 @@ import { resolveEvent } from './_events.mjs';
 import { readInviteAccess } from './_invitations.mjs';
 import { checkoutAllowed } from './_checkout-access.mjs';
 import { makeCheckoutReturn } from './_checkout-return.mjs';
-import { currentTicketOffer, ticketPriceEnv, ticketProductName, loadInvitation, existingTicketForInvitation, existingTicketForUser, finalizePaidSession } from './_payments.mjs';
+import { currentTicketOffer, ticketPricingSchedule, ticketPriceEnv, ticketProductName, loadInvitation, existingTicketForInvitation, existingTicketForUser, finalizePaidSession } from './_payments.mjs';
 import { makeTicketToken } from './_ticket-token.mjs';
 import { json, readBody } from './_response.mjs';
 import { sameOrigin } from './_security.mjs';
@@ -53,6 +53,11 @@ export default async (req) => {
   if (!event || event.visibility !== 'public') return json({ error: 'Event not found.' }, 404);
   if (Date.now() >= new Date(event.endsAt).getTime()) return json({ error: `Ticket sales for ${event.name} have ended.`, code: 'sales_ended' }, 403);
 
+  const schedule = ticketPricingSchedule(event.eventId);
+  const hasPhaseSettings = schedule.phases.some((phase) => phase.name || phase.priceCents || phase.endsAt);
+  if ((hasPhaseSettings && (!schedule.tiered || !schedule.complete))) {
+    return json({error: 'This event pricing schedule is incomplete. Ticket sales are not available.', code: 'pricing_incomplete'}, 503);
+  }
   const offer = currentTicketOffer(event.eventId);
   const price = offer?.priceCents || null;
   if (!price) return json({ error: `Ticket price is not configured for ${event.name}.`, code: 'price_not_configured', requiredEnv: ticketPriceEnv(event.eventId) }, 503);
