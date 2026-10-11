@@ -281,8 +281,17 @@ export default async (req) => {
       return json({ error: 'Explicit authorization and the exact approved event capacity are required.' }, 403);
     }
     const all = await records(STORES.tickets, eventId);
+    const recognized = new Set(['paid', 'checked_in', 'disputed', 'refund_pending', 'refunded', 'revoked', 'void']);
+    if (all.some((ticket) => !recognized.has(ticket.status))) {
+      return json({ error: 'Historical tickets contain unknown statuses; reconciliation requires explicit review.' }, 409);
+    }
     const active = all.filter((ticket) =>
       ['paid', 'checked_in', 'disputed', 'refund_pending'].includes(ticket.status));
+    if (active.some((ticket) =>
+      (ticket.ticketSource !== 'comp' && !/^cs_[A-Za-z0-9_]+$/.test(String(ticket.paymentId || ''))) ||
+      (ticket.ticketSource === 'comp' && Boolean(ticket.paymentId)))) {
+      return json({ error: 'An existing paid or comp ticket has inconsistent payment identity.' }, 409);
+    }
     try {
       const result = await commissionAdmissionInventory({ eventId, tickets: active, expiresAt: event.endsAt });
       await writeAudit({
