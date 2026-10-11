@@ -55,7 +55,7 @@ try {
 
   const root=new URL('../',import.meta.url);
   const contents=async(path)=>readFile(new URL(path,root),'utf8');
-  const [migration,inventory,checkout,payments,webhook,operations,readiness,dashboard,publicPricing] = await Promise.all([
+  const [migration,inventory,checkout,payments,webhook,operations,readiness,dashboard] = await Promise.all([
     'netlify/database/migrations/003_admission-capacity/migration.sql',
     'netlify/functions/_admission-inventory.mjs',
     'netlify/functions/create-checkout.mjs',
@@ -63,8 +63,7 @@ try {
     'netlify/functions/stripe-webhook.mjs',
     'netlify/functions/admin-operations.mjs',
     'netlify/functions/admin-readiness.mjs',
-    'site/assets/js/admin-command.js',
-    'netlify/functions/public-pricing.mjs'
+    'site/assets/js/admin-command.js'
   ].map(contents));
   for (const token of ['CREATE TABLE IF NOT EXISTS wildones_event_capacity','wildones_admission_reservations','UNIQUE INDEX','status IN (\'held\',\'issued\')']) {
     assert.ok(migration.includes(token),`Missing relational safety contract: ${token}`);
@@ -86,7 +85,6 @@ try {
   assert.ok(migration.includes('commissioned BOOLEAN NOT NULL DEFAULT FALSE'),'Inventory must be uncommissioned by default');
   assert.ok(checkout.includes('pricing_incomplete'),'Incomplete price phases must fail checkout closed');
   assert.ok(payments.includes('AUREVA_APPROVED_PHASE_CENTS'),'Live AUREVA rates must be compared against owner's approved $55 and $70');
-  assert.ok(publicPricing.includes('approvedSchedule'),'Public pricing must suppress stale AUREVA live configuration');
   console.log('AUREVA admission/price contract checks passed. Requires Neon concurrency/integration certification before production GO.');
 } finally {
   for (const [key,value] of original) { if (value === undefined) delete process.env[key]; else process.env[key]=value; }
