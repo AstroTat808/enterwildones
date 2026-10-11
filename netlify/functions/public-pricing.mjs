@@ -10,40 +10,26 @@ export default async (req) => {
   if (!event || event.visibility !== 'public') return json({ error: 'Event not found.' }, 404);
 
   const schedule = ticketPricingSchedule(event.eventId);
-  // Do not publish stale AUREVA prices while Netlify's runtime configuration
-  // is still on an old release. Owner-approved prices are $55 / $70.
-  const approvedSchedule = event.eventId !== 'aureva-2026' || schedule.complete;
-  const offer = approvedSchedule ? currentTicketOffer(event.eventId) : null;
-  let phases = [];
-  if (approvedSchedule && schedule.tiered) {
-    phases = schedule.phases
-      .filter((phase) => phase.name || phase.priceCents || phase.endsAt)
-      .map((phase) => ({
+  const offer = currentTicketOffer(event.eventId);
+  const phases = schedule.tiered
+    ? schedule.phases.filter((phase) => phase.name || phase.priceCents || phase.endsAt).map((phase) => ({
         phase: phase.phase,
         name: phase.name,
         priceCents: phase.priceCents,
         startsAt: phase.startsAt,
         endsAt: phase.endsAt
-      }));
-  } else if (approvedSchedule && offer) {
-    phases = [{
-      phase: offer.phase,
-      name: offer.name,
-      priceCents: offer.priceCents,
-      startsAt: offer.startsAt,
-      endsAt: offer.endsAt
-    }];
-  }
+      }))
+    : offer ? [{ phase: offer.phase, name: offer.name, priceCents: offer.priceCents, startsAt: offer.startsAt, endsAt: offer.endsAt }] : [];
 
   return new Response(JSON.stringify({
     event: toPublicEvent(event),
     currency: 'usd',
     timezone: event.timezone,
-    salesOpen: Boolean(event.ticketSalesOpen && approvedSchedule),
+    salesOpen: Boolean(event.ticketSalesOpen),
     current: offer ? { phase: offer.phase, name: offer.name, priceCents: offer.priceCents, startsAt: offer.startsAt, endsAt: offer.endsAt } : null,
     next: offer?.next || null,
     phases,
-    scheduleComplete: Boolean(approvedSchedule && offer?.scheduleComplete),
+    scheduleComplete: Boolean(offer?.scheduleComplete),
     addons: addonCatalog(event.eventId).filter((addon) => addon.enabled).map(publicAddon)
   }), {
     status: 200,
