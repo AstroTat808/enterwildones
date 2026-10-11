@@ -3,9 +3,14 @@
 CREATE TABLE IF NOT EXISTS wildones_event_capacity (
   event_id TEXT PRIMARY KEY,
   capacity INTEGER NOT NULL CHECK (capacity > 0),
+  commissioned BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Retrofittable for isolated staging branches which ran an earlier migration 003.
+ALTER TABLE wildones_event_capacity
+  ADD COLUMN IF NOT EXISTS commissioned BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS wildones_admission_reservations (
   event_id TEXT NOT NULL REFERENCES wildones_event_capacity(event_id),
