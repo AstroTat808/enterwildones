@@ -37,8 +37,8 @@ try {
   assert.equal(schedule.tiered,true);
   assert.equal(schedule.complete,true);
   assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T23:59:59-10:00')).priceCents,5500);
-  assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-16T00:00:00-10:00')).priceCents,5500);
-  assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T12:00:00-10:00')).next.priceCents,5500);
+  assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-16T00:00:00-10:00')).priceCents,7000);
+  assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T12:00:00-10:00')).next.priceCents,7000);
   set(envPrefix+'TICKET_PHASE3_PRICE_CENTS','8000');
   assert.equal(ticketPricingSchedule(eventId).complete,false,'A partially configured ZENITH phase must fail validation');
 
