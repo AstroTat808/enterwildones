@@ -239,7 +239,9 @@ def state_checks(page,case,width=None):
   # force a known expanded starting state. This prevents route/load timing from
   # contaminating the compact-state assertion in the broader browser matrix.
   page.wait_for_function("document.body.classList.contains('wo-guest-masthead')",timeout=10000)
-  page.evaluate("document.body.classList.remove('masthead-scrolled')");page.wait_for_timeout(90)
+  page.evaluate("window.scrollTo(0,0);document.body.classList.remove('masthead-scrolled')")
+  page.wait_for_function("window.scrollY < 2 && !document.body.classList.contains('masthead-scrolled')",timeout=5000)
+  page.wait_for_timeout(220)
   metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
    const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
@@ -276,10 +278,15 @@ def state_checks(page,case,width=None):
    if masthead_px(sub["font"])<mins["sub"]:f.append("guest masthead THE FOUR REALMS text is undersized in "+phase+" header")
   validate_masthead(metrics,False)
   initial_h=metrics["header"]["h"] if metrics.get("header") else None
-  # Exercise the canonical compact state directly. Some transactional pages are
-  # shorter than tall/wide viewports, so scrollTo(140) can be a no-op and create
-  # a false regression even though the masthead contract itself is correct.
-  page.evaluate("document.body.classList.add('masthead-scrolled')");page.wait_for_timeout(420)
+  # Exercise the real scroll-triggered compact state when the page is tall enough.
+  # Short pages fall back to the same canonical class the branding controller uses.
+  page.evaluate("""() => {
+   const max=Math.max(document.documentElement.scrollHeight-innerHeight,0);
+   if(max>90)window.scrollTo(0,Math.min(160,max));
+   else document.body.classList.add('masthead-scrolled');
+  }""")
+  page.wait_for_function("document.body.classList.contains('masthead-scrolled')",timeout=5000)
+  page.wait_for_timeout(360)
   compact_metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
    const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span'),ims=img?getComputedStyle(img):null;
@@ -288,7 +295,7 @@ def state_checks(page,case,width=None):
   validate_masthead(compact_metrics,True)
   compact_h=compact_metrics["header"]["h"] if compact_metrics.get("header") else None
   if initial_h and compact_h and compact_h>=initial_h-1:f.append("guest masthead did not compact after scroll")
-  page.evaluate("document.body.classList.remove('masthead-scrolled')");page.wait_for_timeout(70)
+  page.evaluate("window.scrollTo(0,0);document.body.classList.remove('masthead-scrolled')");page.wait_for_timeout(90)
  # Transactional typography is a release contract: semantic roles must resolve to one
  # shared hierarchy and live markup must not override the shared font metrics.
  transactional_required={
@@ -432,6 +439,16 @@ def state_checks(page,case,width=None):
   if page.locator("#cycleNodes .passport-cycle-node").count()!=4:f.append("cycle meter missing nodes")
   if page.locator(".passport-header .realm-gradient-title").count()!=1:f.append("premium title class missing")
   if page.locator(".passport-header .tx-subheadline").count()!=1:f.append("premium subheadline class missing")
+  if (width or 0)>=901:
+   master=page.locator('[data-master-cycle]').first
+   grid=page.locator("#realms").first
+   if master.count() and grid.count():
+    mb=master.bounding_box();gb=grid.bounding_box()
+    if not mb or not gb or abs(mb["x"]-gb["x"])>2 or abs(mb["width"]-gb["width"])>3:
+     f.append("desktop Master Cycle credential must span the full Passport grid")
+    layout=master.evaluate("""e=>{const s=getComputedStyle(e);return {display:s.display,cols:s.gridTemplateColumns}}""")
+    if layout["display"]!="grid" or layout["cols"] in ("none",""):
+     f.append("desktop Master Cycle credential must use the prestige two-column layout")
  elif case.state=="ticket-access":
   if "$35" not in page.locator("#price").inner_text():f.append("ticket price did not render")
  elif case.state=="public-tickets":
