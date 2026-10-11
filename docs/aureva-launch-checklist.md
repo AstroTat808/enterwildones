@@ -86,6 +86,14 @@
 
 ## 5. Public announcement and first-sale campaign
 
+**Production-ready copy kit:** [AUREVA promotion kit](aureva-promotion-kit.md) includes four gated social variants, a 20-second cinematic reel script, three-screen Stories, four opt-in email campaigns, SMS/DM copy, graphic-overlay specifications, UTM examples, and content-state safeguards.
+
+- [ ] Approve the campaign variant at the moment of distribution; no "tickets on sale" language until payment and release certification pass.
+- [ ] Verify site, email, Stories, partner reposts and all attached graphics use only **First Light $55** and **Full Radiance $70**; retire First Light sales copy after the configured HST cutoff.
+- [ ] Confirm opt-in, production Resend deliverability, unsubscribe flow and required sender disclosures work.
+- [ ] Do not generate new artwork over the approved portal/logo masters without brand review.
+
+
 **Messaging:** AUREVA / REALM I: LIGHT — *Enter the Light. The first realm is opening.*  
 **Public venue:** Undisclosed, Hawai‘i Island. Never publish the private street address, gate codes or staff links.
 
