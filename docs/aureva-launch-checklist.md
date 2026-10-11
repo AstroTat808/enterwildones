@@ -29,13 +29,14 @@
 
 ## 2. Finalize pricing and guest terms
 
-- [ ] Approve **FIRST LIGHT RELEASE** at **$35** and the intended last moment to purchase. Template cutoff: **Oct 16, 2026 12:00 AM HST**, so the $35 phase lasts through Oct 15 at 11:59:59 PM.
-- [ ] Approve **FULL RADIANCE** at **$55**, starting Oct 16 HST with no automatic final cutoff configured.
+- [ ] Verify **FIRST LIGHT RELEASE** at the owner-approved **$55** and the intended last moment to purchase. Template cutoff: **Oct 16, 2026 12:00 AM HST**, so the $55 phase lasts through Oct 15 at 11:59:59 PM.
+- [ ] Verify **FULL RADIANCE** at the owner-approved **$70**, starting Oct 16 HST with no automatic final cutoff configured.
 - [ ] Decide whether the unpriced optional **ZENITH** phase should remain disabled; do not publish it as an active ticket tier without a complete name, price and cutoff.
 - [ ] Approve drink package **$75 / six credits**, and late checkout/car camping **$25/person until 10:00 AM**; verify cost, tax, and all applicable fees.
 - [ ] If commissioning continues beyond October 15, change the First Light cutoff **before** promotional announcements; never sell tickets against an expired promotional date.
 - [ ] Confirm waiver version, age policy (21+), alcohol controls, refunds, transfers, accessibility, parking and weather/cancellation copy.
-- [ ] Verify Launch Control shows current/next ticket tiers, precise HST transition, live capacity, held, issued and available, and owner approval.
+- [ ] Verify Launch Control shows the **$55 / $70** current/next ticket tiers, precise HST transition, live capacity, held, issued and available, and owner approval.
+- [ ] Verify production Netlify Function variables `WILDONES_AUREVA_2026_TICKET_PHASE1_PRICE_CENTS=5500` and `WILDONES_AUREVA_2026_TICKET_PHASE2_PRICE_CENTS=7000`; replacing documentation alone does not update production Checkout.
 
 ## 3. Production services (all mandatory)
 
@@ -49,7 +50,7 @@
 - [ ] Verify that the intended Stripe account and its **live** secret key are installed in production.
 - [ ] Verify the live webhook destination, signing secret, event selection, retry behavior and Stripe payment metadata.
 - [ ] Use a single, allowlisted commissioning guest to complete one real, low-volume controlled paid checkout; confirm charge, webhook, idempotent fulfillment, receipt and correct admission balance.
-- [ ] Confirm correct phase amount, successful/failed/cancelled/expired sessions, absence of duplicate ticket issuance, refund/dispute behavior and capacity return.
+- [ ] Confirm Stripe checkout actually charges **$55 (5500 cents)** for First Light and **$70 (7000 cents)** for Full Radiance, including exact HST phase transition; test successful/failed/cancelled/expired sessions, duplicate-ticket protection, refund/dispute behavior and capacity return.
 - [ ] Test the checkout browser return when the webhook is delayed; verify recovery converges on one ticket.
 - [ ] Remove temporary commissioning emails after certification and verify unauthorized users remain unable to purchase while sales are closed.
 - [ ] Independently reconcile Netlify orders, Stripe payments/refunds and issued admission seats.
@@ -96,13 +97,13 @@
 
 ### Stage B — controlled First Light release (only after GO)
 - [ ] Public CTA: **REQUEST PASSAGE** while approval is required; approved applicants are directed to their authenticated invitation checkout.
-- [ ] Announce the **$35 First Light** price and explicit **Oct 15, 11:59 PM HST** deadline *only if sales actually open before then*.
+- [ ] Announce the **$55 First Light** price and explicit **Oct 15, 11:59 PM HST** deadline *only if sales actually open before then*.
 - [ ] Publish launch-day email, Instagram/TikTok reel, artist reposts, countdown Story and pinned details/FAQ in coordinated branding.
 - [ ] Monitor all purchases, inventory remaining, abandonment, bounced email, Stripe webhook failures, and support tickets during the first launch window.
 - [ ] Pause promotions and preserve sales closed when any payment/seat invariant fails.
 
 ### Stage C — Full Radiance and ongoing promotion
-- [ ] Automatically or deliberately transition to **$55 Full Radiance** at the verified price boundary; perform a controlled server-side price check immediately before/after.
+- [ ] Automatically or deliberately transition to **$70 Full Radiance** at the verified price boundary; perform a controlled server-side price check immediately before/after.
 - [ ] Announce the transition with accurate time-zone copy; do not advertise a false scarcity limit.
 - [ ] Release lineup highlights, guest-experience visuals, venue-region logistics, policies, support, and relevant add-on information.
 - [ ] Issue opt-in reminder sequence to incomplete applicants/approved invitees, without bulk unsolicited messaging.
@@ -113,7 +114,7 @@
 > 
 > The first realm begins December 12 on Hawai‘i Island. Twelve hours of sound, light and the Wild Ones universe. Ages 21+. Location disclosed to eligible ticket holders. Request passage at EnterWildOnes.com.
 >
-> **Approved invitations only.** First Light admission is $35 through October 15, 11:59 PM HST **if** certification is complete and sales are open; Full Radiance is $55 afterward.
+> **Approved invitations only.** First Light admission is $55 through October 15, 11:59 PM HST **if** certification is complete and sales are open; Full Radiance is $70 afterward.
 
 ## Final sign-off
 
