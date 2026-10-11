@@ -46,7 +46,7 @@ async function withLockedEvent(eventId, requireCapacity, operation) {
         [eventId, configured]
       );
     }
-    const result = await client.query('SELECT capacity FROM wildones_event_capacity WHERE event_id=$1 FOR UPDATE', [eventId]);
+    const result = await client.query('SELECT capacity, commissioned FROM wildones_event_capacity WHERE event_id=$1 FOR UPDATE', [eventId]);
     if (!result.rows[0]) {
       throw new AdmissionInventoryError('INVENTORY_NOT_INITIALIZED', 'Admission inventory has not been initialized.', 503);
     }
@@ -61,7 +61,7 @@ async function withLockedEvent(eventId, requireCapacity, operation) {
       await client.query('UPDATE wildones_event_capacity SET capacity=$2, updated_at=NOW() WHERE event_id=$1', [eventId, configured]);
       capacity = configured;
     }
-    const value = await operation(client, { capacity, used });
+    const value = await operation(client, { capacity, used, commissioned: result.rows[0].commissioned === true });
     await client.query('COMMIT');
     return value;
   } catch (error) {
@@ -82,7 +82,8 @@ export async function reserveAdmission({ eventId, invitationId, userId, expiresA
   if (!invitationId || !userId || !Number.isFinite(Date.parse(expiresAt))) {
     throw new AdmissionInventoryError('INVALID_RESERVATION', 'Invalid admission reservation.', 400);
   }
-  return withLockedEvent(eventId, true, async (client, {capacity, used}) => {
+  return withLockedEvent(eventId, true, async (client, {capacity, used, commissioned}) => {
+    if (!commissioned) throw new AdmissionInventoryError('INVENTORY_NOT_COMMISSIONED', 'Existing admission must be reconciled and inventory explicitly commissioned before sales.', 503);
     const existing = await client.query(
       'SELECT status, user_id, session_id FROM wildones_admission_reservations WHERE event_id=$1 AND invitation_id=$2 FOR UPDATE',
       [eventId, invitationId]
@@ -169,7 +170,8 @@ export async function issueCompAdmission({ eventId, invitationId, userId, expire
   if (!invitationId || !userId || !Number.isFinite(Date.parse(expiresAt))) {
     throw new AdmissionInventoryError('INVALID_COMP', 'Invalid comp admission identity.', 400);
   }
-  return withLockedEvent(eventId, true, async (client, { capacity, used }) => {
+  return withLockedEvent(eventId, true, async (client, { capacity, used, commissioned }) => {
+    if (!commissioned) throw new AdmissionInventoryError('INVENTORY_NOT_COMMISSIONED', 'Complimentary admission requires commissioned capacity.', 503);
     const found = await client.query(
       'SELECT status,user_id FROM wildones_admission_reservations WHERE event_id=$1 AND invitation_id=$2 FOR UPDATE',
       [eventId, invitationId]
@@ -202,7 +204,7 @@ export async function getAdmissionInventory(eventId) {
   requireEvent(eventId);
   const configuredCapacity = admissionCapacity(eventId);
   const empty = {
-    configured: Boolean(configuredCapacity), initialized: false,
+    configured: Boolean(configuredCapacity), initialized: false, commissioned: false,
     capacity: configuredCapacity, held: 0, issued: 0, remaining: null,
     ready: false, error: null
   };
@@ -214,17 +216,17 @@ export async function getAdmissionInventory(eventId) {
     await withLockedEvent(eventId, true, async () => true);
     pool = connection();
     const r = await pool.query(
-      "SELECT c.capacity, COUNT(r.invitation_id) FILTER (WHERE r.status='held')::integer AS held, COUNT(r.invitation_id) FILTER (WHERE r.status='issued')::integer AS issued FROM wildones_event_capacity c LEFT JOIN wildones_admission_reservations r ON r.event_id=c.event_id WHERE c.event_id=$1 GROUP BY c.event_id,c.capacity",
+      "SELECT c.capacity, c.commissioned, COUNT(r.invitation_id) FILTER (WHERE r.status='held')::integer AS held, COUNT(r.invitation_id) FILTER (WHERE r.status='issued')::integer AS issued FROM wildones_event_capacity c LEFT JOIN wildones_admission_reservations r ON r.event_id=c.event_id WHERE c.event_id=$1 GROUP BY c.event_id,c.capacity,c.commissioned",
       [eventId]
     );
     if (!r.rows[0]) return { ...empty, error: 'Admission inventory migration/initialization is pending.' };
     const row = r.rows[0], held = Number(row.held), issued = Number(row.issued);
     const matching = Number(row.capacity) === configuredCapacity;
     return {
-      configured: true, initialized: true, capacity: Number(row.capacity), held, issued,
+      configured: true, initialized: true, commissioned: row.commissioned === true, capacity: Number(row.capacity), held, issued,
       remaining: Math.max(0, Number(row.capacity) - held - issued),
-      ready: matching && held + issued <= Number(row.capacity),
-      error: matching ? null : 'Database and environment ticket capacity differ.'
+      ready: matching && row.commissioned === true && held + issued <= Number(row.capacity),
+      error: !matching ? 'Database and environment ticket capacity differ.' : row.commissioned !== true ? 'Inventory has not been reconciled and commissioned.' : null
     };
   } catch (error) {
     console.error('Admission inventory read failed:', error);
