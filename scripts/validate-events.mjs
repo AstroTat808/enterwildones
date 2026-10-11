@@ -22,6 +22,9 @@ for (const [key, event] of Object.entries(EVENTS)) {
   if (!event.copy?.tagline || !event.theme?.accent) errors.push(`${key}: missing public brand configuration`);
 }
 
+const aureva = EVENTS['aureva-2026'];
+if (aureva.startsAt !== '2026-12-19T15:00:00-10:00') errors.push('AUREVA must begin Saturday Dec 19, 2026 at 3 PM HST');
+if (aureva.endsAt !== '2026-12-20T03:00:00-10:00') errors.push('AUREVA must end Sunday Dec 20, 2026 at 3 AM HST');
 const ordered = listEvents();
 if (ordered.length !== 4) errors.push(`Expected 4 active cycle events, found ${ordered.length}`);
 
