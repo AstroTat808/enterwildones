@@ -10,8 +10,11 @@ export default async (req) => {
   if (!event || event.visibility !== 'public') return json({ error: 'Event not found.' }, 404);
 
   const schedule = ticketPricingSchedule(event.eventId);
-  const offer = currentTicketOffer(event.eventId);
-  const phases = schedule.tiered
+  // Do not publish stale AUREVA prices while Netlify's runtime configuration
+  // is still on an old release. Owner-approved prices are $55 / $70.
+  const approvedSchedule = event.eventId !== 'aureva-2026' || schedule.complete;
+  const offer = approvedSchedule ? currentTicketOffer(event.eventId) : null;
+  const phases = !approvedSchedule ? [] : schedule.tiered
     ? schedule.phases.filter((phase) => phase.name || phase.priceCents || phase.endsAt).map((phase) => ({
         phase: phase.phase,
         name: phase.name,
@@ -25,11 +28,11 @@ export default async (req) => {
     event: toPublicEvent(event),
     currency: 'usd',
     timezone: event.timezone,
-    salesOpen: Boolean(event.ticketSalesOpen),
+    salesOpen: Boolean(event.ticketSalesOpen && approvedSchedule),
     current: offer ? { phase: offer.phase, name: offer.name, priceCents: offer.priceCents, startsAt: offer.startsAt, endsAt: offer.endsAt } : null,
     next: offer?.next || null,
     phases,
-    scheduleComplete: Boolean(offer?.scheduleComplete),
+    scheduleComplete: Boolean(approvedSchedule && offer?.scheduleComplete),
     addons: addonCatalog(event.eventId).filter((addon) => addon.enabled).map(publicAddon)
   }), {
     status: 200,
