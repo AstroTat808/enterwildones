@@ -36,10 +36,29 @@ async function loadAurevaPricing(){
   }catch{return;}
   if(!response.ok||data.event?.eventId!=='aureva-2026')return;
   section.hidden=false;
-  const current=data.current||null,next=data.next||null;
-  [1,2,3].forEach((phase)=>markRelease(phase,current,next));
   const phase1=data.phases?.find((phase)=>phase.phase===1),phase2=data.phases?.find((phase)=>phase.phase===2);
   const p1=document.querySelector('[data-release-phase="1"] .release-price'),p2=document.querySelector('[data-release-phase="2"] .release-price');
+  // Show owner-approved prices while production Function variables are being
+  // updated. Stale runtime prices must never replace the approved release cards.
+  if(phase1?.priceCents!==5500||phase2?.priceCents!==7000){
+    if(p1)p1.textContent='$55';
+    if(p2)p2.textContent='$70';
+    const message=document.querySelector('[data-sales-lock]');
+    if(message)message.textContent='Ticket sales remain locked while final pricing and production systems are certified.';
+    const wrap=document.querySelector('[data-release-countdown-wrap]');
+    if(wrap)wrap.hidden=true;
+    const labels=[['1','RELEASE I'],['2','RELEASE II']];
+    for(const [phase,label] of labels){
+      const node=document.querySelector(`[data-phase-state="${phase}"]`);
+      if(node)node.textContent=label;
+    }
+    if(countdownTimer)clearInterval(countdownTimer);
+    if(pricingRefreshTimer)clearTimeout(pricingRefreshTimer);
+    pricingRefreshTimer=setTimeout(loadAurevaPricing,60000);
+    return;
+  }
+  const current=data.current||null,next=data.next||null;
+  [1,2,3].forEach((phase)=>markRelease(phase,current,next));
   if(p1&&phase1?.priceCents)p1.textContent=money(phase1.priceCents);
   if(p2&&phase2?.priceCents)p2.textContent=money(phase2.priceCents);
   const lock=document.querySelector('[data-sales-lock]');
