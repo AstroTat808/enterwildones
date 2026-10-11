@@ -39,12 +39,23 @@ try {
   assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T23:59:59-10:00')).priceCents,5500);
   assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-16T00:00:00-10:00')).priceCents,7000);
   assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T12:00:00-10:00')).next.priceCents,7000);
+  // Stale production settings must never create a checkout with the old rates.
+  set(envPrefix+'TICKET_PHASE1_PRICE_CENTS','3500');
+  assert.equal(ticketPricingSchedule(eventId).approvedPhasePrices,false,'Obsolete First Light pricing must be rejected');
+  assert.equal(currentTicketOffer(eventId),null,'Old $35 First Light pricing must fail closed');
+  set(envPrefix+'TICKET_PHASE1_PRICE_CENTS','5500');
+  set(envPrefix+'TICKET_PHASE2_PRICE_CENTS','5500');
+  assert.equal(ticketPricingSchedule(eventId).approvedPhasePrices,false,'Obsolete Full Radiance pricing must be rejected');
+  assert.equal(currentTicketOffer(eventId),null,'Old $55 Full Radiance pricing must fail closed');
+  set(envPrefix+'TICKET_PHASE2_PRICE_CENTS','7000');
+  assert.equal(ticketPricingSchedule(eventId).approvedPhasePrices,true);
   set(envPrefix+'TICKET_PHASE3_PRICE_CENTS','8000');
   assert.equal(ticketPricingSchedule(eventId).complete,false,'A partially configured ZENITH phase must fail validation');
+  assert.equal(currentTicketOffer(eventId),null,'Incomplete ZENITH phase must not permit an AUREVA payment');
 
   const root=new URL('../',import.meta.url);
   const contents=async(path)=>readFile(new URL(path,root),'utf8');
-  const [migration,inventory,checkout,payments,webhook,operations,readiness,dashboard] = await Promise.all([
+  const [migration,inventory,checkout,payments,webhook,operations,readiness,dashboard,publicPricing] = await Promise.all([
     'netlify/database/migrations/003_admission-capacity/migration.sql',
     'netlify/functions/_admission-inventory.mjs',
     'netlify/functions/create-checkout.mjs',
@@ -52,7 +63,8 @@ try {
     'netlify/functions/stripe-webhook.mjs',
     'netlify/functions/admin-operations.mjs',
     'netlify/functions/admin-readiness.mjs',
-    'site/assets/js/admin-command.js'
+    'site/assets/js/admin-command.js',
+    'netlify/functions/public-pricing.mjs'
   ].map(contents));
   for (const token of ['CREATE TABLE IF NOT EXISTS wildones_event_capacity','wildones_admission_reservations','UNIQUE INDEX','status IN (\'held\',\'issued\')']) {
     assert.ok(migration.includes(token),`Missing relational safety contract: ${token}`);
@@ -73,6 +85,8 @@ try {
   assert.ok(readiness.includes('commissionAdmissionInventory')&&readiness.includes('commission_inventory')&&readiness.includes('COMMISSION '),'Admin commissioning requires explicit authorization and reconciliation');
   assert.ok(migration.includes('commissioned BOOLEAN NOT NULL DEFAULT FALSE'),'Inventory must be uncommissioned by default');
   assert.ok(checkout.includes('pricing_incomplete'),'Incomplete price phases must fail checkout closed');
+  assert.ok(payments.includes('AUREVA_APPROVED_PHASE_CENTS'),'Live AUREVA rates must be compared against owner's approved $55 and $70');
+  assert.ok(publicPricing.includes('approvedSchedule'),'Public pricing must suppress stale AUREVA live configuration');
   console.log('AUREVA admission/price contract checks passed. Requires Neon concurrency/integration certification before production GO.');
 } finally {
   for (const [key,value] of original) { if (value === undefined) delete process.env[key]; else process.env[key]=value; }
