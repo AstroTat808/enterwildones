@@ -206,7 +206,7 @@ def verify_mastheads(base_url:str,browser_name:str="chromium"):
           try:
             page.goto(base_url+path,wait_until="domcontentloaded",timeout=30000)
             page.wait_for_selector(".topbar .brand-label",state="visible",timeout=15000)
-            page.wait_for_function("document.body.classList.contains('wo-guest-masthead')",timeout=10000)
+            page.locator("body.wo-guest-masthead").wait_for(state="attached",timeout=10000)
             page.wait_for_timeout(260)
             initial=page.evaluate(capture_js)
             validate(initial,w,False,row)
