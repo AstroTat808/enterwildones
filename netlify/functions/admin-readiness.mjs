@@ -8,7 +8,7 @@ import { STORES } from './_stores.mjs';
 import { listDrinkLedgers } from './_drink-ledger.mjs';
 import { writeAudit } from './_audit.mjs';
 import { currentTicketOffer, ticketPricingSchedule } from './_payments.mjs';
-import { getAdmissionInventory } from './_admission-inventory.mjs';
+import { admissionCapacity, commissionAdmissionInventory, getAdmissionInventory } from './_admission-inventory.mjs';
 
 const REHEARSAL_STORE = 'wildones-rehearsal';
 const ACTIVE = new Set(['paid', 'checked_in']);
@@ -271,6 +271,31 @@ export default async (req) => {
   const store = blobStore(REHEARSAL_STORE);
   const current = await store.get(eventId, { type: 'json' }).catch(() => null) || { eventId, items: {} };
   const now = new Date().toISOString();
+  if (body.action === 'commission_inventory') {
+    // No unattended commissioning. Explicit admin confirmation + approved number,
+    // while paid sales are still closed, are mandatory.
+    const approved = admissionCapacity(eventId);
+    if (event.ticketSalesOpen) return json({ error: 'Close admission sales before inventory commissioning.' }, 409);
+    if (body.confirm !== true || body.confirmation !== `COMMISSION ${event.name}` ||
+      !approved || Number(body.approvedCapacity) !== approved) {
+      return json({ error: 'Explicit authorization and the exact approved event capacity are required.' }, 403);
+    }
+    const all = await records(STORES.tickets, eventId);
+    const active = all.filter((ticket) =>
+      ['paid', 'checked_in', 'disputed', 'refund_pending'].includes(ticket.status));
+    try {
+      const result = await commissionAdmissionInventory({ eventId, tickets: active, expiresAt: event.endsAt });
+      await writeAudit({
+        eventId, action: 'inventory.commissioned', actor: 'admin',
+        targetType: 'event', targetId: eventId,
+        detail: { capacity: result.capacity, issued: result.issued }
+      });
+      return json({ ok: true, result, inventory: await getAdmissionInventory(eventId) });
+    } catch (error) {
+      return json({ error: error.message || 'Admission inventory reconciliation failed.',
+        code: error.code || 'INVENTORY_UNAVAILABLE' }, error.status || 503);
+    }
+  }
   if (body.action === 'set_rehearsal') {
     const id = String(body.itemId || '');
     const allowed = new Set(MANUAL_ITEMS.map((item) => item[0]));
