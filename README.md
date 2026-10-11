@@ -86,8 +86,11 @@ verified expired/failed checkouts and completed refunds release holds/seats.
 The administrator launch view checks tiered pricing and inventory reconciliation.
 
 Set `WILDONES_AUREVA_2026_TICKET_CAPACITY` only after venue capacity is
-authorized, then apply migration 003 and reconcile preexisting tickets before
-enabling sales. The capacity setting is deliberately blank in the template;
+authorized, then apply migration 003. Use the confirmed **Commission admission inventory**
+action in `/admin/launch` while sales are closed to atomically backfill and reconcile
+preexisting paid/comp/disputed/refund-pending tickets. New inventory is uncommissioned
+by default; payments and complimentary admission fail closed until it is certified.
+Only then consider enabling sales. The capacity setting is deliberately blank in the template;
 `ticketSalesOpen` remains false by default.
 
 See [AUREVA launch checklist](docs/aureva-launch-checklist.md) for Stripe, Resend,
