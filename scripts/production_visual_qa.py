@@ -61,7 +61,7 @@ ADDONS={"event":REALMS[0],"ticketId":"WLD-AUR-QA","addons":[
  {"addonType":"vip","name":"VIP Access","priceCents":9000,"description":"Priority entry and VIP areas.","status":"coming_soon","purchased":False},
  {"addonType":"parking","name":"Reserved Parking","priceCents":2500,"description":"Reserved event parking.","status":"sold_out","purchased":False}
 ]}
-ACCESS={"event":REALMS[0],"eligible":True,"purchaseAvailable":True,"priceCents":3500,"currency":"usd","offer":{"phase":2,"name":"SECOND RELEASE","priceCents":3500},"invitation":{"invitationId":"qa-invite","status":"redeemed","maxTickets":1},"existingTicketId":None}
+ACCESS={"event":REALMS[0],"eligible":True,"purchaseAvailable":True,"priceCents":7000,"currency":"usd","offer":{"phase":2,"name":"FULL RADIANCE","priceCents":7000},"invitation":{"invitationId":"qa-invite","status":"redeemed","maxTickets":1},"existingTicketId":None}
 APP_CONFIG={"event":REALMS[2],"turnstileSiteKey":None,"applicationsReady":True}
 IND_EVENT=[{"id":"gate","label":"Gate readiness","state":"green","detail":"Scanner ready"},{"id":"waivers","label":"Unsigned waivers","state":"yellow","detail":"4 pending"},{"id":"bar","label":"Bartender console","state":"green","detail":"Ready"},{"id":"wallet","label":"Apple Wallet","state":"yellow","detail":"Physical verification pending"}]
 IND_LAUNCH=[{"id":"core","label":"Core platform","state":"green","detail":"Configured"},{"id":"stripe","label":"Stripe live mode","state":"red","detail":"TEST mode"},{"id":"wallet","label":"Apple Wallet","state":"red","detail":"Signing pending"},{"id":"rehearsal","label":"Full rehearsal","state":"yellow","detail":"6 passed · 4 pending"}]
@@ -433,7 +433,7 @@ def state_checks(page,case,width=None):
   if page.locator(".passport-header .realm-gradient-title").count()!=1:f.append("premium title class missing")
   if page.locator(".passport-header .tx-subheadline").count()!=1:f.append("premium subheadline class missing")
  elif case.state=="ticket-access":
-  if "$35" not in page.locator("#price").inner_text():f.append("ticket price did not render")
+  if "$70" not in page.locator("#price").inner_text():f.append("AUREVA Full Radiance $70 price did not render")
  elif case.state=="public-tickets":
   if "SUNVEIL" not in page.locator("[data-name]").inner_text():f.append("SUNVEIL branding missing")
  elif case.state=="ticket-addons":

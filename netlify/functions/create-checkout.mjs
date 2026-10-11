@@ -4,13 +4,14 @@ import { resolveEvent } from './_events.mjs';
 import { readInviteAccess } from './_invitations.mjs';
 import { checkoutAllowed } from './_checkout-access.mjs';
 import { makeCheckoutReturn } from './_checkout-return.mjs';
-import { currentTicketOffer, ticketPriceEnv, ticketProductName, loadInvitation, existingTicketForInvitation, existingTicketForUser, finalizePaidSession } from './_payments.mjs';
+import { currentTicketOffer, ticketPricingSchedule, ticketPriceEnv, ticketProductName, loadInvitation, existingTicketForInvitation, existingTicketForUser, finalizePaidSession } from './_payments.mjs';
 import { makeTicketToken } from './_ticket-token.mjs';
 import { json, readBody } from './_response.mjs';
 import { sameOrigin } from './_security.mjs';
 import { stripeGet, stripePost } from './_stripe.mjs';
 import { STORES, eventKey } from './_stores.mjs';
 import { writeAudit } from './_audit.mjs';
+import { reserveAdmission, attachAdmissionSession, releaseAdmission } from './_admission-inventory.mjs';
 
 const CURRENCY = 'usd';
 function validSessionId(value = '') { return /^cs_[A-Za-z0-9_]+$/.test(String(value)); }
@@ -35,6 +36,10 @@ async function inspectLatestCheckout(latest, event, invitation) {
   }
   if (session.status === 'open' && session.url) return { checkoutUrl: session.url, reused: true, paid: false };
   if (session.status && session.status !== 'expired') return { error: 'Your previous checkout is still being resolved. Try again shortly.', status: 409 };
+  if (session.status === 'expired') {
+    // A signed Stripe response is authoritative. Never release on an unverified timer alone.
+    await releaseAdmission({ eventId: event.eventId, invitationId: invitation.invitationId, sessionId: session.id });
+  }
   return null;
 }
 
@@ -48,6 +53,11 @@ export default async (req) => {
   if (!event || event.visibility !== 'public') return json({ error: 'Event not found.' }, 404);
   if (Date.now() >= new Date(event.endsAt).getTime()) return json({ error: `Ticket sales for ${event.name} have ended.`, code: 'sales_ended' }, 403);
 
+  const schedule = ticketPricingSchedule(event.eventId);
+  const hasPhaseSettings = schedule.phases.some((phase) => phase.name || phase.priceCents || phase.endsAt);
+  if ((hasPhaseSettings && (!schedule.tiered || !schedule.complete))) {
+    return json({error: 'This event pricing schedule is incomplete. Ticket sales are not available.', code: 'pricing_incomplete'}, 503);
+  }
   const offer = currentTicketOffer(event.eventId);
   const price = offer?.priceCents || null;
   if (!price) return json({ error: `Ticket price is not configured for ${event.name}.`, code: 'price_not_configured', requiredEnv: ticketPriceEnv(event.eventId) }, 503);
@@ -85,6 +95,16 @@ export default async (req) => {
   const attempt = Number(latest?.attempt || 0) + 1;
   const idempotency = `wildones-${event.eventId}-${invitation.invitationId}-${attempt}`.slice(0, 255);
   const stripeExpiresAt = Math.floor(Date.now() / 1000) + 31 * 60;
+  try {
+    await reserveAdmission({
+      eventId: event.eventId,
+      invitationId: invitation.invitationId,
+      userId: invitation.userId,
+      expiresAt: new Date(stripeExpiresAt * 1000).toISOString()
+    });
+  } catch (error) {
+    return json({ error: error.message || 'Admission inventory unavailable.', code: error.code || 'INVENTORY_UNAVAILABLE' }, error.status || 503);
+  }
   const tierName = offer.name || 'GENERAL ADMISSION';
   const tierPhase = Number.isInteger(offer.phase) ? offer.phase : 0;
   const tierCode = tierName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 80);
@@ -121,6 +141,7 @@ export default async (req) => {
   try {
     const session = await stripePost('checkout/sessions', params, idempotency);
     if (!sessionMatches(session, event.eventId, invitation.invitationId) || String(session.currency || CURRENCY).toLowerCase() !== CURRENCY) throw new Error('Stripe returned a checkout identity mismatch.');
+    await attachAdmissionSession({ eventId: event.eventId, invitationId: invitation.invitationId, userId: invitation.userId, sessionId: session.id });
     const now = new Date().toISOString();
     const record = {
       paymentId: session.id,
@@ -145,7 +166,12 @@ export default async (req) => {
     await writeAudit({ eventId: event.eventId, action: 'checkout.created', actor: 'guest', targetType: 'payment', targetId: session.id, detail: { invitationId: invitation.invitationId, attempt, ticketTier: tierPhase, ticketTierName: tierName, amountTotal: price, commissioning: !event.ticketSalesOpen } });
     return json({ ok: true, checkoutUrl: session.url, reused: false });
   } catch (error) {
-    return json({ error: error.message || 'Checkout could not be created.' }, 502);
+    // Only a definitive Stripe 4xx response proves no checkout was created.
+    // Network errors, 5xx, or persistence failures retain the hold for reconciliation.
+    if (Number(error.stripeHttpStatus) >= 400 && Number(error.stripeHttpStatus) < 500) {
+      await releaseAdmission({ eventId: event.eventId, invitationId: invitation.invitationId }).catch(() => {});
+    }
+    return json({ error: error.message || 'Checkout could not be created.', code: error.code || 'CHECKOUT_UNAVAILABLE' }, error.status || 502);
   }
 };
 

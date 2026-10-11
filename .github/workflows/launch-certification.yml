@@ -41,3 +41,5 @@ jobs:
           node --check scripts/validate-launch-certification.mjs
       - name: Run automated launch rehearsal
         run: node scripts/validate-launch-certification.mjs
+      - name: Check phased admission pricing and inventory safety
+        run: node scripts/validate-admission-inventory.mjs

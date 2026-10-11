@@ -61,7 +61,7 @@ string in the Netlify project's production environment, scoped to Functions.
 Keep the credential out of source control and the public `site/` directory.
 
 The schema remains versioned in `netlify/database/migrations/`. For a new database,
-apply `001_drink-credit-ledger/migration.sql`, then `002_passport-auth/migration.sql`
+apply `001_drink-credit-ledger/migration.sql`, then `002_passport-auth/migration.sql`, then `003_admission-capacity/migration.sql`
 using a direct Neon connection. Validate schema changes on a Neon branch first.
 These migrations are managed separately from Netlify builds; removing
 `@netlify/database` prevents automatic Netlify Database provisioning and allows
@@ -76,3 +76,22 @@ this project to retain its existing Netlify plan.
 - Keep Wallet/QR validation server authoritative so refunds, disputes and revocations take effect immediately.
 
 See `docs/data-model.md` for the canonical record model.
+
+## AUREVA admission inventory and launch
+
+AUREVA uses transactionally locked Neon Postgres rows for paid and complimentary
+seat accounting. Admission checkout reserves capacity **before** Stripe creates
+a session; fulfillment converts an existing hold into an issued seat. Only
+verified expired/failed checkouts and completed refunds release holds/seats.
+The administrator launch view checks tiered pricing and inventory reconciliation.
+
+Set `WILDONES_AUREVA_2026_TICKET_CAPACITY` only after venue capacity is
+authorized, then apply migration 003. Use the confirmed **Commission admission inventory**
+action in `/admin/launch` while sales are closed to atomically backfill and reconcile
+preexisting paid/comp/disputed/refund-pending tickets. New inventory is uncommissioned
+by default; payments and complimentary admission fail closed until it is certified.
+Only then consider enabling sales. The capacity setting is deliberately blank in the template;
+`ticketSalesOpen` remains false by default.
+
+See [AUREVA launch checklist](docs/aureva-launch-checklist.md) for Stripe, Resend,
+Wallet, CI, physical event-day testing and the first-sales campaign.

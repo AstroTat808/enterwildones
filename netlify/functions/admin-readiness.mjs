@@ -7,6 +7,8 @@ import { sameOrigin } from './_security.mjs';
 import { STORES } from './_stores.mjs';
 import { listDrinkLedgers } from './_drink-ledger.mjs';
 import { writeAudit } from './_audit.mjs';
+import { currentTicketOffer, ticketPricingSchedule } from './_payments.mjs';
+import { admissionCapacity, commissionAdmissionInventory, getAdmissionInventory } from './_admission-inventory.mjs';
 
 const REHEARSAL_STORE = 'wildones-rehearsal';
 const ACTIVE = new Set(['paid', 'checked_in']);
@@ -72,16 +74,28 @@ async function rehearsal(eventId) {
 
 function pricingState(eventId, runbook) {
   const prefix = `WILDONES_${eventPrefix(eventId)}`;
-  const ticketPriceCents = cents(`${prefix}_TICKET_PRICE_CENTS`);
+  const schedule = ticketPricingSchedule(eventId);
+  const offer = currentTicketOffer(eventId);
+  const configuredPhases = schedule.phases.filter((phase) => phase.name || phase.priceCents || phase.endsAt);
+  const anyPhaseConfigured = configuredPhases.length > 0;
+  // Never treat incomplete phased admission as a valid fallback single price.
+  const admissionConfigured = Boolean(offer && (
+    schedule.tiered ? schedule.complete : !anyPhaseConfigured && schedule.fallbackPriceCents
+  ));
+  const ticketPriceCents = admissionConfigured ? offer.priceCents : null;
   const drinkPackagePriceCents = cents(`${prefix}_DRINK_PACKAGE_PRICE_CENTS`);
   const drinkPackageCredits = integer(`${prefix}_DRINK_PACKAGE_CREDITS`, 1, 24);
   const lateStayPriceCents = cents(`${prefix}_LATE_STAY_PRICE_CENTS`);
   const lateStayDepartureTime = String(env(`${prefix}_LATE_STAY_DEPARTURE_TIME`) || '').trim() || null;
-  const valuesConfigured = Boolean(ticketPriceCents && drinkPackagePriceCents && drinkPackageCredits && lateStayPriceCents && lateStayDepartureTime);
-  const placeholderDetected = [ticketPriceCents, drinkPackagePriceCents, lateStayPriceCents].some((value) => value === 100);
+  const valuesConfigured = Boolean(admissionConfigured && drinkPackagePriceCents && drinkPackageCredits && lateStayPriceCents && lateStayDepartureTime);
+  const placeholderDetected = [ticketPriceCents, ...configuredPhases.map((p) => p.priceCents), drinkPackagePriceCents, lateStayPriceCents].some((value) => value === 100);
   const approved = itemState(runbook, 'pricing-approved') === 'passed';
   return {
     ticketPriceCents,
+    ticketTiered: schedule.tiered,
+    ticketPhases: configuredPhases,
+    ticketOffer: offer ? {phase:offer.phase,name:offer.name,priceCents:offer.priceCents,endsAt:offer.endsAt} : null,
+    ticketScheduleComplete: admissionConfigured,
     drinkPackagePriceCents,
     drinkPackageCredits,
     lateStayPriceCents,
@@ -114,6 +128,7 @@ async function snapshot(event) {
       invitations: invites.length,
       invitationEmailsSent: apps.filter((app) => app.invitationEmailSentAt).length,
       activeTickets: activeTickets.length,
+      inventoryOccupiedTickets: tickets.filter((ticket) => ['paid', 'checked_in', 'disputed', 'refund_pending'].includes(ticket.status)).length,
       checkedIn: checked,
       unsignedWaivers: Math.max(0, activeTickets.length - signed),
       signedWaivers: signed,
@@ -131,11 +146,14 @@ async function snapshot(event) {
   };
 }
 
-function readiness(event, runbook) {
+function readiness(event, runbook, inventory, live) {
   const prefix = eventPrefix(event.eventId);
   const pricing = pricingState(event.eventId, runbook);
+  const inventoryReconciled = inventory.ready && inventory.issued === Number(live.counts?.inventoryOccupiedTickets || 0);
+  const inventoryReady = inventory.ready && inventoryReconciled;
   const config = {
     database: configured('DATABASE_URL'),
+    inventory: inventoryReady,
     admin: configured('WILDONES_ADMIN_KEY', 'WILDONES_ADMIN_SESSION_SECRET'),
     stripe: configured('STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'),
     stripeMode: stripeMode(),
@@ -149,7 +167,7 @@ function readiness(event, runbook) {
     wallet: configured('WILDONES_APPLE_PASS_TYPE_ID', 'WILDONES_APPLE_TEAM_ID') && configuredCertificate('WILDONES_APPLE_WWDR_CERT') && configuredCertificate('WILDONES_APPLE_PASS_CERT') && configuredCertificate('WILDONES_APPLE_PASS_KEY')
   };
   const coreBlockers = [];
-  for (const [key, label] of [['database', 'Database'], ['admin', 'Admin authentication'], ['stripe', 'Stripe'], ['turnstile', 'Turnstile'], ['email', 'Email'], ['ticketSigning', 'Ticket signing'], ['gate', 'Gate credentials'], ['bar', 'Bar credentials'], ['venue', 'Private venue']]) if (!config[key]) coreBlockers.push(label);
+  for (const [key, label] of [['database', 'Database'], ['admin', 'Admin authentication'], ['stripe', 'Stripe'], ['turnstile', 'Turnstile'], ['email', 'Email'], ['ticketSigning', 'Ticket signing'], ['gate', 'Gate credentials'], ['bar', 'Bar credentials'], ['venue', 'Private venue'], ['inventory', 'Admission capacity / inventory reconciliation']]) if (!config[key]) coreBlockers.push(label);
   const launchBlockers = [...coreBlockers];
   if (!pricing.valuesConfigured) launchBlockers.push('Final pricing values');
   else if (pricing.placeholderDetected) launchBlockers.push('Replace $1.00 commissioning prices');
@@ -165,7 +183,7 @@ function readiness(event, runbook) {
     ['refund', 'Refund verification']
   ]) if (itemState(runbook, id) !== 'passed') launchBlockers.push(label);
   if (!runbook.ready) launchBlockers.push('Complete rehearsal checklist');
-  return { config, pricing, coreReady: coreBlockers.length === 0, coreBlockers, launchReady: launchBlockers.length === 0 && runbook.ready, launchBlockers: [...new Set(launchBlockers)], blockers: coreBlockers };
+  return { config, pricing, inventory: { ...inventory, reconciled: inventoryReconciled, expectedIssued: Number(live.counts?.inventoryOccupiedTickets || 0), ready: inventoryReady }, coreReady: coreBlockers.length === 0, coreBlockers, launchReady: launchBlockers.length === 0 && runbook.ready, launchBlockers: [...new Set(launchBlockers)], blockers: coreBlockers };
 }
 
 function operationalStatus(ready, live, runbook) {
@@ -207,6 +225,7 @@ function operationalStatus(ready, live, runbook) {
       ],
       launch: [
         light('pricing', 'Final pricing', pricing.ready ? 'green' : 'red', pricing.ready ? 'Prices configured and approved' : pricing.placeholderDetected ? '$1.00 commissioning prices are still present' : pricing.valuesConfigured ? 'Pricing values set; approval still pending' : 'One or more pricing values are missing'),
+        light('inventory', 'Admission inventory', ready.inventory.ready ? 'green' : 'red', ready.inventory.ready ? `${ready.inventory.remaining} available · ${ready.inventory.held} held · ${ready.inventory.issued} issued` : ready.inventory.error || (ready.inventory.reconciled ? 'Inventory not ready' : 'Ticket records and issued capacity do not match')),
         light('stripe', 'Stripe live mode', config.stripeMode === 'live' ? 'green' : 'red', stripeDetail),
         runbookLight(runbook, 'live-stripe-payment', 'Live payment test', { hard: true }),
         light('wallet-config', 'Apple Wallet signing', config.wallet ? 'green' : 'red', config.wallet ? 'Pass signing credentials configured' : 'Pass Type ID / Team ID / signing certificates missing'),
@@ -240,8 +259,8 @@ export default async (req) => {
   const event = getEvent(eventId);
   if (!event) return json({ error: 'Unknown event.' }, 400);
   if (req.method === 'GET') {
-    const [live, runbook] = await Promise.all([snapshot(event), rehearsal(eventId)]);
-    const ready = readiness(event, runbook);
+    const [live, runbook, inventory] = await Promise.all([snapshot(event), rehearsal(eventId), getAdmissionInventory(eventId)]);
+    const ready = readiness(event, runbook, inventory, live);
     return json({ event: toPublicEvent(event), events: listEvents({ includeHidden: true }).map(toPublicEvent), ...ready, live, rehearsal: runbook, ...operationalStatus(ready, live, runbook), generatedAt: new Date().toISOString() });
   }
   if (req.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
@@ -252,6 +271,40 @@ export default async (req) => {
   const store = blobStore(REHEARSAL_STORE);
   const current = await store.get(eventId, { type: 'json' }).catch(() => null) || { eventId, items: {} };
   const now = new Date().toISOString();
+  if (body.action === 'commission_inventory') {
+    // No unattended commissioning. Explicit admin confirmation + approved number,
+    // while paid sales are still closed, are mandatory.
+    const approved = admissionCapacity(eventId);
+    if (event.ticketSalesOpen) return json({ error: 'Close admission sales before inventory commissioning.' }, 409);
+    if (body.confirm !== true || body.confirmation !== `COMMISSION ${event.name}` ||
+      !approved || Number(body.approvedCapacity) !== approved) {
+      return json({ error: 'Explicit authorization and the exact approved event capacity are required.' }, 403);
+    }
+    const all = await records(STORES.tickets, eventId);
+    const recognized = new Set(['paid', 'checked_in', 'disputed', 'refund_pending', 'refunded', 'revoked', 'void']);
+    if (all.some((ticket) => !recognized.has(ticket.status))) {
+      return json({ error: 'Historical tickets contain unknown statuses; reconciliation requires explicit review.' }, 409);
+    }
+    const active = all.filter((ticket) =>
+      ['paid', 'checked_in', 'disputed', 'refund_pending'].includes(ticket.status));
+    if (active.some((ticket) =>
+      (ticket.ticketSource !== 'comp' && !/^cs_[A-Za-z0-9_]+$/.test(String(ticket.paymentId || ''))) ||
+      (ticket.ticketSource === 'comp' && Boolean(ticket.paymentId)))) {
+      return json({ error: 'An existing paid or comp ticket has inconsistent payment identity.' }, 409);
+    }
+    try {
+      const result = await commissionAdmissionInventory({ eventId, tickets: active, expiresAt: event.endsAt });
+      await writeAudit({
+        eventId, action: 'inventory.commissioned', actor: 'admin',
+        targetType: 'event', targetId: eventId,
+        detail: { capacity: result.capacity, issued: result.issued }
+      });
+      return json({ ok: true, result, inventory: await getAdmissionInventory(eventId) });
+    } catch (error) {
+      return json({ error: error.message || 'Admission inventory reconciliation failed.',
+        code: error.code || 'INVENTORY_UNAVAILABLE' }, error.status || 503);
+    }
+  }
   if (body.action === 'set_rehearsal') {
     const id = String(body.itemId || '');
     const allowed = new Set(MANUAL_ITEMS.map((item) => item[0]));
