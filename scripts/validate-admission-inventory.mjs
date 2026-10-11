@@ -25,6 +25,9 @@ try {
   assert.equal(admissionCapacity(eventId),1);
 
   // Admission phases and Checkout use the same server-side pricing model.
+  const {requireEvent}=await import('../netlify/functions/_events.mjs');
+  assert.equal(requireEvent(eventId).startsAt,'2026-12-19T15:00:00-10:00');
+  assert.equal(requireEvent(eventId).endsAt,'2026-12-20T03:00:00-10:00');
   const { ticketPricingSchedule, currentTicketOffer } = await import('../netlify/functions/_payments.mjs');
   const phase = {
     TICKET_PHASE1_NAME:'FIRST LIGHT RELEASE', TICKET_PHASE1_PRICE_CENTS:'5500',
