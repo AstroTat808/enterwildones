@@ -46,7 +46,7 @@ The current admission implementation is invitation-authenticated. Events configu
 
 ## Capacity and concurrency controls
 
-The server must reserve seats in Postgres before creating Stripe Checkout.
+The server must reserve seats in Postgres before creating Stripe Checkout. New inventory starts `commissioned=false`: a protected, explicitly confirmed admin operation must reconcile historical paid, complimentary, disputed and pending-refund tickets before admitting any paid or comp request.
 The transaction locks one event-capacity row using `FOR UPDATE`. It counts
 both `held` and `issued` reservations and rejects SOLD_OUT and duplicate
 user/invitation activity. This is independent of front-end counts and applies
