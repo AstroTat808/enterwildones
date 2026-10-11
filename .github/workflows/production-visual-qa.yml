@@ -1,4 +1,7 @@
 name: Production visual QA
+# Fresh certification run: earlier PR #71 Actions attempts exhausted GitHub's
+# 50-attempt retry limit during transient hosted-runner allocation failures.
+# This preserves the existing Lighthouse, browser and visual quality gates.
 
 on:
   pull_request:
