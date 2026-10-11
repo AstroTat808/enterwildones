@@ -27,16 +27,16 @@ try {
   // Admission phases and Checkout use the same server-side pricing model.
   const { ticketPricingSchedule, currentTicketOffer } = await import('../netlify/functions/_payments.mjs');
   const phase = {
-    TICKET_PHASE1_NAME:'FIRST LIGHT RELEASE', TICKET_PHASE1_PRICE_CENTS:'3500',
+    TICKET_PHASE1_NAME:'FIRST LIGHT RELEASE', TICKET_PHASE1_PRICE_CENTS:'5500',
     TICKET_PHASE1_ENDS_AT:'2026-10-16T00:00:00-10:00',
-    TICKET_PHASE2_NAME:'FULL RADIANCE', TICKET_PHASE2_PRICE_CENTS:'5500',
+    TICKET_PHASE2_NAME:'FULL RADIANCE', TICKET_PHASE2_PRICE_CENTS:'7000',
     TICKET_PHASE2_ENDS_AT:'', TICKET_PHASE3_NAME:'', TICKET_PHASE3_PRICE_CENTS:''
   };
   for (const [key,value] of Object.entries(phase)) set(envPrefix + key,value);
   const schedule=ticketPricingSchedule(eventId);
   assert.equal(schedule.tiered,true);
   assert.equal(schedule.complete,true);
-  assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T23:59:59-10:00')).priceCents,3500);
+  assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T23:59:59-10:00')).priceCents,5500);
   assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-16T00:00:00-10:00')).priceCents,5500);
   assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T12:00:00-10:00')).next.priceCents,5500);
   set(envPrefix+'TICKET_PHASE3_PRICE_CENTS','8000');
