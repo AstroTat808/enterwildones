@@ -200,6 +200,71 @@ export async function issueCompAdmission({ eventId, invitationId, userId, expire
   });
 }
 
+
+/**
+ * Owner-initiated migration from existing event-scoped ticket records.
+ * The event's paid sales MUST remain closed throughout commissioning.
+ * A single event row lock protects backfill, historical validation and
+ * the explicit commissioned flag as one atomic Postgres transaction.
+ */
+export async function commissionAdmissionInventory({ eventId, tickets, expiresAt }) {
+  if (!Array.isArray(tickets) || tickets.length > MAX_CAPACITY || !Number.isFinite(Date.parse(expiresAt))) {
+    throw new AdmissionInventoryError('INVALID_COMMISSIONING', 'Invalid inventory reconciliation input.', 400);
+  }
+  const records = tickets.map((ticket) => ({
+    invitationId: String(ticket?.invitationId || '').trim(),
+    userId: String(ticket?.userId || '').trim(),
+    sessionId: ticket?.paymentId ? String(ticket.paymentId) : null
+  }));
+  const inviteIds = new Set(records.map((record) => record.invitationId));
+  const userIds = new Set(records.map((record) => record.userId));
+  if (records.some((record) => !record.invitationId || !record.userId) ||
+      inviteIds.size !== records.length || userIds.size !== records.length) {
+    throw new AdmissionInventoryError('DUPLICATE_OR_INVALID_TICKET', 'Historical admission identities are missing or duplicated.', 409);
+  }
+  return withLockedEvent(eventId, true, async (client, { capacity }) => {
+    if (records.length > capacity) {
+      throw new AdmissionInventoryError('CAPACITY_BELOW_OCCUPANCY', 'Existing admission exceeds approved capacity.', 409);
+    }
+    const before = await client.query(
+      'SELECT invitation_id,user_id,session_id,status FROM wildones_admission_reservations WHERE event_id=$1 FOR UPDATE',
+      [eventId]
+    );
+    const previous = new Map(before.rows.map((row) => [row.invitation_id, row]));
+    const expected = new Set();
+    for (const record of records) {
+      expected.add(record.invitationId);
+      const old = previous.get(record.invitationId);
+      if (old) {
+        if (old.status !== 'issued' || old.user_id !== record.userId || old.session_id !== record.sessionId) {
+          throw new AdmissionInventoryError('INVENTORY_RECONCILIATION_REQUIRED', 'An existing reservation does not match the historical paid/comp ticket.', 409);
+        }
+      } else {
+        await client.query(
+          "INSERT INTO wildones_admission_reservations(event_id,invitation_id,user_id,session_id,status,expires_at) VALUES ($1,$2,$3,$4,'issued',$5)",
+          [eventId, record.invitationId, record.userId, record.sessionId, expiresAt]
+        );
+      }
+    }
+    if (before.rows.some((row) => row.status === 'held' ||
+      (row.status === 'issued' && !expected.has(row.invitation_id)))) {
+      throw new AdmissionInventoryError('INVENTORY_RECONCILIATION_REQUIRED', 'Outstanding holds or unaccounted issued tickets require manual review.', 409);
+    }
+    const occupied = await client.query(
+      "SELECT COUNT(*)::integer AS issued FROM wildones_admission_reservations WHERE event_id=$1 AND status='issued'",
+      [eventId]
+    );
+    if (Number(occupied.rows[0].issued) !== records.length) {
+      throw new AdmissionInventoryError('INVENTORY_RECONCILIATION_REQUIRED', 'Ticket and issued-seat counts do not match.', 409);
+    }
+    await client.query(
+      'UPDATE wildones_event_capacity SET commissioned=TRUE,updated_at=NOW() WHERE event_id=$1',
+      [eventId]
+    );
+    return { commissioned: true, issued: records.length, capacity, available: capacity - records.length };
+  });
+}
+
 export async function getAdmissionInventory(eventId) {
   requireEvent(eventId);
   const configuredCapacity = admissionCapacity(eventId);
