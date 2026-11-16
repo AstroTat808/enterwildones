@@ -37,6 +37,7 @@ export function auditHistoricalAdmission({
     if (ticketIds.has(id)) issue('DUPLICATE_TICKET_ID',ticket,index);
     ticketIds.add(id);
     if (!HISTORIC_STATES.has(status)) issue('UNKNOWN_TICKET_STATUS',ticket,index);
+    if (OCCUPY.has(status) && !['stripe','comp'].includes(source)) issue('UNKNOWN_ACTIVE_TICKET_SOURCE',ticket,index);
     if (status==='refunded') counts.refunded++;
     if (status==='revoked') counts.revoked++;
     if (status==='void') counts.void++;
