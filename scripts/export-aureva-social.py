@@ -28,8 +28,8 @@ def main():
     for stem, dimensions in ASSETS.items():
         svg_path = SRC / f"{stem}.svg"
         svg = svg_path.read_text(encoding="utf-8")
-        match = re.search(r"<svg\\b[^>]*\\bwidth=\"(\\d+)\"[^>]*\\bheight=\"(\\d+)\"", svg)
-        if not match or tuple(map(int, match.groups())) != dimensions:
+        match = __import__("xml.etree.ElementTree", fromlist=["fromstring"]).fromstring(svg)
+        if (int(match.get("width", "0")), int(match.get("height", "0"))) != dimensions:
             raise RuntimeError(f"{stem}: SVG dimensions do not match approved export size")
         if "data:image/png;base64," not in svg:
             raise RuntimeError(f"{stem}: original embedded official logo is missing")
