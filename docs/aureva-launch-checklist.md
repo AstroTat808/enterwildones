@@ -1,8 +1,12 @@
-# AUREVA 2026 — Launch certification and first-sales campaign
+# AUREVA 2027 — Launch certification and first-sales campaign
 
 **Realm:** AUREVA · Realm I / Light  
-**Event:** Saturday December 19, 2026, 3:00 PM HST to Sunday December 20, 3:00 AM HST  
+**Event:** Saturday January 23, 2027, 7:00 PM HST to Sunday January 24, 3:00 AM HST  
 **Decision:** NO-GO until every hard gate has been independently verified; never enable paid admission to bypass an incomplete gate.
+
+**Approved overnight schedule:** Sat Jan 23, 2027, **7:00 PM–3:00 AM HST** (ends Sun Jan 24). Late Checkout / Car Camping extends **3:00 AM–10:00 AM on Sun Jan 24**, with existing **$25 per-person** add-on terms.
+
+**Pricing cutoff warning:** Original First Light $55 cutoff of Oct 15, 2026 has passed. Do not advertise the previously scheduled First Light sale or send its last-chance reminders. New tier dates require explicit owner approval and production price tests; Full Radiance remains $70.
 
 ## 1. Release ownership and invariants
 
@@ -32,7 +36,7 @@
 - [ ] Verify **FIRST LIGHT RELEASE** at the owner-approved **$55** and the intended last moment to purchase. Template cutoff: **Oct 16, 2026 12:00 AM HST**, so the $55 phase lasts through Oct 15 at 11:59:59 PM.
 - [ ] Verify **FULL RADIANCE** at the owner-approved **$70**, starting Oct 16 HST with no automatic final cutoff configured.
 - [ ] Decide whether the unpriced optional **ZENITH** phase should remain disabled; do not publish it as an active ticket tier without a complete name, price and cutoff.
-- [ ] Approve drink package **$75 / six credits**, and late checkout/car camping **$25/person until 10:00 AM**; verify cost, tax, and all applicable fees.
+- [ ] Approve drink package **$75 / six credits**, and late checkout/car camping **$25/person until 10:00 AM**; verify the seven-hour window (3:00–10:00 AM Sun Jan 24), cost, tax, and all applicable fees.
 - [ ] If commissioning continues beyond October 15, change the First Light cutoff **before** promotional announcements; never sell tickets against an expired promotional date.
 - [ ] Confirm waiver version, age policy (21+), alcohol controls, refunds, transfers, accessibility, parking and weather/cancellation copy.
 - [ ] Verify Launch Control shows the **$55 / $70** current/next ticket tiers, precise HST transition, live capacity, held, issued and available, and owner approval.
@@ -72,6 +76,7 @@
 ### Add-ons and staffed operations
 - [ ] Complete a real drink-package add-on purchase, six-credit allocation, wristband assignment and last-credit redemption without underflow or duplicate charges.
 - [ ] Complete late-stay add-on checkout and verify per-person entitlement and 10:00 AM departure instructions.
+- [ ] Verify add-on checkout receipt and digital credential explicitly show **Sunday, January 24, 2027 at 10:00 AM HST**; reject stale late-checkout departure times and ensure the venue safely supports guests remaining until departure.
 - [ ] Test staff admin access, RBAC/session expiry, lost-device credentials, refunds, cancellations and a physical event-day drill.
 - [ ] Record each of the 14 rehearsal items as Passed in `/admin/rehearsal` with tester and evidence; require `/admin/launch` to show GO.
 
@@ -120,7 +125,7 @@
 ### Copy starter (edit after pricing and GO)
 > **AUREVA · REALM I / LIGHT**
 > 
-> The first realm begins December 19 on Hawai‘i Island. Twelve hours of sound, light and the Wild Ones universe. Ages 21+. Location disclosed to eligible ticket holders. Request passage at EnterWildOnes.com.
+> The first realm begins January 23 on Hawai‘i Island. Eight hours of sound, light and the Wild Ones universe. Ages 21+. Location disclosed to eligible ticket holders. Request passage at EnterWildOnes.com.
 >
 > **Approved invitations only.** First Light admission is $55 through October 15, 11:59 PM HST **if** certification is complete and sales are open; Full Radiance is $70 afterward.
 
