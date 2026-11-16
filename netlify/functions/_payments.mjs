@@ -10,9 +10,13 @@ import { issueAdmission, releaseAdmission } from './_admission-inventory.mjs';
 function eventPrefix(eventId){return `WILDONES_${String(eventId).toUpperCase().replace(/[^A-Z0-9]/g,'_')}`;}
 function cents(value){const n=Number(value);return Number.isInteger(n)&&n>=50?n:null;}
 function instant(value){const raw=String(value||'').trim();if(!raw)return null;const ms=Date.parse(raw);return Number.isFinite(ms)?new Date(ms).toISOString():null;}
-// AUREVA's owner-approved release amounts. Runtime prices still come from
-// Netlify Functions variables; a stale production value must fail closed.
-const AUREVA_APPROVED_PHASE_CENTS = Object.freeze({firstLight:5500, fullRadiance:7000});
+// Owner-approved AUREVA commercial terms. These constants are a fail-closed
+// safety check; actual Checkout pricing still comes from protected Netlify vars.
+const AUREVA_ADMISSION = Object.freeze({
+  firstLightCents: 5500,
+  fullRadianceCents: 7000,
+  firstLightEnd: '2027-01-10T10:00:00.000Z'
+});
 export function ticketPriceEnv(eventId){return `${eventPrefix(eventId)}_TICKET_PRICE_CENTS`;}
 export const ticketPriceEnvName=ticketPriceEnv;
 export function ticketTierEnvName(eventId,phase,suffix){return `${eventPrefix(eventId)}_TICKET_PHASE${phase}_${suffix}`;}
@@ -24,17 +28,20 @@ export function ticketPricingSchedule(eventId){
   const phase3={phase:3,name:String(env(ticketTierEnvName(eventId,3,'NAME'))||'').trim()||null,priceCents:cents(env(ticketTierEnvName(eventId,3,'PRICE_CENTS'))),startsAt:phase2.endsAt,endsAt:null};
   const tiered=Boolean(phase1.name&&phase1.priceCents&&phase1.endsAt&&phase2.name&&phase2.priceCents);
   const wantsPhase3=Boolean(phase3.priceCents||phase3.name||phase2.endsAt);
-  const approvedPhasePrices=eventId!=='aureva-2026'||(
-    phase1.priceCents===AUREVA_APPROVED_PHASE_CENTS.firstLight &&
-    phase2.priceCents===AUREVA_APPROVED_PHASE_CENTS.fullRadiance
+  const approvedAureva=eventId!=='aureva-2026'||(
+    phase1.name==='FIRST LIGHT RELEASE'&&phase1.priceCents===AUREVA_ADMISSION.firstLightCents&&
+    phase1.endsAt===AUREVA_ADMISSION.firstLightEnd&&
+    phase2.name==='FULL RADIANCE'&&phase2.priceCents===AUREVA_ADMISSION.fullRadianceCents&&
+    !wantsPhase3
   );
-  const complete=Boolean(tiered&&approvedPhasePrices&&(!wantsPhase3||(phase2.endsAt&&phase3.name&&phase3.priceCents)));
-  return {tiered,complete,approvedPhasePrices,fallbackPriceCents,phases:[phase1,phase2,phase3],wantsPhase3};
+  const complete=Boolean(tiered&&approvedAureva&&(!wantsPhase3||(phase2.endsAt&&phase3.name&&phase3.priceCents)));
+  return {tiered,complete,approvedAureva,fallbackPriceCents,phases:[phase1,phase2,phase3],wantsPhase3};
 }
 
 export function currentTicketOffer(eventId,at=Date.now()){
   const schedule=ticketPricingSchedule(eventId),now=at instanceof Date?at.getTime():Number(at);
-  // No obsolete AUREVA ticket prices or single-price fallback can ever reach Checkout.
+  // Do not allow legacy AUREVA $35/$55 values, the old Oct deadline,
+  // incomplete tiers, fallback general admission, or unapproved ZENITH.
   if(eventId==='aureva-2026'&&!schedule.complete)return null;
   if(schedule.tiered){
     const [p1,p2,p3]=schedule.phases,firstEnd=Date.parse(p1.endsAt),secondEnd=p2.endsAt?Date.parse(p2.endsAt):null;
