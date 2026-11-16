@@ -309,8 +309,10 @@ def state_checks(page,case,width=None,browser_name="chromium"):
    if position<=72:f.append("guest masthead did not reach scroll threshold")
   else:
    page.evaluate("document.body.classList.add('masthead-scrolled')")
-  # Preserve failure semantics while recording the first WebKit scroll error
-  # before expensive screenshot/renderer teardown.
+  # Keep the original 5-second compact-state tolerance and log a
+  # failed assertion without discarding the page's diagnostic state.
+  try:page.locator('body.masthead-scrolled').wait_for(state='attached',timeout=5000)
+  except Exception as e:f.append("guest masthead compact-state wait failed: "+str(e))
   scroll_details=page.evaluate("""() => ({
     scrollY:window.scrollY, bodyScroll:document.body.scrollTop,
     rootScroll:document.documentElement.scrollTop,
