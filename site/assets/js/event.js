@@ -1,5 +1,6 @@
 const slug=new URLSearchParams(location.search).get('event')||location.pathname.split('/').filter(Boolean).pop();
 const fmt=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'Pacific/Honolulu'});
+const fmtTime=new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Pacific/Honolulu'});
 const worlds=Object.freeze({
   light:{index:'REALM I / <span class="realm-key realm-light">LIGHT</span>',title:'Begin in <span class="realm-key realm-light">radiance.</span>',energyTitle:'Awaken',energyCopy:'Warm, expansive and ceremonial. AUREVA is the first opening of the cycle: a world designed around emergence, connection and the feeling of stepping into first light.',soundTitle:'Ascend',soundCopy:'Melodic electronic music, luminous builds and euphoric release shape an upward arc from arrival through the final hours.',ritualTitle:'Arrive',ritualCopy:'The first realm establishes the Wild Ones language. Cross the threshold, leave the ordinary outside and begin the cycle together.'},
   balance:{index:'REALM II / <span class="realm-key realm-balance">BALANCE</span>',title:'Stand between <span class="realm-key realm-balance">worlds.</span>',energyTitle:'Align',energyCopy:'HALORA lives at the equinox: equal parts light and shadow, restraint and release. Its atmosphere is intentional, symmetrical and suspended between opposites.',soundTitle:'Resolve',soundCopy:'Tension and harmony trade places throughout the night. Rhythmic precision, contrast and carefully timed release create the realm’s equilibrium.',ritualTitle:'Center',ritualCopy:'This is the midpoint state: neither beginning nor ending. Enter with the cycle already in motion and find the moment where opposing forces become one.'},
@@ -67,7 +68,7 @@ async function loadAurevaPricing(){
   document.body.dataset.realm=e.realm;
   document.title=`${e.name} - ENTER WILD ONES`;
   text('[data-eyebrow]',e.copy.eyebrow);text('[data-name]',e.name);text('[data-description]',e.copy.description);text('[data-tagline]',e.copy.tagline);
-  text('[data-date]',fmt.format(new Date(e.startsAt)));text('[data-age]',`${e.minimumAge}+`);text('[data-status]',e.ticketSalesOpen?'TICKETS OPEN':e.applicationOpen?'PASSAGE REQUESTS OPEN':String(e.status).toUpperCase());
+  text('[data-date]',fmt.format(new Date(e.startsAt)));text('[data-time]',`${fmtTime.format(new Date(e.startsAt))}–${fmtTime.format(new Date(e.endsAt))} HST`);text('[data-age]',`${e.minimumAge}+`);text('[data-status]',e.ticketSalesOpen?'TICKETS OPEN':e.applicationOpen?'PASSAGE REQUESTS OPEN':String(e.status).toUpperCase());
   const w=worlds[e.realm];
   if(w){
     html('[data-doctrine-index]',w.index);
