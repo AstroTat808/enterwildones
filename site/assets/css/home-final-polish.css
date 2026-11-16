@@ -756,3 +756,20 @@ body.cinematic-home .site-footer>span{
   background-clip:border-box!important;
   -webkit-text-fill-color:currentColor!important;
 }
+
+/* The canonical guest masthead has distinct expanded and compact tokens on
+   every viewport. Older mobile homepage editorial rules assigned the SAME
+   height to both .topbar and .scrolled .topbar, overriding the canonical
+   compact state (most visibly at 320–844px) and defeating scroll shrink.
+   Keep these two geometry tokens authoritative; do not modify the visual
+   design, emblem ratio, typography, gradients, or footer. */
+@media (max-width:860px) {
+  body.cinematic-home.wo-guest-masthead .topbar,
+  body.cinematic-home.wo-guest-masthead.scrolled .topbar,
+  body.cinematic-home.wo-guest-masthead.masthead-scrolled .topbar {
+    min-height:var(--wo-masthead-height)!important;
+  }
+  body.cinematic-home.wo-guest-masthead .topbar .brand {
+    min-height:var(--wo-masthead-brand-height)!important;
+  }
+}
