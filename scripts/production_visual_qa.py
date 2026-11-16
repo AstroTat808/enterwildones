@@ -231,7 +231,21 @@ def typography_contract_checks(page,case):
  return f
 
 
-def state_checks(page,case,width=None):
+def scroll_guest_masthead(page,browser_name,width,max_scroll):
+ # Mobile WebKit cannot use Playwright Mouse.wheel(); standards-compliant
+ # scrolling fires the real branding.js scroll handler at scrollY>72.
+ top=min(220,max_scroll)
+ if browser_name=="webkit" and width<900:
+  page.evaluate("top=>window.scrollTo({top,behavior:'auto'})",top)
+ else:
+  page.mouse.wheel(0,top)
+  page.wait_for_timeout(200)
+  if page.evaluate("window.scrollY")<=72:
+   page.evaluate("top=>window.scrollTo({top,behavior:'auto'})",top)
+ page.wait_for_timeout(200)
+ return page.evaluate("window.scrollY")
+
+def state_checks(page,case,width=None,browser_name="chromium"):
  f=typography_contract_checks(page,case)
  guest_header=page.locator(".topbar .brand").count()>0 and not (case.name.startswith("admin-") or case.name in ("check-in","bar"))
  if guest_header:
@@ -242,7 +256,7 @@ def state_checks(page,case,width=None):
   # Disable CSS smooth scroll for deterministic initial geometry.
   page.evaluate("""() => {
    document.documentElement.style.scrollBehavior='auto';
-   window.scrollTo({top:0,behavior:'instant'});
+   window.scrollTo({top:0,behavior:'auto'});
    document.body.classList.remove('masthead-scrolled');
   }""")
   page.locator('body:not(.masthead-scrolled)').wait_for(state='attached',timeout=5000)
@@ -288,15 +302,11 @@ def state_checks(page,case,width=None):
   initial_h=metrics["header"]["h"] if metrics.get("header") else None
   # Exercise the real scroll-triggered compact state when the page is tall enough.
   # Short pages fall back to the same canonical class the branding controller uses.
-  # Exercise a real wheel gesture before falling back to CSSOM auto scroll:
-  # WebKit may not dispatch an event for nonstandard 'instant' scroll options.
-  # Do not synthesize the compact class on genuinely scrollable pages.
+  # Real scroll position and compact header class must both be present.
   max_scroll=page.evaluate("Math.max(document.documentElement.scrollHeight-innerHeight,0)")
   if max_scroll>90:
-   page.mouse.wheel(0,min(220,max_scroll))
-   page.wait_for_timeout(250)
-   if page.evaluate("window.scrollY")<=72:
-    page.evaluate("top=>window.scrollTo({top,behavior:'auto'})",min(220,max_scroll))
+   position=scroll_guest_masthead(page,browser_name,width or 0,max_scroll)
+   if position<=72:f.append("guest masthead did not reach scroll threshold")
   else:
    page.evaluate("document.body.classList.add('masthead-scrolled')")
   page.locator('body.masthead-scrolled').wait_for(state='attached',timeout=5000)
@@ -311,7 +321,7 @@ def state_checks(page,case,width=None):
   if initial_h and compact_h and compact_h>=initial_h-1:f.append("guest masthead did not compact after scroll")
   page.evaluate("""() => {
    document.documentElement.style.scrollBehavior='auto';
-   window.scrollTo({top:0,behavior:'instant'});
+   window.scrollTo({top:0,behavior:'auto'});
    document.body.classList.remove('masthead-scrolled');
   }""")
   for _ in range(20):
