@@ -173,8 +173,25 @@
 
   function mastheadScrollState(){
     if(!guestMasthead)return;
-    const apply=()=>document.body.classList.toggle('masthead-scrolled',window.scrollY>72);
+    const apply=()=>{
+      const compact=window.scrollY>72;
+      if(document.body.classList.contains('masthead-scrolled')!==compact){
+        document.body.classList.toggle('masthead-scrolled',compact);
+      }
+    };
+    // Window scroll events may be coalesced or missed during momentum and
+    // programmatic scrolling in some iOS/WebKit builds. Both ordinary scroll
+    // events and a low-frequency state reconciliation keep the actual header
+    // synchronized to the REAL scroll position; neither forces compact mode.
     addEventListener('scroll',apply,{passive:true});
+    addEventListener('scrollend',apply,{passive:true});
+    addEventListener('resize',apply,{passive:true});
+    addEventListener('pageshow',apply,{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)apply();});
+    const timer=setInterval(()=>{if(!document.hidden)apply();},400);
+    // Preserve timer for the lifetime of this single document; browsers
+    // throttle it in inactive tabs. No busy rAF loop or layout measurements.
+    void timer;
     apply();
   }
 
