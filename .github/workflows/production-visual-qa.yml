@@ -161,7 +161,11 @@ jobs:
           python-version: '3.12'
       - name: Install masthead browser dependencies
         run: |
-          pip install playwright==1.55.0 pillow==11.3.0
+          if [ "${{ matrix.browser }}" = "webkit" ]; then
+            pip install playwright==1.65.2 pillow==11.3.0
+          else
+            pip install playwright==1.55.0 pillow==11.3.0
+          fi
           python -m playwright install --with-deps ${{ matrix.browser }}
       - name: Verify canonical masthead at all approved widths
         run: python scripts/visual_regression.py --mode verify-masthead --browser ${{ matrix.browser }}
@@ -228,7 +232,7 @@ jobs:
           python-version: '3.12'
       - name: Install mobile WebKit
         run: |
-          pip install playwright==1.55.0
+          pip install playwright==1.65.2
           python -m playwright install --with-deps webkit
       - name: Exercise actual mobile header and menu interactions
         env:
@@ -426,7 +430,11 @@ jobs:
         run: python -m unittest discover -s scripts -p 'test_webkit_viewport_shards.py' -v
       - name: Install Playwright
         run: |
-          pip install playwright==1.55.0
+          if [ "${{ matrix.browser }}" = "webkit" ]; then
+            pip install playwright==1.65.2
+          else
+            pip install playwright==1.55.0
+          fi
           python -m playwright install --with-deps ${{ matrix.browser }}
       - name: Full responsive production browser audit
         env:
