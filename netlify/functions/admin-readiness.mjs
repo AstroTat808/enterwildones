@@ -9,7 +9,7 @@ import { listDrinkLedgers } from './_drink-ledger.mjs';
 import { writeAudit } from './_audit.mjs';
 import { currentTicketOffer, ticketPricingSchedule } from './_payments.mjs';
 import { admissionCapacity, commissionAdmissionInventory, getAdmissionInventory } from './_admission-inventory.mjs';
-import { auditHistoricalAdmission } from './_historical-ticket-audit.mjs';
+import { auditHistoricalAdmission, historicalBlobKeys } from './_historical-ticket-audit.mjs';
 
 const REHEARSAL_STORE = 'wildones-rehearsal';
 const ACTIVE = new Set(['paid', 'checked_in']);
@@ -46,9 +46,7 @@ async function records(storeName, eventId) {
 // list are mandatory before a 200-ticket commissioning transaction.
 async function auditedRecords(storeName, eventId) {
   const store = blobStore(storeName);
-  const listed = await store.list({ prefix: `${eventId}/` });
-  if (!Array.isArray(listed?.blobs)) throw new Error('Historical Blob listing is incomplete.');
-  const keys = listed.blobs.map(item => item.key);
+  const keys = await historicalBlobKeys(store, eventId);
   const records = Array(keys.length);
   let cursor = 0;
   await Promise.all(Array.from({ length: Math.min(10, keys.length) }, async () => {
