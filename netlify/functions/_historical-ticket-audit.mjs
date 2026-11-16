@@ -1,3 +1,31 @@
+/**
+ * Enumerate every event-scoped Blob key, including all paginated result pages.
+ * Reject incomplete, duplicated, or cross-event listings rather than silently
+ * understating occupied seats. No writes are performed here.
+ */
+export async function historicalBlobKeys(store, eventId) {
+  const prefix = String(eventId || '').trim() + '/';
+  if (prefix === '/' || typeof store?.list !== 'function') throw new Error('Invalid Blob audit scope');
+  const pages = store.list({ prefix, paginate: true });
+  if (!pages || typeof pages[Symbol.asyncIterator] !== 'function') {
+    throw new Error('Historical Blob listing did not provide a complete page iterator');
+  }
+  const seen = new Set();
+  const keys = [];
+  for await (const page of pages) {
+    if (!Array.isArray(page?.blobs)) throw new Error('Historical Blob listing page was incomplete');
+    for (const item of page.blobs) {
+      const key = item?.key;
+      if (typeof key !== 'string' || !key.startsWith(prefix) || seen.has(key)) {
+        throw new Error('Historical Blob listing had an invalid or repeated key');
+      }
+      seen.add(key);
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
 const OCCUPY = new Set(['paid', 'checked_in', 'disputed', 'refund_pending']);
 const HISTORIC_STATES = new Set([...OCCUPY, 'refunded', 'revoked', 'void']);
 const PAID_EVIDENCE_STATES = new Set(['paid','disputed','refund_pending']);
