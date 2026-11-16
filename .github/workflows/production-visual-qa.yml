@@ -70,6 +70,8 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Full production build and validation suite
         run: npm run build
+      - name: Enforce exact WebKit viewport coverage in every shard (PR gate)
+        run: python -m unittest discover -s scripts -p 'test_webkit_viewport_shards.py' -v
       - name: Static source, asset, route, and regression audit
         env:
           VISUAL_RESULTS: visual-results
