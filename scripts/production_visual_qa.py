@@ -539,14 +539,33 @@ def state_checks(page,case,width=None,browser_name="chromium"):
   if unloaded:f.append("Passport realm images must be fully decoded before audit")
  return f
 
+def touch_menu_summary(page):
+ # Mobile WebKit can keep the topbar animating, preventing Locator.tap()
+ # from achieving Playwright's "stable" actionability condition. A real
+ # coordinate-based touchscreen tap must still hit a visible, unobstructed
+ # summary; never fire synthetic click/DOM events or force an element open.
+ target=page.locator("details.mobile-menu summary").first
+ hit=target.evaluate("""el=>{
+  const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  const front=document.elementFromPoint(x,y);
+  return {x,y,w:r.width,h:r.height,viewportW:innerWidth,viewportH:innerHeight,
+    visible:!!r.width&&!!r.height&&!!front&&(front===el||el.contains(front)),
+    front:front?.tagName||null};
+ }""")
+ if not hit["visible"] or not (0<=hit["x"]<hit["viewportW"] and 0<=hit["y"]<hit["viewportH"]):
+  raise AssertionError("Mobile menu summary is hidden, obscured, or outside the viewport: "+json.dumps(hit))
+ print("WEBKIT_MENU_TOUCH_TARGET "+json.dumps(hit),flush=True)
+ page.touchscreen.tap(hit["x"],hit["y"])
+
 def mobile_menu(page,width,browser_name="chromium"):
  if width>850 or page.locator("details.mobile-menu summary").count()==0:return None
  s=page.locator("details.mobile-menu summary").first
  def activate():
-  # Touch-only WebKit uses tap instead of synthetic mouse hover/click.
-  if browser_name=="webkit" and width<900:s.tap(timeout=10000)
+  # Exercise a real touch gesture while preserving the visible/hit-target
+  # assertion, instead of waiting forever for a CSS-animated stable element.
+  if browser_name=="webkit" and width<900:touch_menu_summary(page)
   else:s.click(timeout=10000)
- activate();page.wait_for_timeout(60)
+ activate();page.wait_for_timeout(120)
  ok=page.locator("details.mobile-menu").first.get_attribute("open") is not None and page.locator("details.mobile-menu[open] nav a:visible").count()>0
  if ok:activate()
  return ok
