@@ -601,12 +601,16 @@ def browser_mode(suite,browser_name,viewport_group="all",case_name=None,viewport
     page.on("response",lambda r:assetfail.append({"url":r.url,"status":r.status}) if same_origin(r.url) and r.status>=400 and r.request.resource_type in {"document","script","stylesheet","image","font"} else None)
     fixtures(page,case.state);rep={"suite":suite,"browser":browser_name,"viewport":vp,"width":w,"case":case.name,"path":case.path}
     try:
+     if browser_name=="webkit":print(f"WEBKIT_STAGE begin suite={suite} case={case.name} viewport={vp}",flush=True)
      resp=page.goto(BASE+case.path,wait_until="domcontentloaded",timeout=45000);rep["status"]=resp.status if resp else 0
+     if browser_name=="webkit":print(f"WEBKIT_STAGE domcontentloaded suite={suite} case={case.name} viewport={vp} status={rep['status']}",flush=True)
      if case.wait:page.wait_for_selector(case.wait,state="visible",timeout=15000)
      page.wait_for_timeout(250)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE before-content-sweep suite={suite} case={case.name} viewport={vp}",flush=True)
      height=page.evaluate("document.documentElement.scrollHeight")
      for y in range(0,int(height),700):page.evaluate("y=>window.scrollTo(0,y)",y);page.wait_for_timeout(25)
      page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(100)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE after-content-sweep suite={suite} case={case.name} viewport={vp} height={height}",flush=True)
      # Preserve production CSP: Playwright string-based wait_for_function uses
      # unsafe-eval in Chromium. Use CSP-compatible evaluate + explicit polling.
      images_ready=False
@@ -617,9 +621,13 @@ def browser_mode(suite,browser_name,viewport_group="all",case_name=None,viewport
 }""")
       if images_ready:break
       page.wait_for_timeout(500)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE before-state-checks suite={suite} case={case.name} viewport={vp} images_ready={images_ready}",flush=True)
      checks=state_checks(page,case,w,browser_name)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE after-state-checks suite={suite} case={case.name} viewport={vp} failures={len(checks)}",flush=True)
      if not images_ready:checks.append("visible images did not finish decoding within 10 seconds")
+     if browser_name=="webkit":print(f"WEBKIT_STAGE before-dom-menu suite={suite} case={case.name} viewport={vp}",flush=True)
      audit=dom(page);menu=mobile_menu(page,w,browser_name)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE after-dom-menu suite={suite} case={case.name} viewport={vp} menu={menu}",flush=True)
      rep.update(audit);rep.update({"pageErrors":errors,"consoleErrors":console,"requestFailures":reqfail,"assetFailures":assetfail,"stateFailures":checks,"mobileMenuOk":menu})
      rep["failed"]=any([rep["status"]>=400,errors,console,reqfail,assetfail,audit["overflow"],audit["dups"],audit["unlabeled"],audit["unnamed"],audit["broken"],audit["missingAlt"],not audit["title"],not audit["h1"],audit["text"]<20,checks,menu is False])
     except Exception as e:
