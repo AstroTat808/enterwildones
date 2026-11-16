@@ -166,14 +166,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Require EVERY viewport shard; missing or cancelled shards are NO-GO.
           expected=(
             "public · chromium"
+            "public · webkit · shard0"
+            "public · webkit · shard1"
+            "public · webkit · shard2"
+            "public · webkit · shard3"
             "transactional · chromium"
+            "transactional · webkit · shard0"
+            "transactional · webkit · shard1"
+            "transactional · webkit · shard2"
+            "transactional · webkit · shard3"
             "admin · chromium"
+            "admin · webkit · shard0"
+            "admin · webkit · shard1"
+            "admin · webkit · shard2"
+            "admin · webkit · shard3"
             "staff · chromium"
-            "public · webkit"
-            "transactional · webkit"
-            "admin · webkit"
             "staff · webkit"
           )
           for attempt in $(seq 1 180); do

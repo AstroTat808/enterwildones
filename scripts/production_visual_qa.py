@@ -514,12 +514,23 @@ def mobile_menu(page,width):
  if ok:s.click()
  return ok
 
-def browser_mode(suite,browser_name):
+def viewport_groups(browser_name, group):
+ if group == "all": return VIEWPORTS[browser_name]
+ if browser_name != "webkit" or group not in ("0","1","2","3"):
+  raise ValueError("Sharding is supported only for named WebKit viewport groups")
+ selected=[vp for index,vp in enumerate(VIEWPORTS[browser_name]) if index % 4 == int(group)]
+ if not selected: raise ValueError("Empty viewport shard")
+ return selected
+
+def browser_mode(suite,browser_name,viewport_group="all"):
  from playwright.sync_api import sync_playwright
- root=OUT/(suite+"-"+browser_name);root.mkdir(parents=True,exist_ok=True);results=[]
+ groups=viewport_groups(browser_name,viewport_group)
+ suffix="" if viewport_group=="all" else "-shard"+viewport_group
+ root=OUT/(suite+"-"+browser_name+suffix);root.mkdir(parents=True,exist_ok=True);results=[]
+ progress=root/"progress.jsonl"
  with sync_playwright() as p:
   browser=getattr(p,browser_name).launch()
-  for vp,w,h,dpr in VIEWPORTS[browser_name]:
+  for vp,w,h,dpr in groups:
    ctx=browser.new_context(viewport={"width":w,"height":h},device_scale_factor=dpr,is_mobile=w<900,has_touch=w<900,color_scheme="dark")
    for case in SUITES[suite]:
     page=ctx.new_page();errors=[];console=[];reqfail=[];assetfail=[]
@@ -555,7 +566,11 @@ def browser_mode(suite,browser_name):
     if vp in SHOTS[browser_name] or rep["failed"]:
      try:page.screenshot(path=str(root/(vp+"-"+case.name+".png")),full_page=True,animations="disabled",caret="hide")
      except Exception as e:rep["screenshotError"]=str(e);rep["failed"]=True
-    results.append(rep);page.close()
+    results.append(rep)
+    with progress.open("a",encoding="utf-8") as evidence:
+     evidence.write(json.dumps({"suite":suite,"browser":browser_name,"shard":viewport_group,"viewport":vp,"case":case.name,"failed":rep.get("failed"),"exception":rep.get("exception")})+"\n")
+    print(f'BROWSER_PROGRESS suite={suite} browser={browser_name} shard={viewport_group} viewport={vp} case={case.name} failed={rep.get("failed")}',flush=True)
+    page.close()
    ctx.close()
   browser.close()
  with sync_playwright() as p:
@@ -574,6 +589,8 @@ def browser_mode(suite,browser_name):
   except Exception as e:motion.update(exception=str(e),failed=True)
   results.append(motion);page.close();c.close();b.close()
  (root/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
+ expected=len(groups)*len(SUITES[suite])+1
+ if len(results)!=expected: raise RuntimeError(f"Missing browser cases: expected {expected}, got {len(results)}")
  failures=[r for r in results if r.get("failed")];print(json.dumps({"checks":len(results),"failures":len(failures),"tinyWarnings":sum(len(r.get("tiny",[])) for r in results)},indent=2))
  if failures:print(json.dumps(failures[:12],indent=2))
  return 1 if failures else 0
@@ -748,10 +765,10 @@ def wait_mode(before):
  s,h,b=get("/");ok=s==200 and len(b)>100;print(json.dumps({"productionReachable":ok,"status":s},indent=2));return 0 if ok else 1
 
 def main():
- p=argparse.ArgumentParser();p.add_argument("--mode",choices=("source","wait","smoke","browser"),required=True);p.add_argument("--suite",choices=tuple(SUITES),default="public");p.add_argument("--browser",choices=tuple(VIEWPORTS),default="chromium");p.add_argument("--before",default=os.environ.get("BEFORE_SHA",""));a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument("--mode",choices=("source","wait","smoke","browser"),required=True);p.add_argument("--suite",choices=tuple(SUITES),default="public");p.add_argument("--browser",choices=tuple(VIEWPORTS),default="chromium");p.add_argument("--viewport-group",choices=("all","0","1","2","3"),default="all");p.add_argument("--before",default=os.environ.get("BEFORE_SHA",""));a=p.parse_args()
  if a.mode=="source":return source_mode()
  if a.mode=="wait":return wait_mode(a.before)
  if a.mode=="smoke":return smoke_mode()
- return browser_mode(a.suite,a.browser)
+ return browser_mode(a.suite,a.browser,a.viewport_group)
 
 if __name__=="__main__":sys.exit(main())

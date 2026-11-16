@@ -1,0 +1,60 @@
+name: Release Ruleset Utility QA
+on:
+  pull_request:
+    paths:
+      - 'scripts/enforce-main-release-checks.py'
+      - 'scripts/test_enforce_main_release_checks.py'
+      - '.github/workflows/release-ruleset-audit.yml'
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type ENFORCE-CHECKS to confirm updating the live main ruleset'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  ruleset-utility-tests:
+    name: Release ruleset utility tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check syntax and fail-closed ruleset planner
+        run: |
+          python -m py_compile scripts/enforce-main-release-checks.py
+          python -m unittest discover -s scripts -p test_enforce_main_release_checks.py -v
+      - name: Read-only main ruleset audit
+        run: python scripts/enforce-main-release-checks.py
+
+  enforce-main-required-checks:
+    name: Apply required GitHub Actions checks (explicit admin approval)
+    if: github.event_name == 'workflow_dispatch'
+    needs: ruleset-utility-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.EWO_RULESET_ADMIN_TOKEN }}
+      CONFIRM: ${{ inputs.confirm }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require explicit owner confirmation and Admin:write credential
+        run: |
+          test "$CONFIRM" = 'ENFORCE-CHECKS'
+          test -n "$GH_TOKEN"
+      - name: Enforce and independently verify protected default-branch check requirements
+        run: |
+          python scripts/enforce-main-release-checks.py --apply --confirm "$CONFIRM"
+          python scripts/enforce-main-release-checks.py --verify
