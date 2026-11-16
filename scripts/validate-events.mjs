@@ -23,8 +23,10 @@ for (const [key, event] of Object.entries(EVENTS)) {
 }
 
 const aureva = EVENTS['aureva-2026'];
-if (aureva.startsAt !== '2026-12-19T15:00:00-10:00') errors.push('AUREVA must begin Saturday Dec 19, 2026 at 3 PM HST');
-if (aureva.endsAt !== '2026-12-20T03:00:00-10:00') errors.push('AUREVA must end Sunday Dec 20, 2026 at 3 AM HST');
+if (aureva.startsAt !== '2027-01-23T19:00:00-10:00') errors.push('AUREVA must begin Saturday Jan 23, 2027 at 7 PM HST');
+if (aureva.endsAt !== '2027-01-24T03:00:00-10:00') errors.push('AUREVA must end Sunday Jan 24, 2027 at 3 AM HST');
+if (aureva.year !== 2027) errors.push('AUREVA public year must be 2027 while the event identity remains stable');
+if ((Date.parse(aureva.endsAt)-Date.parse(aureva.startsAt)) !== 8*60*60*1000) errors.push('AUREVA duration must be 8 hours');
 const ordered = listEvents();
 if (ordered.length !== 4) errors.push(`Expected 4 active cycle events, found ${ordered.length}`);
 
