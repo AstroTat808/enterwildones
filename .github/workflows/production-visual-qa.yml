@@ -4,19 +4,9 @@ name: Production visual QA
 # This preserves the existing Lighthouse, browser and visual quality gates.
 
 on:
+  # All pull requests must run required QA, even for workflow or documentation changes.
   pull_request:
     branches: [main]
-    paths:
-      - '.github/workflows/production-visual-qa.yml'
-      - 'site/**'
-      - 'netlify/functions/**'
-      - 'netlify.toml'
-      - 'scripts/production_visual_qa.py'
-      - 'scripts/visual_regression.py'
-      - 'lighthouserc.cjs'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.nvmrc'
   push:
     branches: [main]
     paths:
