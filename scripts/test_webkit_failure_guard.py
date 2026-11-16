@@ -29,7 +29,13 @@ class WebKitCleanups(unittest.TestCase):
 
     def test_webkit_masthead_requires_actual_scroll_class(self):
         source = SRC.read_text(encoding="utf-8")
-        self.assertIn("page.mouse.wheel(0,min(220,max_scroll))", source)
+        self.assertIn("page.mouse.wheel(0,top)", source)
+        self.assertIn('if browser_name=="webkit" and width<900:', source)
+        self.assertIn('page.evaluate("top=>window.scrollTo({top,behavior:\'auto\'})",top)', source)
+        self.assertIn("s.tap(timeout=10000)", source)
+        self.assertIn("page.on(\"crash\"", source)
+        self.assertIn('full_page=(browser_name!="webkit")', source)
+        self.assertNotIn("page.mouse.wheel(0,min(220,max_scroll))", source)
         self.assertIn("page.locator('body.masthead-scrolled').wait_for", source)
         self.assertIn("if max_scroll>90:", source)
         self.assertIn("WEBKIT_FAIL_FAST", source)
