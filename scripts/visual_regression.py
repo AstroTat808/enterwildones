@@ -215,7 +215,34 @@ def verify_mastheads(base_url:str,browser_name:str="chromium"):
             if ref is None:viewport_reference[(vp,"expanded")]=initial_signature
             elif initial_signature!=ref:row["failures"].append("expanded masthead physical dimensions differ across routes: "+str(ref)+" got "+str(initial_signature))
 
-            page.evaluate("document.body.classList.add('masthead-scrolled')")
+            # Test the real scroll-driven state, not a fabricated CSS
+            # class. The production masthead reconciles the class with
+            # window.scrollY in all Chromium and WebKit mobile viewports.
+            # Add only a non-rendered vertical spacer on unusually short
+            # routes; it leaves fixed header geometry unchanged.
+            page.evaluate("""() => {
+              const doc=document.documentElement;
+              doc.style.scrollBehavior='auto';
+              if(doc.scrollHeight-window.innerHeight<190){
+                const spacer=document.createElement('div');
+                spacer.setAttribute('aria-hidden','true');
+                spacer.setAttribute('data-masthead-test-spacer','');
+                spacer.style.cssText='height:360px;visibility:hidden;pointer-events:none';
+                document.body.append(spacer);
+              }
+              const max=Math.max(doc.scrollHeight-window.innerHeight,0);
+              window.scrollTo({top:Math.min(180,max),behavior:'auto'});
+            }""")
+            compact_state=None
+            for _ in range(50):
+              compact_state=page.evaluate("""() => ({
+                scrollY:window.scrollY,
+                classActive:document.body.classList.contains('masthead-scrolled')
+              })""")
+              if compact_state["scrollY"]>72 and compact_state["classActive"]:break
+              page.wait_for_timeout(100)
+            if not compact_state or compact_state["scrollY"]<=72 or not compact_state["classActive"]:
+              row["failures"].append("masthead did not enter real compact state after scrolling")
             page.wait_for_timeout(430)
             compact=page.evaluate(capture_js)
             validate(compact,w,True,row)
