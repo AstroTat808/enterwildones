@@ -1,0 +1,42 @@
+name: AUREVA campaign graphics · verified PNG exports
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'site/assets/images/aureva-2027-campaign/**'
+      - 'scripts/export-aureva-social.py'
+      - '.github/workflows/aureva-campaign-export.yml'
+  push:
+    branches:
+      - 'fix/aureva-inventory-launch-hardening'
+    paths:
+      - 'site/assets/images/aureva-2027-campaign/**'
+      - 'scripts/export-aureva-social.py'
+      - '.github/workflows/aureva-campaign-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-verified-social-graphics:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install reproducible SVG rendering dependencies
+        run: python -m pip install --disable-pip-version-check --no-input 'CairoSVG==2.7.1' 'Pillow==11.3.0'
+      - name: Render, validate and hash the five official AUREVA social images
+        run: python scripts/export-aureva-social.py
+      - name: Archive approved AUREVA exports
+        uses: actions/upload-artifact@v4
+        with:
+          name: aureva-jan2027-social-exports
+          path: dist/aureva-social-2027/
+          retention-days: 30
+          if-no-files-found: error

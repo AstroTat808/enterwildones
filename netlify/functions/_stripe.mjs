@@ -8,7 +8,11 @@ export async function stripePost(path, body, idempotencyKey = '') {
   if (!secret) throw new Error('Stripe is not configured.');
   const response = await fetch(`https://api.stripe.com/v1/${path}`, { method: 'POST', headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/x-www-form-urlencoded', ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}) }, body: new URLSearchParams(body) });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data?.error?.message || `Stripe returned ${response.status}.`);
+  if (!response.ok) {
+    const error = new Error(data?.error?.message || `Stripe returned ${response.status}.`);
+    error.stripeHttpStatus = response.status;
+    throw error;
+  }
   return data;
 }
 export async function stripeGet(path) {
