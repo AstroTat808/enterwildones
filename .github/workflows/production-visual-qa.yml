@@ -93,6 +93,7 @@ jobs:
       - name: Install visual regression dependencies
         run: |
           pip install playwright==1.55.0 pillow==11.3.0
+          bash scripts/prepare-playwright-apt.sh
           python -m playwright install --with-deps chromium
       - name: Restore approved screenshot baseline
         id: baseline
@@ -166,6 +167,7 @@ jobs:
           else
             pip install playwright==1.55.0 pillow==11.3.0
           fi
+          bash scripts/prepare-playwright-apt.sh
           python -m playwright install --with-deps ${{ matrix.browser }}
       - name: Verify canonical masthead at all approved widths
         run: python scripts/visual_regression.py --mode verify-masthead --browser ${{ matrix.browser }}
@@ -233,6 +235,7 @@ jobs:
       - name: Install mobile WebKit
         run: |
           pip install playwright==1.65.2
+          bash scripts/prepare-playwright-apt.sh
           python -m playwright install --with-deps webkit
       - name: Exercise actual mobile header and menu interactions
         env:
@@ -269,6 +272,7 @@ jobs:
       - name: Install actual WebKit and route-aware local preview dependencies
         run: |
           pip install playwright==1.65.2 pillow==11.3.0
+          bash scripts/prepare-playwright-apt.sh
           python -m playwright install --with-deps webkit
       - name: Verify candidate site's real WebKit DOM, geometry and overflow
         env:
@@ -470,6 +474,7 @@ jobs:
           else
             pip install playwright==1.55.0
           fi
+          bash scripts/prepare-playwright-apt.sh
           python -m playwright install --with-deps ${{ matrix.browser }}
       - name: Full responsive production browser audit
         env:
