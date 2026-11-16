@@ -251,10 +251,41 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
+  webkit-pr-preview-critical:
+    name: WebKit candidate-site regression
+    if: github.event_name == 'pull_request'
+    needs: source-audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install actual WebKit and route-aware local preview dependencies
+        run: |
+          pip install playwright==1.65.2 pillow==11.3.0
+          python -m playwright install --with-deps webkit
+      - name: Verify candidate site's real WebKit DOM, geometry and overflow
+        env:
+          VISUAL_RESULTS: visual-results
+        run: python scripts/verify_aureva_webkit_preview.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr-preview-webkit-critical
+          path: visual-results/pr-preview-webkit/
+          retention-days: 14
+          if-no-files-found: warn
+
   production-qa-gate:
     name: Production QA Gate
     if: always()
-    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa, webkit-mobile-contract]
+    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa, webkit-mobile-contract, webkit-pr-preview-critical]
     runs-on: ubuntu-latest
     steps:
       - name: Enforce pre-merge critical gates
@@ -264,6 +295,7 @@ jobs:
           LIGHTHOUSE_RESULT: ${{ needs.lighthouse-ci.result }}
           MASTHEAD_BROWSER_RESULT: ${{ needs.masthead-browser-qa.result }}
           WEBKIT_MOBILE_RESULT: ${{ needs.webkit-mobile-contract.result }}
+          WEBKIT_PREVIEW_RESULT: ${{ needs.webkit-pr-preview-critical.result }}
           IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
         run: |
           echo "Source + build audit: $SOURCE_RESULT"
@@ -274,7 +306,10 @@ jobs:
           test "$VISUAL_RESULT" = "success"
           test "$LIGHTHOUSE_RESULT" = "success"
           test "$MASTHEAD_BROWSER_RESULT" = "success"
-          if [ "$IS_PULL_REQUEST" = "true" ]; then test "$WEBKIT_MOBILE_RESULT" = "success"; fi
+          if [ "$IS_PULL_REQUEST" = "true" ]; then
+            test "$WEBKIT_MOBILE_RESULT" = "success"
+            test "$WEBKIT_PREVIEW_RESULT" = "success"
+          fi
 
   deploy-sync:
     name: Confirm production deployment
