@@ -239,9 +239,17 @@ def state_checks(page,case,width=None):
   # force a known expanded starting state. This prevents route/load timing from
   # contaminating the compact-state assertion in the broader browser matrix.
   page.locator('body.wo-guest-masthead').wait_for(state='attached',timeout=10000)
-  page.evaluate("window.scrollTo(0,0);document.body.classList.remove('masthead-scrolled')")
+  # Disable CSS smooth scroll for deterministic initial geometry.
+  page.evaluate("""() => {
+   document.documentElement.style.scrollBehavior='auto';
+   window.scrollTo({top:0,behavior:'instant'});
+   document.body.classList.remove('masthead-scrolled');
+  }""")
   page.locator('body:not(.masthead-scrolled)').wait_for(state='attached',timeout=5000)
-  page.wait_for_timeout(220)
+  for _ in range(20):
+   if page.evaluate("window.scrollY < 2 && !document.body.classList.contains('masthead-scrolled')"):break
+   page.wait_for_timeout(100)
+  page.wait_for_timeout(140)
   metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
    const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
@@ -282,7 +290,7 @@ def state_checks(page,case,width=None):
   # Short pages fall back to the same canonical class the branding controller uses.
   page.evaluate("""() => {
    const max=Math.max(document.documentElement.scrollHeight-innerHeight,0);
-   if(max>90)window.scrollTo(0,Math.min(160,max));
+   if(max>90)window.scrollTo({top:Math.min(160,max),behavior:'instant'});
    else document.body.classList.add('masthead-scrolled');
   }""")
   page.locator('body.masthead-scrolled').wait_for(state='attached',timeout=5000)
@@ -295,7 +303,15 @@ def state_checks(page,case,width=None):
   validate_masthead(compact_metrics,True)
   compact_h=compact_metrics["header"]["h"] if compact_metrics.get("header") else None
   if initial_h and compact_h and compact_h>=initial_h-1:f.append("guest masthead did not compact after scroll")
-  page.evaluate("window.scrollTo(0,0);document.body.classList.remove('masthead-scrolled')");page.wait_for_timeout(90)
+  page.evaluate("""() => {
+   document.documentElement.style.scrollBehavior='auto';
+   window.scrollTo({top:0,behavior:'instant'});
+   document.body.classList.remove('masthead-scrolled');
+  }""")
+  for _ in range(20):
+   if page.evaluate("window.scrollY < 2 && !document.body.classList.contains('masthead-scrolled')"):break
+   page.wait_for_timeout(100)
+  page.wait_for_timeout(140)
  # Transactional typography is a release contract: semantic roles must resolve to one
  # shared hierarchy and live markup must not override the shared font metrics.
  transactional_required={
