@@ -514,12 +514,19 @@ def mobile_menu(page,width):
  if ok:s.click()
  return ok
 
-def browser_mode(suite,browser_name):
+def browser_mode(suite,browser_name,viewport_shard="all"):
  from playwright.sync_api import sync_playwright
- root=OUT/(suite+"-"+browser_name);root.mkdir(parents=True,exist_ok=True);results=[]
+ suffix="" if viewport_shard=="all" else "-"+viewport_shard
+ root=OUT/(suite+"-"+browser_name+suffix);root.mkdir(parents=True,exist_ok=True);results=[]
+ # Mobile includes 320/390/430/768px; desktop includes 1024px and wider.
+ # Sharding reduces WebKit runtime without changing the approved viewport coverage.
+ viewports=VIEWPORTS[browser_name]
+ if viewport_shard=="mobile":viewports=[v for v in viewports if v[1]<900]
+ elif viewport_shard=="desktop":viewports=[v for v in viewports if v[1]>=900]
+ if not viewports:raise ValueError("Empty browser viewport shard")
  with sync_playwright() as p:
   browser=getattr(p,browser_name).launch()
-  for vp,w,h,dpr in VIEWPORTS[browser_name]:
+  for vp,w,h,dpr in viewports:
    ctx=browser.new_context(viewport={"width":w,"height":h},device_scale_factor=dpr,is_mobile=w<900,has_touch=w<900,color_scheme="dark")
    for case in SUITES[suite]:
     page=ctx.new_page();errors=[];console=[];reqfail=[];assetfail=[]
@@ -527,7 +534,8 @@ def browser_mode(suite,browser_name):
     page.on("console",lambda m:console.append(m.text) if m.type=="error" and "challenges.cloudflare.com" not in m.text and not (case.state=="passport-login" and "401 (Unauthorized)" in m.text) else None)
     page.on("requestfailed",lambda r:reqfail.append(r.url) if same_origin(r.url) and not (r.resource_type=="image" and "ERR_ABORTED" in str(r.failure).upper()) else None)
     page.on("response",lambda r:assetfail.append({"url":r.url,"status":r.status}) if same_origin(r.url) and r.status>=400 and r.request.resource_type in {"document","script","stylesheet","image","font"} else None)
-    fixtures(page,case.state);rep={"suite":suite,"browser":browser_name,"viewport":vp,"width":w,"case":case.name,"path":case.path}
+    fixtures(page,case.state);rep={"suite":suite,"browser":browser_name,"viewportShard":viewport_shard,"viewport":vp,"width":w,"case":case.name,"path":case.path}
+    print(f"BEGIN {suite}/{browser_name}/{viewport_shard}: {vp} {case.name}",flush=True)
     try:
      resp=page.goto(BASE+case.path,wait_until="domcontentloaded",timeout=45000);rep["status"]=resp.status if resp else 0
      if case.wait:page.wait_for_selector(case.wait,state="visible",timeout=15000)
@@ -555,7 +563,11 @@ def browser_mode(suite,browser_name):
     if vp in SHOTS[browser_name] or rep["failed"]:
      try:page.screenshot(path=str(root/(vp+"-"+case.name+".png")),full_page=True,animations="disabled",caret="hide")
      except Exception as e:rep["screenshotError"]=str(e);rep["failed"]=True
-    results.append(rep);page.close()
+    results.append(rep)
+    # Persist case evidence during the run, not only on successful shutdown.
+    (root/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
+    print(f"END {suite}/{browser_name}/{viewport_shard}: {vp} {case.name} {'FAIL' if rep['failed'] else 'PASS'}",flush=True)
+    page.close()
    ctx.close()
   browser.close()
  with sync_playwright() as p:
@@ -748,10 +760,10 @@ def wait_mode(before):
  s,h,b=get("/");ok=s==200 and len(b)>100;print(json.dumps({"productionReachable":ok,"status":s},indent=2));return 0 if ok else 1
 
 def main():
- p=argparse.ArgumentParser();p.add_argument("--mode",choices=("source","wait","smoke","browser"),required=True);p.add_argument("--suite",choices=tuple(SUITES),default="public");p.add_argument("--browser",choices=tuple(VIEWPORTS),default="chromium");p.add_argument("--before",default=os.environ.get("BEFORE_SHA",""));a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument("--mode",choices=("source","wait","smoke","browser"),required=True);p.add_argument("--suite",choices=tuple(SUITES),default="public");p.add_argument("--browser",choices=tuple(VIEWPORTS),default="chromium");p.add_argument("--before",default=os.environ.get("BEFORE_SHA",""));p.add_argument("--viewport-shard",choices=("all","mobile","desktop"),default="all");a=p.parse_args()
  if a.mode=="source":return source_mode()
  if a.mode=="wait":return wait_mode(a.before)
  if a.mode=="smoke":return smoke_mode()
- return browser_mode(a.suite,a.browser)
+ return browser_mode(a.suite,a.browser,a.viewport_shard)
 
 if __name__=="__main__":sys.exit(main())
