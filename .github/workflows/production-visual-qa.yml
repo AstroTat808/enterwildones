@@ -4,7 +4,7 @@ name: Production visual QA
 # This preserves the existing Lighthouse, browser and visual quality gates.
 
 on:
-  # Required release checks must run for EVERY PR, including ruleset/docs changes.
+  # All pull requests must run required QA, even for workflow or documentation changes.
   pull_request:
     branches: [main]
   push:
@@ -60,6 +60,8 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Full production build and validation suite
         run: npm run build
+      - name: Enforce exact WebKit viewport coverage in every shard (PR gate)
+        run: python -m unittest discover -s scripts -p 'test_webkit_viewport_shards.py' -v
       - name: Static source, asset, route, and regression audit
         env:
           VISUAL_RESULTS: visual-results
@@ -265,7 +267,7 @@ jobs:
           if-no-files-found: error
 
   browser-qa:
-    name: ${{ matrix.suite }} · ${{ matrix.browser }}
+    name: ${{ matrix.name }}
     if: github.event_name != 'pull_request'
     needs: deploy-sync
     runs-on: ubuntu-24.04
@@ -274,8 +276,92 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
-        suite: [public, transactional, admin, staff]
-        browser: [chromium, webkit]
+        include:
+          - suite: public
+            browser: chromium
+            shard: 'all'
+            name: 'public · chromium'
+            results_dir: 'public-chromium'
+          - suite: public
+            browser: webkit
+            shard: '0'
+            name: 'public · webkit · shard0'
+            results_dir: 'public-webkit-shard0'
+          - suite: public
+            browser: webkit
+            shard: '1'
+            name: 'public · webkit · shard1'
+            results_dir: 'public-webkit-shard1'
+          - suite: public
+            browser: webkit
+            shard: '2'
+            name: 'public · webkit · shard2'
+            results_dir: 'public-webkit-shard2'
+          - suite: public
+            browser: webkit
+            shard: '3'
+            name: 'public · webkit · shard3'
+            results_dir: 'public-webkit-shard3'
+          - suite: transactional
+            browser: chromium
+            shard: 'all'
+            name: 'transactional · chromium'
+            results_dir: 'transactional-chromium'
+          - suite: transactional
+            browser: webkit
+            shard: '0'
+            name: 'transactional · webkit · shard0'
+            results_dir: 'transactional-webkit-shard0'
+          - suite: transactional
+            browser: webkit
+            shard: '1'
+            name: 'transactional · webkit · shard1'
+            results_dir: 'transactional-webkit-shard1'
+          - suite: transactional
+            browser: webkit
+            shard: '2'
+            name: 'transactional · webkit · shard2'
+            results_dir: 'transactional-webkit-shard2'
+          - suite: transactional
+            browser: webkit
+            shard: '3'
+            name: 'transactional · webkit · shard3'
+            results_dir: 'transactional-webkit-shard3'
+          - suite: admin
+            browser: chromium
+            shard: 'all'
+            name: 'admin · chromium'
+            results_dir: 'admin-chromium'
+          - suite: admin
+            browser: webkit
+            shard: '0'
+            name: 'admin · webkit · shard0'
+            results_dir: 'admin-webkit-shard0'
+          - suite: admin
+            browser: webkit
+            shard: '1'
+            name: 'admin · webkit · shard1'
+            results_dir: 'admin-webkit-shard1'
+          - suite: admin
+            browser: webkit
+            shard: '2'
+            name: 'admin · webkit · shard2'
+            results_dir: 'admin-webkit-shard2'
+          - suite: admin
+            browser: webkit
+            shard: '3'
+            name: 'admin · webkit · shard3'
+            results_dir: 'admin-webkit-shard3'
+          - suite: staff
+            browser: chromium
+            shard: 'all'
+            name: 'staff · chromium'
+            results_dir: 'staff-chromium'
+          - suite: staff
+            browser: webkit
+            shard: 'all'
+            name: 'staff · webkit'
+            results_dir: 'staff-webkit'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -283,6 +369,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Verify all viewport shards cover every WebKit width exactly once
+        run: python -m unittest discover -s scripts -p 'test_webkit_viewport_shards.py' -v
       - name: Install Playwright
         run: |
           pip install playwright==1.55.0
@@ -291,13 +379,13 @@ jobs:
         env:
           PRODUCTION_BASE_URL: https://enterwildones.com
           VISUAL_RESULTS: visual-results
-        run: python scripts/production_visual_qa.py --mode browser --suite ${{ matrix.suite }} --browser ${{ matrix.browser }}
+        run: python scripts/production_visual_qa.py --mode browser --suite ${{ matrix.suite }} --browser ${{ matrix.browser }} --viewport-group ${{ matrix.shard }}
       - uses: actions/upload-artifact@v4
         if: always()
         continue-on-error: true
         with:
-          name: production-visual-${{ matrix.suite }}-${{ matrix.browser }}
-          path: visual-results/${{ matrix.suite }}-${{ matrix.browser }}
+          name: production-visual-${{ matrix.results_dir }}
+          path: visual-results/${{ matrix.results_dir }}
           retention-days: 14
           if-no-files-found: error
 
