@@ -261,6 +261,10 @@ export default async (req) => {
   const event = getEvent(eventId);
   if (!event) return json({ error: 'Unknown event.' }, 400);
   if (req.method === 'GET' && url.searchParams.get('audit') === '1') {
+    if (globalThis.Netlify?.context?.deploy?.context !== 'production' ||
+        url.hostname !== 'enterwildones.com') return json({
+      error:'Historical ticket auditing is restricted to the published production site.'
+    },403);
     // Admin-only complete read of event-scoped production Blobs. This endpoint is
     // strictly read-only: it cannot reserve admission or commission inventory.
     const [tickets, payments, invitations, inventory] = await Promise.all([
@@ -288,6 +292,10 @@ export default async (req) => {
   const current = await store.get(eventId, { type: 'json' }).catch(() => null) || { eventId, items: {} };
   const now = new Date().toISOString();
   if (body.action === 'commission_inventory') {
+    if (globalThis.Netlify?.context?.deploy?.context !== 'production' ||
+        url.hostname !== 'enterwildones.com') return json({
+      error:'Inventory commissioning is restricted to the published production site.'
+    },403);
     // No unattended commissioning. Explicit admin confirmation + approved number,
     // while paid sales are still closed, are mandatory.
     const approved = admissionCapacity(eventId);
