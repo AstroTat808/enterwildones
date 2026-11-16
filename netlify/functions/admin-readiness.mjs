@@ -9,6 +9,7 @@ import { listDrinkLedgers } from './_drink-ledger.mjs';
 import { writeAudit } from './_audit.mjs';
 import { currentTicketOffer, ticketPricingSchedule } from './_payments.mjs';
 import { admissionCapacity, commissionAdmissionInventory, getAdmissionInventory } from './_admission-inventory.mjs';
+import { auditHistoricalAdmission } from './_historical-ticket-audit.mjs';
 
 const REHEARSAL_STORE = 'wildones-rehearsal';
 const ACTIVE = new Set(['paid', 'checked_in']);
@@ -259,6 +260,20 @@ export default async (req) => {
   const eventId = String(url.searchParams.get('eventId') || listEvents({ includeHidden: true })[0]?.eventId || '');
   const event = getEvent(eventId);
   if (!event) return json({ error: 'Unknown event.' }, 400);
+  if (req.method === 'GET' && url.searchParams.get('audit') === '1') {
+    // Admin-only complete read of event-scoped production Blobs. This endpoint is
+    // strictly read-only: it cannot reserve admission or commission inventory.
+    const [tickets, payments, invitations, inventory] = await Promise.all([
+      records(STORES.tickets, eventId),
+      records(STORES.payments, eventId),
+      records(STORES.invitations, eventId),
+      getAdmissionInventory(eventId)
+    ]);
+    const audit = auditHistoricalAdmission({
+      eventId,capacity:admissionCapacity(eventId),tickets,payments,invitations,inventory
+    });
+    return json({event:toPublicEvent(event),audit,generatedAt:new Date().toISOString()});
+  }
   if (req.method === 'GET') {
     const [live, runbook, inventory] = await Promise.all([snapshot(event), rehearsal(eventId), getAdmissionInventory(eventId)]);
     const ready = readiness(event, runbook, inventory, live);
@@ -281,7 +296,18 @@ export default async (req) => {
       !approved || Number(body.approvedCapacity) !== approved) {
       return json({ error: 'Explicit authorization and the exact approved event capacity are required.' }, 403);
     }
-    const all = await records(STORES.tickets, eventId);
+    const [all, historicalPayments, historicalInvitations, databaseInventory] = await Promise.all([
+      records(STORES.tickets,eventId), records(STORES.payments,eventId),
+      records(STORES.invitations,eventId), getAdmissionInventory(eventId)
+    ]);
+    const audit = auditHistoricalAdmission({
+      eventId,capacity:approved,tickets:all,payments:historicalPayments,
+      invitations:historicalInvitations,inventory:databaseInventory
+    });
+    if (!audit.ready) return json({
+      error:'Historical ticket reconciliation failed. Resolve all audit findings before commissioning.',
+      code:'HISTORICAL_RECONCILIATION_REQUIRED',audit
+    },409);
     const recognized = new Set(['paid', 'checked_in', 'disputed', 'refund_pending', 'refunded', 'revoked', 'void']);
     if (all.some((ticket) => !recognized.has(ticket.status))) {
       return json({ error: 'Historical tickets contain unknown statuses; reconciliation requires explicit review.' }, 409);
