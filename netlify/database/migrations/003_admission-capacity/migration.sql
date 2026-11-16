@@ -1,5 +1,5 @@
 -- Event-scoped, transactionally locked admission inventory.
--- Apply after 001 and 002 on a Neon branch; only then apply to production.
+-- Apply after 001 and 002 on a Neon branch. Apply to production only after a safe rehearsal.
 CREATE TABLE IF NOT EXISTS wildones_event_capacity (
   event_id TEXT PRIMARY KEY,
   capacity INTEGER NOT NULL CHECK (capacity > 0),
