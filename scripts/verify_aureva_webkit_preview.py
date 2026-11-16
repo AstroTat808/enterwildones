@@ -16,6 +16,14 @@ from urllib.parse import urlparse
 import production_visual_qa as qa
 import visual_regression as vr
 
+# Dates mirror the public event catalog, without opening ticket sales.
+DATES = {
+    "aureva":"2027-01-23T19:00:00-10:00",
+    "halora":"2027-03-20T15:00:00-10:00",
+    "sunveil":"2027-06-19T15:00:00-10:00",
+    "nocturne":"2027-09-05T15:00:00-10:00",
+}
+
 CASES = (
     ("public", "home", "phone"),
     ("transactional", "passport-auth", "phone-large"),
@@ -23,7 +31,7 @@ CASES = (
 )
 
 
-class PreviewHandler(PreviewHandler):
+class PreviewHandler(vr.Handler):
     """Faithful local response for the otherwise unserved Netlify /api/events.
 
     This ONLY affects candidate-site smoke tests. The full published-SHA
@@ -35,10 +43,16 @@ class PreviewHandler(PreviewHandler):
             payload = {
                 "cycle":{"name":"The Wild Ones Cycle","statement":"Four realms. One cycle."},
                 "events":[
-                    {**entry, "startsAt": (
-                        "2027-01-23T19:00:00-10:00" if entry["slug"]=="aureva"
-                        else "2027-01-23T19:00:00-10:00"
-                    )} for entry in qa.REALMS
+                    {
+                        "eventId":entry["eventId"],
+                        "slug":entry["slug"],
+                        "startsAt":DATES[entry["slug"]],
+                        "ticketSalesOpen":False,
+                        "applicationOpen":entry["slug"]=="aureva",
+                        "status":"announced" if entry["slug"]=="aureva" else "planned",
+                        "accessMode":"application" if entry["slug"] in ("aureva","nocturne") else (
+                            "application_then_public" if entry["slug"]=="halora" else "public"),
+                    } for entry in qa.REALMS
                 ],
             }
             body=json.dumps(payload).encode("utf-8")
@@ -55,7 +69,7 @@ class PreviewHandler(PreviewHandler):
 def main():
     qa.OUT = Path(os.getenv("VISUAL_RESULTS", "visual-results")) / "pr-preview-webkit"
     qa.OUT.mkdir(parents=True, exist_ok=True)
-    server = ThreadingHTTPServer(("127.0.0.1", 0), vr.Handler)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), PreviewHandler)
     runner = threading.Thread(target=server.serve_forever, daemon=True)
     runner.start()
     qa.BASE = f"http://127.0.0.1:{server.server_address[1]}"
