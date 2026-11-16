@@ -76,26 +76,27 @@ function pricingState(eventId, runbook) {
   const prefix = `WILDONES_${eventPrefix(eventId)}`;
   const schedule = ticketPricingSchedule(eventId);
   const offer = currentTicketOffer(eventId);
-  const configuredPhases = schedule.phases.filter((phase) => phase.name || phase.priceCents || phase.endsAt);
-  const anyPhaseConfigured = configuredPhases.length > 0;
-  // Never treat incomplete phased admission as a valid fallback single price.
-  const admissionConfigured = Boolean(offer && (
-    schedule.tiered ? schedule.complete : !anyPhaseConfigured && schedule.fallbackPriceCents
-  ));
+  const phased = schedule.phases.filter((p) => p.name || p.priceCents || p.endsAt);
+  const hasAnyPhase = phased.length > 0;
+  const admissionConfigured = eventId==='aureva-2026'
+    ? Boolean(schedule.complete && offer)
+    : Boolean(offer && (!hasAnyPhase || schedule.complete));
   const ticketPriceCents = admissionConfigured ? offer.priceCents : null;
   const drinkPackagePriceCents = cents(`${prefix}_DRINK_PACKAGE_PRICE_CENTS`);
   const drinkPackageCredits = integer(`${prefix}_DRINK_PACKAGE_CREDITS`, 1, 24);
   const lateStayPriceCents = cents(`${prefix}_LATE_STAY_PRICE_CENTS`);
   const lateStayDepartureTime = String(env(`${prefix}_LATE_STAY_DEPARTURE_TIME`) || '').trim() || null;
-  const valuesConfigured = Boolean(admissionConfigured && drinkPackagePriceCents && drinkPackageCredits && lateStayPriceCents && lateStayDepartureTime);
-  const placeholderDetected = [ticketPriceCents, ...configuredPhases.map((p) => p.priceCents), drinkPackagePriceCents, lateStayPriceCents].some((value) => value === 100);
+  const lateStayValid = eventId!=='aureva-2026' || lateStayDepartureTime==='10:00 AM';
+  const valuesConfigured = Boolean(admissionConfigured && drinkPackagePriceCents && drinkPackageCredits &&
+    lateStayPriceCents && lateStayDepartureTime && lateStayValid);
+  const placeholderDetected = [ticketPriceCents, drinkPackagePriceCents, lateStayPriceCents].some((value) => value === 100);
   const approved = itemState(runbook, 'pricing-approved') === 'passed';
   return {
     ticketPriceCents,
     ticketTiered: schedule.tiered,
-    ticketPhases: configuredPhases,
+    ticketPhases: phased,
+    ticketScheduleComplete: Boolean(schedule.complete),
     ticketOffer: offer ? {phase:offer.phase,name:offer.name,priceCents:offer.priceCents,endsAt:offer.endsAt} : null,
-    ticketScheduleComplete: admissionConfigured,
     drinkPackagePriceCents,
     drinkPackageCredits,
     lateStayPriceCents,
