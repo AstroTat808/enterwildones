@@ -111,7 +111,9 @@ body.wo-guest-masthead.cinematic-home .v2-hero{padding-top:var(--wo-masthead-hei
 
 /* Premium compact state after scroll: smaller, still legible, and ratio-safe. */
 body.wo-guest-masthead.masthead-scrolled{
-  --wo-masthead-height:94px;
+  /* Match the homepage's existing 100px compact desktop masthead on
+     every realm, Passport and invite route; mobile overrides below stay. */
+  --wo-masthead-height:100px;
   --wo-masthead-brand-height:82px;
   --wo-masthead-icon-w:102px;
   --wo-masthead-gap:12px;

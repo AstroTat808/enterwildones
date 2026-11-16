@@ -88,7 +88,12 @@ class WebKitCleanups(unittest.TestCase):
         self.assertIn("page.on(\"crash\"", source)
         self.assertIn('full_page=(browser_name!="webkit")', source)
         self.assertNotIn("page.mouse.wheel(0,min(220,max_scroll))", source)
-        self.assertIn("page.locator('body.masthead-scrolled').wait_for", source)
+        # Real scroll position AND the real class are now polled directly for
+        # the same five-second window; no artificial class toggle on tall pages.
+        self.assertIn("compact_poll_deadline=time.monotonic()+5.0", source)
+        self.assertIn('if state["compact"] and (max_scroll<=90 or state["scrollY"]>72):', source)
+        self.assertIn('if not compact_seen:', source)
+        self.assertIn('validate_masthead(compact_metrics,True)', source)
         self.assertIn("if max_scroll>90:", source)
         self.assertIn("WEBKIT_FAIL_FAST", source)
         self.assertIn("WEBKIT_CLEANUP_TIMEOUT", source)

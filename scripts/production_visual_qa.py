@@ -309,10 +309,23 @@ def state_checks(page,case,width=None,browser_name="chromium"):
    if position<=72:f.append("guest masthead did not reach scroll threshold")
   else:
    page.evaluate("document.body.classList.add('masthead-scrolled')")
-  # Keep the original 5-second compact-state tolerance and log a
-  # failed assertion without discarding the page's diagnostic state.
-  try:page.locator('body.masthead-scrolled').wait_for(state='attached',timeout=5000)
-  except Exception as e:f.append("guest masthead compact-state wait failed: "+str(e))
+  # Poll the actual DOM state for five seconds, without synthesizing
+  # success. In WebKit the selector wait can time out even when a direct
+  # evaluation confirms the class; retain both real scroll and class checks.
+  compact_seen=False
+  compact_poll_deadline=time.monotonic()+5.0
+  while True:
+   state=page.evaluate("""() => ({
+    scrollY:window.scrollY,
+    compact:document.body.classList.contains('masthead-scrolled')
+   })""")
+   if state["compact"] and (max_scroll<=90 or state["scrollY"]>72):
+    compact_seen=True
+    break
+   if time.monotonic()>=compact_poll_deadline:break
+   page.wait_for_timeout(100)
+  if not compact_seen:
+   f.append("guest masthead compact-state wait failed: real scroll position and class did not both satisfy the five-second contract")
   scroll_details=page.evaluate("""() => ({
     scrollY:window.scrollY, bodyScroll:document.body.scrollTop,
     rootScroll:document.documentElement.scrollTop,
@@ -646,6 +659,20 @@ def browser_mode(suite,browser_name,viewport_group="all",case_name=None,viewport
      if not images_ready:checks.append("visible images did not finish decoding within 10 seconds")
      if browser_name=="webkit":print(f"WEBKIT_STAGE before-dom-menu suite={suite} case={case.name} viewport={vp}",flush=True)
      audit=dom(page);menu=mobile_menu(page,w,browser_name)
+     if audit["overflow"]:
+      overflow_details=page.evaluate("""() => {
+       const viewport=document.documentElement.clientWidth;
+       const scrollWidth=document.documentElement.scrollWidth;
+       const offenders=[...document.querySelectorAll('body *')].map(el=>{
+        const r=el.getBoundingClientRect();
+        return {tag:el.tagName.toLowerCase(),id:el.id||'',
+         className:typeof el.className==='string'?el.className.slice(0,120):'',
+         left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width)};
+       }).filter(el=>el.right>viewport+2 || el.left < -2).slice(0,35);
+       return {viewport,scrollWidth,offenders};
+      }""")
+      rep["overflowDetails"]=overflow_details
+      if browser_name=="webkit":print("WEBKIT_OVERFLOW_DETAILS "+json.dumps(overflow_details),flush=True)
      if browser_name=="webkit":print(f"WEBKIT_STAGE after-dom-menu suite={suite} case={case.name} viewport={vp} menu={menu}",flush=True)
      rep.update(audit);rep.update({"pageErrors":errors,"consoleErrors":console,"requestFailures":reqfail,"assetFailures":assetfail,"stateFailures":checks,"mobileMenuOk":menu})
      rep["failed"]=any([rep["status"]>=400,errors,console,reqfail,assetfail,audit["overflow"],audit["dups"],audit["unlabeled"],audit["unnamed"],audit["broken"],audit["missingAlt"],not audit["title"],not audit["h1"],audit["text"]<20,checks,menu is False])
