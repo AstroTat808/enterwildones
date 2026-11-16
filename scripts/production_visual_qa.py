@@ -288,11 +288,17 @@ def state_checks(page,case,width=None):
   initial_h=metrics["header"]["h"] if metrics.get("header") else None
   # Exercise the real scroll-triggered compact state when the page is tall enough.
   # Short pages fall back to the same canonical class the branding controller uses.
-  page.evaluate("""() => {
-   const max=Math.max(document.documentElement.scrollHeight-innerHeight,0);
-   if(max>90)window.scrollTo({top:Math.min(160,max),behavior:'instant'});
-   else document.body.classList.add('masthead-scrolled');
-  }""")
+  # Exercise a real wheel gesture before falling back to CSSOM auto scroll:
+  # WebKit may not dispatch an event for nonstandard 'instant' scroll options.
+  # Do not synthesize the compact class on genuinely scrollable pages.
+  max_scroll=page.evaluate("Math.max(document.documentElement.scrollHeight-innerHeight,0)")
+  if max_scroll>90:
+   page.mouse.wheel(0,min(220,max_scroll))
+   page.wait_for_timeout(250)
+   if page.evaluate("window.scrollY")<=72:
+    page.evaluate("top=>window.scrollTo({top,behavior:'auto'})",min(220,max_scroll))
+  else:
+   page.evaluate("document.body.classList.add('masthead-scrolled')")
   page.locator('body.masthead-scrolled').wait_for(state='attached',timeout=5000)
   page.wait_for_timeout(360)
   compact_metrics=page.evaluate("""() => {
@@ -522,6 +528,20 @@ def viewport_groups(browser_name, group):
  if not selected: raise ValueError("Empty viewport shard")
  return selected
 
+def guarded_browser_cleanup(close, root, label, browser_name):
+ if browser_name!="webkit": return close()
+ # Playwright WebKit's MiniBrowser can freeze when closing a failed renderer;
+ # kill this check with evidence instead of timing out the entire CI job.
+ from threading import Timer
+ def watchdog_fail():
+  details={"kind":"webkit_cleanup_timeout","step":label,"limit_seconds":20}
+  print("WEBKIT_CLEANUP_TIMEOUT "+json.dumps(details),flush=True)
+  (root/"cleanup-timeout.json").write_text(json.dumps(details,indent=2),encoding="utf-8")
+  os._exit(1)
+ watchdog=Timer(20,watchdog_fail);watchdog.daemon=True;watchdog.start()
+ try: return close()
+ finally: watchdog.cancel()
+
 def browser_mode(suite,browser_name,viewport_group="all"):
  from playwright.sync_api import sync_playwright
  groups=viewport_groups(browser_name,viewport_group)
@@ -564,15 +584,25 @@ def browser_mode(suite,browser_name,viewport_group="all"):
     except Exception as e:
      rep["exception"]=str(e);rep["failed"]=True
     if vp in SHOTS[browser_name] or rep["failed"]:
-     try:page.screenshot(path=str(root/(vp+"-"+case.name+".png")),full_page=True,animations="disabled",caret="hide")
+     try:page.screenshot(path=str(root/(vp+"-"+case.name+".png")),full_page=True,animations="disabled",caret="hide",timeout=18000)
      except Exception as e:rep["screenshotError"]=str(e);rep["failed"]=True
+    if browser_name=="webkit" and rep.get("failed"):
+     try:
+      rep["scrollDiagnostics"]=page.evaluate("""() => ({scrollY:window.scrollY,scrollHeight:document.documentElement.scrollHeight,viewportHeight:innerHeight,compact:document.body.classList.contains('masthead-scrolled')})""")
+     except Exception as e:rep["diagnosticError"]=str(e)
     results.append(rep)
     with progress.open("a",encoding="utf-8") as evidence:
      evidence.write(json.dumps({"suite":suite,"browser":browser_name,"shard":viewport_group,"viewport":vp,"case":case.name,"failed":rep.get("failed"),"exception":rep.get("exception")})+"\n")
     print(f'BROWSER_PROGRESS suite={suite} browser={browser_name} shard={viewport_group} viewport={vp} case={case.name} failed={rep.get("failed")}',flush=True)
-    page.close()
-   ctx.close()
-  browser.close()
+    if browser_name=="webkit" and rep.get("failed"):
+     (root/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
+     print("WEBKIT_FAIL_FAST "+json.dumps(rep),flush=True)
+     sys.stdout.flush();sys.stderr.flush()
+     # The check must fail, never hang in page.close() and appear incomplete.
+     os._exit(1)
+    guarded_browser_cleanup(page.close,root,f"page:{vp}:{case.name}",browser_name)
+   guarded_browser_cleanup(ctx.close,root,f"context:{vp}",browser_name)
+  guarded_browser_cleanup(browser.close,root,"browser",browser_name)
  with sync_playwright() as p:
   b=getattr(p,browser_name).launch();c=b.new_context(viewport={"width":390,"height":844},is_mobile=True,has_touch=True,reduced_motion="reduce");page=c.new_page();case=SUITES[suite][0];fixtures(page,case.state)
   motion={"suite":suite,"browser":browser_name,"case":case.name,"reducedMotion":True}
@@ -587,7 +617,14 @@ def browser_mode(suite,browser_name,viewport_group="all"):
  return {candidateCount:candidates.length+pseudoHosts.length,activeAnimatedCandidates:badElements+badPseudo,media:matchMedia('(prefers-reduced-motion: reduce)').matches};
 }""");motion.update(status=r.status if r else 0,**motion_state,failed=(not motion_state["media"] or motion_state["activeAnimatedCandidates"]>0))
   except Exception as e:motion.update(exception=str(e),failed=True)
-  results.append(motion);page.close();c.close();b.close()
+  results.append(motion)
+  if browser_name=="webkit" and motion.get("failed"):
+   (root/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
+   print("WEBKIT_MOTION_FAILURE "+json.dumps(motion),flush=True)
+   os._exit(1)
+  guarded_browser_cleanup(page.close,root,"motion_page",browser_name)
+  guarded_browser_cleanup(c.close,root,"motion_context",browser_name)
+  guarded_browser_cleanup(b.close,root,"motion_browser",browser_name)
  (root/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
  expected=len(groups)*len(SUITES[suite])+1
  if len(results)!=expected: raise RuntimeError(f"Missing browser cases: expected {expected}, got {len(results)}")
