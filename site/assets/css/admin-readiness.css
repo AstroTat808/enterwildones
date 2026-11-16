@@ -11,3 +11,32 @@
 .admin-command-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:24px 0}.admin-command-links a{display:block;padding:18px;border:1px solid rgba(232,201,130,.14);border-radius:16px;background:rgba(255,255,255,.018)}.admin-command-links strong{display:block;color:#fff2dc;font:22px Georgia,serif}.admin-command-links span{display:block;margin-top:6px;color:#91877a;font-size:11px;line-height:1.45}
 @media(max-width:900px){.command-hero,.command-panel-head{align-items:stretch;flex-direction:column}.command-two{grid-template-columns:minmax(0,1fr)}.signal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rehearsal-row{grid-template-columns:1fr}.rehearsal-row .rehearsal-controls{flex-wrap:wrap}.admin-command-links{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.command-page .command-shell{padding-left:17px;padding-right:17px}.command-actions{display:grid;grid-template-columns:1fr}.command-actions a,.command-actions button,.command-actions select{width:100%;justify-content:center}.command-decision{grid-template-columns:1fr;grid-template-areas:"kicker" "decision" "summary"}.command-grid,.signal-grid,.physical-guide{grid-template-columns:1fr}.command-card{min-height:108px;padding:16px}.command-verdict{align-items:flex-start;flex-direction:column}.rehearsal-meta{grid-template-columns:1fr}.admin-command-links{grid-template-columns:1fr}.command-table{min-width:600px}}
+
+
+/* Master Admin at 390-600px: keep real dashboard content within the
+   viewport rather than hiding horizontal overflow from browser QA. */
+@media(max-width:600px){
+  .admin-cinematic .admin-shell,
+  .admin-cinematic .admin-hero,
+  .admin-cinematic .metrics,
+  .admin-cinematic .events,
+  .admin-cinematic .event,
+  .admin-cinematic .card,
+  .admin-cinematic .admin-command-links,
+  .admin-cinematic .admin-command-links a,
+  .admin-cinematic .admin-links,
+  .admin-cinematic .admin-links a{min-width:0;max-width:100%}
+  .admin-cinematic .metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .admin-cinematic .events{grid-template-columns:minmax(0,1fr)}
+  .admin-cinematic .event .row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .admin-cinematic .card{min-width:0;padding:clamp(12px,3vw,18px)}
+  .admin-cinematic .card strong{font-size:clamp(22px,6vw,34px);overflow-wrap:anywhere}
+  .admin-cinematic .admin-command-links strong,
+  .admin-cinematic .admin-command-links span,
+  .admin-cinematic .event h2,
+  .admin-cinematic .admin-links a{overflow-wrap:anywhere}
+}
+@media(max-width:390px){
+  .admin-cinematic .metrics,
+  .admin-cinematic .event .row{grid-template-columns:minmax(0,1fr)!important}
+}
