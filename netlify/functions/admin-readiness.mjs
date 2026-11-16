@@ -41,6 +41,33 @@ async function records(storeName, eventId) {
   return out;
 }
 
+// Strict, bounded-concurrency production audit reads: never silently skip a
+// missing or corrupted historical record. Strong consistency and a complete
+// list are mandatory before a 200-ticket commissioning transaction.
+async function auditedRecords(storeName, eventId) {
+  const store = blobStore(storeName);
+  const listed = await store.list({ prefix: `${eventId}/` });
+  if (!Array.isArray(listed?.blobs)) throw new Error('Historical Blob listing is incomplete.');
+  const keys = listed.blobs.map(item => item.key);
+  const records = Array(keys.length);
+  let cursor = 0;
+  await Promise.all(Array.from({ length: Math.min(10, keys.length) }, async () => {
+    while (true) {
+      const at = cursor++;
+      if (at >= keys.length) break;
+      const record = await store.get(keys[at], { type: 'json', consistency: 'strong' });
+      if (!record || record.eventId !== eventId) {
+        throw new Error('A historical Blob record was unreadable or had the wrong event scope.');
+      }
+      records[at] = record;
+    }
+  }));
+  if (records.length !== keys.length || records.some(record => !record)) {
+    throw new Error('Historical Blob reads did not match the complete listing.');
+  }
+  return records;
+}
+
 function configured(...keys) { return keys.every((key) => Boolean(env(key))); }
 function configuredCertificate(name) { return Boolean(env(`${name}_BASE64`) || env(`${name}_PEM`)); }
 function eventPrefix(eventId) { return String(eventId || '').replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '').toUpperCase(); }
@@ -268,9 +295,9 @@ export default async (req) => {
     // Admin-only complete read of event-scoped production Blobs. This endpoint is
     // strictly read-only: it cannot reserve admission or commission inventory.
     const [tickets, payments, invitations, inventory] = await Promise.all([
-      records(STORES.tickets, eventId),
-      records(STORES.payments, eventId),
-      records(STORES.invitations, eventId),
+      auditedRecords(STORES.tickets, eventId),
+      auditedRecords(STORES.payments, eventId),
+      auditedRecords(STORES.invitations, eventId),
       getAdmissionInventory(eventId)
     ]);
     const audit = auditHistoricalAdmission({
@@ -305,8 +332,8 @@ export default async (req) => {
       return json({ error: 'Explicit authorization and the exact approved event capacity are required.' }, 403);
     }
     const [all, historicalPayments, historicalInvitations, databaseInventory] = await Promise.all([
-      records(STORES.tickets,eventId), records(STORES.payments,eventId),
-      records(STORES.invitations,eventId), getAdmissionInventory(eventId)
+      auditedRecords(STORES.tickets,eventId), auditedRecords(STORES.payments,eventId),
+      auditedRecords(STORES.invitations,eventId), getAdmissionInventory(eventId)
     ]);
     const audit = auditHistoricalAdmission({
       eventId,capacity:approved,tickets:all,payments:historicalPayments,
