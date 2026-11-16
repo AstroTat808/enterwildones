@@ -11,6 +11,7 @@ import sys
 import threading
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlparse
 
 import production_visual_qa as qa
 import visual_regression as vr
@@ -20,6 +21,35 @@ CASES = (
     ("transactional", "passport-auth", "phone-large"),
     ("admin", "admin-overview", "phone-large"),
 )
+
+
+class PreviewHandler(PreviewHandler):
+    """Faithful local response for the otherwise unserved Netlify /api/events.
+
+    This ONLY affects candidate-site smoke tests. The full published-SHA
+    production matrix still tests the real public API with no mock.
+    Unknown URLs and missing assets remain genuine HTTP 404s.
+    """
+    def do_GET(self):
+        if urlparse(self.path).path == "/api/events":
+            payload = {
+                "cycle":{"name":"The Wild Ones Cycle","statement":"Four realms. One cycle."},
+                "events":[
+                    {**entry, "startsAt": (
+                        "2027-01-23T19:00:00-10:00" if entry["slug"]=="aureva"
+                        else "2027-01-23T19:00:00-10:00"
+                    )} for entry in qa.REALMS
+                ],
+            }
+            body=json.dumps(payload).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type","application/json; charset=utf-8")
+            self.send_header("Cache-Control","no-store")
+            self.send_header("Content-Length",str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        return super().do_GET()
 
 
 def main():
