@@ -18,6 +18,7 @@ export function auditHistoricalAdmission({
     checkedIn: 0, disputed: 0, refundPending: 0, refunded: 0, revoked: 0, void: 0,
     totalPayments: payments.length, totalInvitations: invitations.length };
   const ticketIds = new Set(), users = new Set(), inviteIds = new Set(), sessions = new Set();
+  const invitationById = new Map(invitations.filter(x=>x?.eventId===eventId).map(x=>[val(x.invitationId), x]));
   const paymentById = new Map();
   const linkedAdmissionSessions = new Set();
   const issue = (code, ticket, n) => errors.push({code, ticketId: safeTicket(ticket,n)});
@@ -45,6 +46,9 @@ export function auditHistoricalAdmission({
     if (status==='disputed') counts.disputed++;
     if (status==='refund_pending') counts.refundPending++;
     if (!uid || !invite) issue('ACTIVE_TICKET_MISSING_IDENTITY',ticket,index);
+    const invitationRecord=invitationById.get(invite);
+    if (invite && !invitationRecord) issue('ACTIVE_TICKET_WITHOUT_INVITATION',ticket,index);
+    if (invitationRecord?.userId && val(invitationRecord.userId)!==uid) issue('TICKET_INVITATION_USER_MISMATCH',ticket,index);
     if (uid && users.has(uid)) issue('DUPLICATE_ACTIVE_USER',ticket,index);
     if (invite && inviteIds.has(invite)) issue('DUPLICATE_ACTIVE_INVITATION',ticket,index);
     users.add(uid);inviteIds.add(invite);
