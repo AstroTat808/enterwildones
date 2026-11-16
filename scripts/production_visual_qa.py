@@ -309,7 +309,21 @@ def state_checks(page,case,width=None,browser_name="chromium"):
    if position<=72:f.append("guest masthead did not reach scroll threshold")
   else:
    page.evaluate("document.body.classList.add('masthead-scrolled')")
-  page.locator('body.masthead-scrolled').wait_for(state='attached',timeout=5000)
+  # Preserve failure semantics while recording the first WebKit scroll error
+  # before expensive screenshot/renderer teardown.
+  scroll_details=page.evaluate("""() => ({
+    scrollY:window.scrollY, bodyScroll:document.body.scrollTop,
+    rootScroll:document.documentElement.scrollTop,
+    scrollHeight:document.documentElement.scrollHeight,
+    innerHeight:window.innerHeight, compact:document.body.classList.contains('masthead-scrolled'),
+    guest:document.body.classList.contains('wo-guest-masthead'),
+    brandingLoaded:!!document.querySelector('.topbar .brand'),
+    bodyClass:document.body.className
+  })""")
+  if browser_name=="webkit":
+   print("WEBKIT_SCROLL_STATE "+json.dumps({"case":case.name,"width":width,"details":scroll_details}),flush=True)
+  if not scroll_details["compact"]:
+   f.append("guest masthead did not enter compact state after real scrolling")
   page.wait_for_timeout(360)
   compact_metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
