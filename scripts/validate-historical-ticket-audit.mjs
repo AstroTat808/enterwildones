@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { auditHistoricalAdmission } from '../netlify/functions/_historical-ticket-audit.mjs';
+import { auditHistoricalAdmission, historicalBlobKeys } from '../netlify/functions/_historical-ticket-audit.mjs';
 
 const eventId='aureva-2026',capacity=200;
 const inventory={configured:true,initialized:true,capacity,commissioned:false,held:0,issued:0};
@@ -71,4 +71,36 @@ assert.ok(has(oversold,'CAPACITY_EXCEEDED'));
 assert.equal(oversold.counts.occupied,201);
 
 assert.deepEqual([paid('a'),comp('b')],[paid('a'),comp('b')]); // inputs are never modified
+// Netlify Blobs can return pages of at most 1,000 entries. The audit must never
+// infer zero issued seats from only the first page.
+const twoPages = {
+  list(options) {
+    assert.equal(options.prefix, eventId + '/');
+    assert.equal(options.paginate, true);
+    return (async function* () {
+      yield {blobs:[{key:eventId+'/ticket-a'},{key:eventId+'/ticket-b'}]};
+      yield {blobs:[{key:eventId+'/ticket-c'}]};
+    })();
+  }
+};
+assert.deepEqual(await historicalBlobKeys(twoPages,eventId),[
+  eventId+'/ticket-a',eventId+'/ticket-b',eventId+'/ticket-c'
+]);
+const duplicatePages = {list(){ return (async function* () {
+  yield {blobs:[{key:eventId+'/ticket-a'}]};
+  yield {blobs:[{key:eventId+'/ticket-a'}]};
+})();}};
+await assert.rejects(historicalBlobKeys(duplicatePages,eventId),/invalid or repeated key/);
+const incompletePages={list(){ return (async function* () {
+  yield {blobs:[{key:eventId+'/ticket-a'}]};
+  yield {missingBlobs:[]};
+})();}};
+await assert.rejects(historicalBlobKeys(incompletePages,eventId),/incomplete/);
+const otherEvent={list(){ return (async function* () {
+  yield {blobs:[{key:'nocturne-2027/ticket-a'}]};
+})();}};
+await assert.rejects(historicalBlobKeys(otherEvent,eventId),/invalid or repeated key/);
+const emptyPages={list(){return (async function*(){yield {blobs:[]};})();}};
+assert.deepEqual(await historicalBlobKeys(emptyPages,eventId),[]);
 console.log('PASS: 17 historical ticket invariants including 200-seat cap, payments, comps, refunds, identity, and orphan checks.');
+console.log('PASS: 5 paginated Blob enumeration invariants; no pages omitted.');
