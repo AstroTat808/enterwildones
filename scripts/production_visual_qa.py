@@ -231,7 +231,21 @@ def typography_contract_checks(page,case):
  return f
 
 
-def state_checks(page,case,width=None):
+def scroll_guest_masthead(page,browser_name,width,max_scroll):
+ # Mobile WebKit cannot use Playwright Mouse.wheel(); standards-compliant
+ # scrolling fires the real branding.js scroll handler at scrollY>72.
+ top=min(220,max_scroll)
+ if browser_name=="webkit" and width<900:
+  page.evaluate("top=>window.scrollTo({top,behavior:'auto'})",top)
+ else:
+  page.mouse.wheel(0,top)
+  page.wait_for_timeout(200)
+  if page.evaluate("window.scrollY")<=72:
+   page.evaluate("top=>window.scrollTo({top,behavior:'auto'})",top)
+ page.wait_for_timeout(200)
+ return page.evaluate("window.scrollY")
+
+def state_checks(page,case,width=None,browser_name="chromium"):
  f=typography_contract_checks(page,case)
  guest_header=page.locator(".topbar .brand").count()>0 and not (case.name.startswith("admin-") or case.name in ("check-in","bar"))
  if guest_header:
@@ -242,7 +256,7 @@ def state_checks(page,case,width=None):
   # Disable CSS smooth scroll for deterministic initial geometry.
   page.evaluate("""() => {
    document.documentElement.style.scrollBehavior='auto';
-   window.scrollTo({top:0,behavior:'instant'});
+   window.scrollTo({top:0,behavior:'auto'});
    document.body.classList.remove('masthead-scrolled');
   }""")
   page.locator('body:not(.masthead-scrolled)').wait_for(state='attached',timeout=5000)
@@ -288,18 +302,30 @@ def state_checks(page,case,width=None):
   initial_h=metrics["header"]["h"] if metrics.get("header") else None
   # Exercise the real scroll-triggered compact state when the page is tall enough.
   # Short pages fall back to the same canonical class the branding controller uses.
-  # Exercise a real wheel gesture before falling back to CSSOM auto scroll:
-  # WebKit may not dispatch an event for nonstandard 'instant' scroll options.
-  # Do not synthesize the compact class on genuinely scrollable pages.
+  # Real scroll position and compact header class must both be present.
   max_scroll=page.evaluate("Math.max(document.documentElement.scrollHeight-innerHeight,0)")
   if max_scroll>90:
-   page.mouse.wheel(0,min(220,max_scroll))
-   page.wait_for_timeout(250)
-   if page.evaluate("window.scrollY")<=72:
-    page.evaluate("top=>window.scrollTo({top,behavior:'auto'})",min(220,max_scroll))
+   position=scroll_guest_masthead(page,browser_name,width or 0,max_scroll)
+   if position<=72:f.append("guest masthead did not reach scroll threshold")
   else:
    page.evaluate("document.body.classList.add('masthead-scrolled')")
-  page.locator('body.masthead-scrolled').wait_for(state='attached',timeout=5000)
+  # Keep the original 5-second compact-state tolerance and log a
+  # failed assertion without discarding the page's diagnostic state.
+  try:page.locator('body.masthead-scrolled').wait_for(state='attached',timeout=5000)
+  except Exception as e:f.append("guest masthead compact-state wait failed: "+str(e))
+  scroll_details=page.evaluate("""() => ({
+    scrollY:window.scrollY, bodyScroll:document.body.scrollTop,
+    rootScroll:document.documentElement.scrollTop,
+    scrollHeight:document.documentElement.scrollHeight,
+    innerHeight:window.innerHeight, compact:document.body.classList.contains('masthead-scrolled'),
+    guest:document.body.classList.contains('wo-guest-masthead'),
+    brandingLoaded:!!document.querySelector('.topbar .brand'),
+    bodyClass:document.body.className
+  })""")
+  if browser_name=="webkit":
+   print("WEBKIT_SCROLL_STATE "+json.dumps({"case":case.name,"width":width,"details":scroll_details}),flush=True)
+  if not scroll_details["compact"]:
+   f.append("guest masthead did not enter compact state after real scrolling")
   page.wait_for_timeout(360)
   compact_metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
@@ -311,7 +337,7 @@ def state_checks(page,case,width=None):
   if initial_h and compact_h and compact_h>=initial_h-1:f.append("guest masthead did not compact after scroll")
   page.evaluate("""() => {
    document.documentElement.style.scrollBehavior='auto';
-   window.scrollTo({top:0,behavior:'instant'});
+   window.scrollTo({top:0,behavior:'auto'});
    document.body.classList.remove('masthead-scrolled');
   }""")
   for _ in range(20):
@@ -513,11 +539,35 @@ def state_checks(page,case,width=None):
   if unloaded:f.append("Passport realm images must be fully decoded before audit")
  return f
 
-def mobile_menu(page,width):
+def touch_menu_summary(page):
+ # Mobile WebKit can keep the topbar animating, preventing Locator.tap()
+ # from achieving Playwright's "stable" actionability condition. A real
+ # coordinate-based touchscreen tap must still hit a visible, unobstructed
+ # summary; never fire synthetic click/DOM events or force an element open.
+ target=page.locator("details.mobile-menu summary").first
+ hit=target.evaluate("""el=>{
+  const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  const front=document.elementFromPoint(x,y);
+  return {x,y,w:r.width,h:r.height,viewportW:innerWidth,viewportH:innerHeight,
+    visible:!!r.width&&!!r.height&&!!front&&(front===el||el.contains(front)),
+    front:front?.tagName||null};
+ }""")
+ if not hit["visible"] or not (0<=hit["x"]<hit["viewportW"] and 0<=hit["y"]<hit["viewportH"]):
+  raise AssertionError("Mobile menu summary is hidden, obscured, or outside the viewport: "+json.dumps(hit))
+ print("WEBKIT_MENU_TOUCH_TARGET "+json.dumps(hit),flush=True)
+ page.touchscreen.tap(hit["x"],hit["y"])
+
+def mobile_menu(page,width,browser_name="chromium"):
  if width>850 or page.locator("details.mobile-menu summary").count()==0:return None
- s=page.locator("details.mobile-menu summary").first;s.click();page.wait_for_timeout(60)
+ s=page.locator("details.mobile-menu summary").first
+ def activate():
+  # Exercise a real touch gesture while preserving the visible/hit-target
+  # assertion, instead of waiting forever for a CSS-animated stable element.
+  if browser_name=="webkit" and width<900:touch_menu_summary(page)
+  else:s.click(timeout=10000)
+ activate();page.wait_for_timeout(120)
  ok=page.locator("details.mobile-menu").first.get_attribute("open") is not None and page.locator("details.mobile-menu[open] nav a:visible").count()>0
- if ok:s.click()
+ if ok:activate()
  return ok
 
 def viewport_groups(browser_name, group):
@@ -542,30 +592,44 @@ def guarded_browser_cleanup(close, root, label, browser_name):
  try: return close()
  finally: watchdog.cancel()
 
-def browser_mode(suite,browser_name,viewport_group="all"):
+def browser_mode(suite,browser_name,viewport_group="all",case_name=None,viewport_name=None):
  from playwright.sync_api import sync_playwright
  groups=viewport_groups(browser_name,viewport_group)
+ if viewport_name:
+  groups=[vp for vp in groups if vp[0]==viewport_name]
+  if not groups:raise ValueError("Requested viewport is not in the selected browser shard")
+ cases=SUITES[suite]
+ if case_name:
+  cases=[case for case in cases if case.name==case_name]
+  if not cases:raise ValueError("Requested test case is not in the selected suite")
  suffix="" if viewport_group=="all" else "-shard"+viewport_group
+ if viewport_name:suffix+="-"+viewport_name
+ if case_name:suffix+="-"+case_name
  root=OUT/(suite+"-"+browser_name+suffix);root.mkdir(parents=True,exist_ok=True);results=[]
  progress=root/"progress.jsonl"
  with sync_playwright() as p:
   browser=getattr(p,browser_name).launch()
   for vp,w,h,dpr in groups:
    ctx=browser.new_context(viewport={"width":w,"height":h},device_scale_factor=dpr,is_mobile=w<900,has_touch=w<900,color_scheme="dark")
-   for case in SUITES[suite]:
-    page=ctx.new_page();errors=[];console=[];reqfail=[];assetfail=[]
+   for case in cases:
+    page=ctx.new_page();errors=[];console=[];reqfail=[];assetfail=[];crashes=[]
+    page.on("crash",lambda _:crashes.append("WebKit renderer crashed"))
     page.on("pageerror",lambda e:errors.append(str(e)))
     page.on("console",lambda m:console.append(m.text) if m.type=="error" and "challenges.cloudflare.com" not in m.text and not (case.state=="passport-login" and "401 (Unauthorized)" in m.text) else None)
     page.on("requestfailed",lambda r:reqfail.append(r.url) if same_origin(r.url) and not (r.resource_type=="image" and "ERR_ABORTED" in str(r.failure).upper()) else None)
     page.on("response",lambda r:assetfail.append({"url":r.url,"status":r.status}) if same_origin(r.url) and r.status>=400 and r.request.resource_type in {"document","script","stylesheet","image","font"} else None)
     fixtures(page,case.state);rep={"suite":suite,"browser":browser_name,"viewport":vp,"width":w,"case":case.name,"path":case.path}
     try:
+     if browser_name=="webkit":print(f"WEBKIT_STAGE begin suite={suite} case={case.name} viewport={vp}",flush=True)
      resp=page.goto(BASE+case.path,wait_until="domcontentloaded",timeout=45000);rep["status"]=resp.status if resp else 0
+     if browser_name=="webkit":print(f"WEBKIT_STAGE domcontentloaded suite={suite} case={case.name} viewport={vp} status={rep['status']}",flush=True)
      if case.wait:page.wait_for_selector(case.wait,state="visible",timeout=15000)
      page.wait_for_timeout(250)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE before-content-sweep suite={suite} case={case.name} viewport={vp}",flush=True)
      height=page.evaluate("document.documentElement.scrollHeight")
      for y in range(0,int(height),700):page.evaluate("y=>window.scrollTo(0,y)",y);page.wait_for_timeout(25)
      page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(100)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE after-content-sweep suite={suite} case={case.name} viewport={vp} height={height}",flush=True)
      # Preserve production CSP: Playwright string-based wait_for_function uses
      # unsafe-eval in Chromium. Use CSP-compatible evaluate + explicit polling.
      images_ready=False
@@ -576,16 +640,23 @@ def browser_mode(suite,browser_name,viewport_group="all"):
 }""")
       if images_ready:break
       page.wait_for_timeout(500)
-     checks=state_checks(page,case,w)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE before-state-checks suite={suite} case={case.name} viewport={vp} images_ready={images_ready}",flush=True)
+     checks=state_checks(page,case,w,browser_name)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE after-state-checks suite={suite} case={case.name} viewport={vp} failures={len(checks)}",flush=True)
      if not images_ready:checks.append("visible images did not finish decoding within 10 seconds")
-     audit=dom(page);menu=mobile_menu(page,w)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE before-dom-menu suite={suite} case={case.name} viewport={vp}",flush=True)
+     audit=dom(page);menu=mobile_menu(page,w,browser_name)
+     if browser_name=="webkit":print(f"WEBKIT_STAGE after-dom-menu suite={suite} case={case.name} viewport={vp} menu={menu}",flush=True)
      rep.update(audit);rep.update({"pageErrors":errors,"consoleErrors":console,"requestFailures":reqfail,"assetFailures":assetfail,"stateFailures":checks,"mobileMenuOk":menu})
      rep["failed"]=any([rep["status"]>=400,errors,console,reqfail,assetfail,audit["overflow"],audit["dups"],audit["unlabeled"],audit["unnamed"],audit["broken"],audit["missingAlt"],not audit["title"],not audit["h1"],audit["text"]<20,checks,menu is False])
     except Exception as e:
      rep["exception"]=str(e);rep["failed"]=True
     if vp in SHOTS[browser_name] or rep["failed"]:
-     try:page.screenshot(path=str(root/(vp+"-"+case.name+".png")),full_page=True,animations="disabled",caret="hide",timeout=18000)
+     # DOM assertions still scan the full page. Full-page regression images
+     # are captured separately; cap WebKit browser evidence at viewport size.
+     try:page.screenshot(path=str(root/(vp+"-"+case.name+".png")),full_page=(browser_name!="webkit"),animations="disabled",caret="hide",timeout=12000)
      except Exception as e:rep["screenshotError"]=str(e);rep["failed"]=True
+    if crashes:rep["crashes"]=crashes;rep["failed"]=True
     if browser_name=="webkit" and rep.get("failed"):
      try:
       rep["scrollDiagnostics"]=page.evaluate("""() => ({scrollY:window.scrollY,scrollHeight:document.documentElement.scrollHeight,viewportHeight:innerHeight,compact:document.body.classList.contains('masthead-scrolled')})""")
@@ -626,7 +697,7 @@ def browser_mode(suite,browser_name,viewport_group="all"):
   guarded_browser_cleanup(c.close,root,"motion_context",browser_name)
   guarded_browser_cleanup(b.close,root,"motion_browser",browser_name)
  (root/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
- expected=len(groups)*len(SUITES[suite])+1
+ expected=len(groups)*len(cases)+1
  if len(results)!=expected: raise RuntimeError(f"Missing browser cases: expected {expected}, got {len(results)}")
  failures=[r for r in results if r.get("failed")];print(json.dumps({"checks":len(results),"failures":len(failures),"tinyWarnings":sum(len(r.get("tiny",[])) for r in results)},indent=2))
  if failures:print(json.dumps(failures[:12],indent=2))
@@ -802,10 +873,10 @@ def wait_mode(before):
  s,h,b=get("/");ok=s==200 and len(b)>100;print(json.dumps({"productionReachable":ok,"status":s},indent=2));return 0 if ok else 1
 
 def main():
- p=argparse.ArgumentParser();p.add_argument("--mode",choices=("source","wait","smoke","browser"),required=True);p.add_argument("--suite",choices=tuple(SUITES),default="public");p.add_argument("--browser",choices=tuple(VIEWPORTS),default="chromium");p.add_argument("--viewport-group",choices=("all","0","1","2","3"),default="all");p.add_argument("--before",default=os.environ.get("BEFORE_SHA",""));a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument("--mode",choices=("source","wait","smoke","browser"),required=True);p.add_argument("--suite",choices=tuple(SUITES),default="public");p.add_argument("--browser",choices=tuple(VIEWPORTS),default="chromium");p.add_argument("--viewport-group",choices=("all","0","1","2","3"),default="all");p.add_argument("--viewport-name",default=None);p.add_argument("--case-name",default=None);p.add_argument("--before",default=os.environ.get("BEFORE_SHA",""));a=p.parse_args()
  if a.mode=="source":return source_mode()
  if a.mode=="wait":return wait_mode(a.before)
  if a.mode=="smoke":return smoke_mode()
- return browser_mode(a.suite,a.browser,a.viewport_group)
+ return browser_mode(a.suite,a.browser,a.viewport_group,a.case_name,a.viewport_name)
 
 if __name__=="__main__":sys.exit(main())

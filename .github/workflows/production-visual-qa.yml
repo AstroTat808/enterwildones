@@ -161,7 +161,11 @@ jobs:
           python-version: '3.12'
       - name: Install masthead browser dependencies
         run: |
-          pip install playwright==1.55.0 pillow==11.3.0
+          if [ "${{ matrix.browser }}" = "webkit" ]; then
+            pip install playwright==1.65.2 pillow==11.3.0
+          else
+            pip install playwright==1.55.0 pillow==11.3.0
+          fi
           python -m playwright install --with-deps ${{ matrix.browser }}
       - name: Verify canonical masthead at all approved widths
         run: python scripts/visual_regression.py --mode verify-masthead --browser ${{ matrix.browser }}
@@ -199,10 +203,58 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+  webkit-mobile-contract:
+    name: WebKit mobile contract · ${{ matrix.suite }}
+    if: github.event_name == 'pull_request'
+    needs: source-audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - suite: public
+            case: home
+            viewport: phone-small
+          - suite: transactional
+            case: passport-auth
+            viewport: phone
+          - suite: admin
+            case: admin-applications
+            viewport: tablet
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install mobile WebKit
+        run: |
+          pip install playwright==1.65.2
+          python -m playwright install --with-deps webkit
+      - name: Exercise actual mobile header and menu interactions
+        env:
+          PRODUCTION_BASE_URL: https://enterwildones.com
+          VISUAL_RESULTS: visual-results
+        run: >-
+          python scripts/production_visual_qa.py
+          --mode browser --suite ${{ matrix.suite }} --browser webkit
+          --viewport-name ${{ matrix.viewport }} --case-name ${{ matrix.case }}
+      - name: Save full case verdict and mobile crash evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: webkit-mobile-probe-${{ matrix.suite }}
+          path: visual-results/${{ matrix.suite }}-webkit-${{ matrix.viewport }}-${{ matrix.case }}
+          retention-days: 14
+          if-no-files-found: warn
+
   production-qa-gate:
     name: Production QA Gate
     if: always()
-    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa]
+    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa, webkit-mobile-contract]
     runs-on: ubuntu-latest
     steps:
       - name: Enforce pre-merge critical gates
@@ -211,6 +263,8 @@ jobs:
           VISUAL_RESULT: ${{ needs.visual-regression.result }}
           LIGHTHOUSE_RESULT: ${{ needs.lighthouse-ci.result }}
           MASTHEAD_BROWSER_RESULT: ${{ needs.masthead-browser-qa.result }}
+          WEBKIT_MOBILE_RESULT: ${{ needs.webkit-mobile-contract.result }}
+          IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
         run: |
           echo "Source + build audit: $SOURCE_RESULT"
           echo "Approved visual regression: $VISUAL_RESULT"
@@ -220,6 +274,7 @@ jobs:
           test "$VISUAL_RESULT" = "success"
           test "$LIGHTHOUSE_RESULT" = "success"
           test "$MASTHEAD_BROWSER_RESULT" = "success"
+          if [ "$IS_PULL_REQUEST" = "true" ]; then test "$WEBKIT_MOBILE_RESULT" = "success"; fi
 
   deploy-sync:
     name: Confirm production deployment
@@ -276,7 +331,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 3
       matrix:
         include:
           - suite: public
@@ -375,7 +430,11 @@ jobs:
         run: python -m unittest discover -s scripts -p 'test_webkit_viewport_shards.py' -v
       - name: Install Playwright
         run: |
-          pip install playwright==1.55.0
+          if [ "${{ matrix.browser }}" = "webkit" ]; then
+            pip install playwright==1.65.2
+          else
+            pip install playwright==1.55.0
+          fi
           python -m playwright install --with-deps ${{ matrix.browser }}
       - name: Full responsive production browser audit
         env:
