@@ -27,6 +27,55 @@ class WebKitCleanups(unittest.TestCase):
             )
             self.assertEqual(calls, ["closed"])
 
+    def test_touch_only_mobile_webkit_scroll_avoids_mouse_wheel(self):
+        class TouchOnlyPage:
+            def __init__(self):
+                self.position = 0
+                self.mouse = self
+
+            def wheel(self, *args):
+                raise AssertionError("Mouse.wheel must never run in mobile WebKit")
+
+            def evaluate(self, expression, *args):
+                if expression.startswith("top=>"):
+                    self.position = int(args[0])
+                if expression == "window.scrollY":
+                    return self.position
+
+            def wait_for_timeout(self, milliseconds):
+                pass
+
+        for width in (320, 390, 430, 768):
+            with self.subTest(width=width):
+                page = TouchOnlyPage()
+                offset = AUDIT["scroll_guest_masthead"](page, "webkit", width, 1800)
+                self.assertGreater(offset, 72)
+                self.assertEqual(offset, page.position)
+
+    def test_desktop_wheel_falls_back_to_real_scroll_when_needed(self):
+        class DesktopPage:
+            def __init__(self):
+                self.mouse = self
+                self.position = 0
+                self.wheel_calls = 0
+
+            def wheel(self, dx, dy):
+                self.wheel_calls += 1
+
+            def evaluate(self, expression, *args):
+                if expression.startswith("top=>"):
+                    self.position = int(args[0])
+                if expression == "window.scrollY":
+                    return self.position
+
+            def wait_for_timeout(self, milliseconds):
+                pass
+
+        page = DesktopPage()
+        offset = AUDIT["scroll_guest_masthead"](page, "webkit", 1024, 1800)
+        self.assertEqual(page.wheel_calls, 1)
+        self.assertGreater(offset, 72)
+
     def test_webkit_masthead_requires_actual_scroll_class(self):
         source = SRC.read_text(encoding="utf-8")
         self.assertIn("page.mouse.wheel(0,top)", source)
