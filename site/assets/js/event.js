@@ -38,16 +38,40 @@ async function loadAurevaPricing(){
   if(!response.ok||data.event?.eventId!=='aureva-2026')return;
   section.hidden=false;
   const current=data.current||null,next=data.next||null;
-  [1,2,3].forEach((phase)=>markRelease(phase,current,next));
   const phase1=data.phases?.find((phase)=>phase.phase===1),phase2=data.phases?.find((phase)=>phase.phase===2);
   const p1=document.querySelector('[data-release-phase="1"] .release-price'),p2=document.querySelector('[data-release-phase="2"] .release-price');
-  if(p1&&phase1?.priceCents)p1.textContent=money(phase1.priceCents);
-  if(p2&&phase2?.priceCents)p2.textContent=money(phase2.priceCents);
   const lock=document.querySelector('[data-sales-lock]');
+  const approved=Boolean(data.scheduleComplete && phase1?.priceCents===5500 &&
+    phase2?.priceCents===7000 && Date.parse(phase1.endsAt)===Date.parse('2027-01-10T00:00:00-10:00'));
+  // Stale Netlify variables cannot overwrite the owner-approved static prices.
+  if(!approved){
+    if(p1)p1.textContent='$55';
+    if(p2)p2.textContent='$70';
+    if(lock)lock.textContent='Admission sales are not available while approved release pricing is being certified. Request Passage to apply.';
+    const counterWrap=document.querySelector('[data-release-countdown-wrap]');
+    if(counterWrap)counterWrap.hidden=true;
+    for(const phase of [1,2]){
+      const state=document.querySelector(`[data-phase-state="${phase}"]`);
+      if(state)state.textContent=`PHASE ${phase===1?'I':'II'}`;
+    }
+    if(countdownTimer)clearInterval(countdownTimer);
+    if(pricingRefreshTimer)clearTimeout(pricingRefreshTimer);
+    pricingRefreshTimer=setTimeout(loadAurevaPricing,60000);
+    return;
+  }
+  if(p1)p1.textContent=money(phase1.priceCents);
+  if(p2)p2.textContent=money(phase2.priceCents);
+  [1,2,3].forEach((phase)=>markRelease(phase,current,next));
+  if(!data.salesOpen){
+    const state1=document.querySelector('[data-phase-state="1"]');
+    const state2=document.querySelector('[data-phase-state="2"]');
+    if(state1)state1.textContent=Date.now()<Date.parse(phase1.endsAt)?'PLANNED FIRST LIGHT':'FIRST LIGHT CLOSED';
+    if(state2)state2.textContent='FULL RADIANCE · PLANNED';
+  }
   if(lock)lock.textContent=data.salesOpen?`${current?.name||'Admission'} is now available at ${money(current?.priceCents)}.`:'Ticket sales remain locked while final production systems are certified.';
   const wrap=document.querySelector('[data-release-countdown-wrap]'),counter=document.querySelector('[data-release-countdown]'),label=document.querySelector('[data-release-countdown-label]');
   if(countdownTimer)clearInterval(countdownTimer);
-  if(current?.phase===1&&current.endsAt&&counter){
+  if(data.salesOpen&&current?.phase===1&&current.endsAt&&counter){
     if(wrap)wrap.hidden=false;
     if(label)label.textContent='FIRST LIGHT FADES IN';
     const target=Date.parse(current.endsAt);

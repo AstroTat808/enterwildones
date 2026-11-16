@@ -10,8 +10,9 @@ export default async (req) => {
   if (!event || event.visibility !== 'public') return json({ error: 'Event not found.' }, 404);
 
   const schedule = ticketPricingSchedule(event.eventId);
-  const offer = currentTicketOffer(event.eventId);
-  const phases = schedule.tiered
+  const valid = event.eventId !== 'aureva-2026' || schedule.complete;
+  const offer = valid ? currentTicketOffer(event.eventId) : null;
+  const phases = !valid ? [] : schedule.tiered
     ? schedule.phases.filter((phase) => phase.name || phase.priceCents || phase.endsAt).map((phase) => ({
         phase: phase.phase,
         name: phase.name,
@@ -25,7 +26,7 @@ export default async (req) => {
     event: toPublicEvent(event),
     currency: 'usd',
     timezone: event.timezone,
-    salesOpen: Boolean(event.ticketSalesOpen),
+    salesOpen: Boolean(event.ticketSalesOpen && valid),
     current: offer ? { phase: offer.phase, name: offer.name, priceCents: offer.priceCents, startsAt: offer.startsAt, endsAt: offer.endsAt } : null,
     next: offer?.next || null,
     phases,

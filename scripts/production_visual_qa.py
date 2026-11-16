@@ -61,7 +61,7 @@ ADDONS={"event":REALMS[0],"ticketId":"WLD-AUR-QA","addons":[
  {"addonType":"vip","name":"VIP Access","priceCents":9000,"description":"Priority entry and VIP areas.","status":"coming_soon","purchased":False},
  {"addonType":"parking","name":"Reserved Parking","priceCents":2500,"description":"Reserved event parking.","status":"sold_out","purchased":False}
 ]}
-ACCESS={"event":REALMS[0],"eligible":True,"purchaseAvailable":True,"priceCents":7000,"currency":"usd","offer":{"phase":2,"name":"FULL RADIANCE","priceCents":7000},"invitation":{"invitationId":"qa-invite","status":"redeemed","maxTickets":1},"existingTicketId":None}
+ACCESS={"event":REALMS[0],"eligible":True,"purchaseAvailable":True,"priceCents":3500,"currency":"usd","offer":{"phase":2,"name":"SECOND RELEASE","priceCents":3500},"invitation":{"invitationId":"qa-invite","status":"redeemed","maxTickets":1},"existingTicketId":None}
 APP_CONFIG={"event":REALMS[2],"turnstileSiteKey":None,"applicationsReady":True}
 IND_EVENT=[{"id":"gate","label":"Gate readiness","state":"green","detail":"Scanner ready"},{"id":"waivers","label":"Unsigned waivers","state":"yellow","detail":"4 pending"},{"id":"bar","label":"Bartender console","state":"green","detail":"Ready"},{"id":"wallet","label":"Apple Wallet","state":"yellow","detail":"Physical verification pending"}]
 IND_LAUNCH=[{"id":"core","label":"Core platform","state":"green","detail":"Configured"},{"id":"stripe","label":"Stripe live mode","state":"red","detail":"TEST mode"},{"id":"wallet","label":"Apple Wallet","state":"red","detail":"Signing pending"},{"id":"rehearsal","label":"Full rehearsal","state":"yellow","detail":"6 passed · 4 pending"}]
@@ -239,7 +239,17 @@ def state_checks(page,case,width=None):
   # force a known expanded starting state. This prevents route/load timing from
   # contaminating the compact-state assertion in the broader browser matrix.
   page.locator('body.wo-guest-masthead').wait_for(state='attached',timeout=10000)
-  page.evaluate("document.body.classList.remove('masthead-scrolled')");page.wait_for_timeout(90)
+  # Disable CSS smooth scroll for deterministic initial geometry.
+  page.evaluate("""() => {
+   document.documentElement.style.scrollBehavior='auto';
+   window.scrollTo({top:0,behavior:'instant'});
+   document.body.classList.remove('masthead-scrolled');
+  }""")
+  page.locator('body:not(.masthead-scrolled)').wait_for(state='attached',timeout=5000)
+  for _ in range(20):
+   if page.evaluate("window.scrollY < 2 && !document.body.classList.contains('masthead-scrolled')"):break
+   page.wait_for_timeout(100)
+  page.wait_for_timeout(140)
   metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
    const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span');
@@ -276,10 +286,15 @@ def state_checks(page,case,width=None):
    if masthead_px(sub["font"])<mins["sub"]:f.append("guest masthead THE FOUR REALMS text is undersized in "+phase+" header")
   validate_masthead(metrics,False)
   initial_h=metrics["header"]["h"] if metrics.get("header") else None
-  # Exercise the canonical compact state directly. Some transactional pages are
-  # shorter than tall/wide viewports, so scrollTo(140) can be a no-op and create
-  # a false regression even though the masthead contract itself is correct.
-  page.evaluate("document.body.classList.add('masthead-scrolled')");page.wait_for_timeout(420)
+  # Exercise the real scroll-triggered compact state when the page is tall enough.
+  # Short pages fall back to the same canonical class the branding controller uses.
+  page.evaluate("""() => {
+   const max=Math.max(document.documentElement.scrollHeight-innerHeight,0);
+   if(max>90)window.scrollTo({top:Math.min(160,max),behavior:'instant'});
+   else document.body.classList.add('masthead-scrolled');
+  }""")
+  page.locator('body.masthead-scrolled').wait_for(state='attached',timeout=5000)
+  page.wait_for_timeout(360)
   compact_metrics=page.evaluate("""() => {
    const r=e=>{const b=e?.getBoundingClientRect(),s=e?getComputedStyle(e):null;return e?{x:b.x,y:b.y,w:b.width,h:b.height,font:s.fontSize,tracking:s.letterSpacing,display:s.display,visibility:s.visibility,opacity:+s.opacity}:null};
    const header=document.querySelector('.topbar'),brand=header?.querySelector('.brand'),icon=header?.querySelector('.brand-icon'),img=icon?.querySelector('img'),label=header?.querySelector('.brand-label'),sub=label?.querySelector('span'),ims=img?getComputedStyle(img):null;
@@ -288,7 +303,15 @@ def state_checks(page,case,width=None):
   validate_masthead(compact_metrics,True)
   compact_h=compact_metrics["header"]["h"] if compact_metrics.get("header") else None
   if initial_h and compact_h and compact_h>=initial_h-1:f.append("guest masthead did not compact after scroll")
-  page.evaluate("document.body.classList.remove('masthead-scrolled')");page.wait_for_timeout(70)
+  page.evaluate("""() => {
+   document.documentElement.style.scrollBehavior='auto';
+   window.scrollTo({top:0,behavior:'instant'});
+   document.body.classList.remove('masthead-scrolled');
+  }""")
+  for _ in range(20):
+   if page.evaluate("window.scrollY < 2 && !document.body.classList.contains('masthead-scrolled')"):break
+   page.wait_for_timeout(100)
+  page.wait_for_timeout(140)
  # Transactional typography is a release contract: semantic roles must resolve to one
  # shared hierarchy and live markup must not override the shared font metrics.
  transactional_required={
@@ -432,8 +455,18 @@ def state_checks(page,case,width=None):
   if page.locator("#cycleNodes .passport-cycle-node").count()!=4:f.append("cycle meter missing nodes")
   if page.locator(".passport-header .realm-gradient-title").count()!=1:f.append("premium title class missing")
   if page.locator(".passport-header .tx-subheadline").count()!=1:f.append("premium subheadline class missing")
+  if (width or 0)>=901:
+   master=page.locator('[data-master-cycle]').first
+   grid=page.locator("#realms").first
+   if master.count() and grid.count():
+    mb=master.bounding_box();gb=grid.bounding_box()
+    if not mb or not gb or abs(mb["x"]-gb["x"])>2 or abs(mb["width"]-gb["width"])>3:
+     f.append("desktop Master Cycle credential must span the full Passport grid")
+    layout=master.evaluate("""e=>{const s=getComputedStyle(e);return {display:s.display,cols:s.gridTemplateColumns}}""")
+    if layout["display"]!="grid" or layout["cols"] in ("none",""):
+     f.append("desktop Master Cycle credential must use the prestige two-column layout")
  elif case.state=="ticket-access":
-  if "$70" not in page.locator("#price").inner_text():f.append("AUREVA Full Radiance $70 price did not render")
+  if "$35" not in page.locator("#price").inner_text():f.append("ticket price did not render")
  elif case.state=="public-tickets":
   if "SUNVEIL" not in page.locator("[data-name]").inner_text():f.append("SUNVEIL branding missing")
  elif case.state=="ticket-addons":
@@ -502,7 +535,8 @@ def browser_mode(suite,browser_name):
      height=page.evaluate("document.documentElement.scrollHeight")
      for y in range(0,int(height),700):page.evaluate("y=>window.scrollTo(0,y)",y);page.wait_for_timeout(25)
      page.evaluate("window.scrollTo(0,0)");page.wait_for_timeout(100)
-     # Respect production CSP without unsafe-eval based waits.
+     # Preserve production CSP: Playwright string-based wait_for_function uses
+     # unsafe-eval in Chromium. Use CSP-compatible evaluate + explicit polling.
      images_ready=False
      for _ in range(20):
       images_ready=page.evaluate("""() => {
