@@ -9,6 +9,7 @@ import { listDrinkLedgers } from './_drink-ledger.mjs';
 import { writeAudit } from './_audit.mjs';
 import { currentTicketOffer, ticketPricingSchedule } from './_payments.mjs';
 import { admissionCapacity, commissionAdmissionInventory, getAdmissionInventory } from './_admission-inventory.mjs';
+import { auditHistoricalAdmission, historicalBlobKeys } from './_historical-ticket-audit.mjs';
 
 const REHEARSAL_STORE = 'wildones-rehearsal';
 const ACTIVE = new Set(['paid', 'checked_in']);
@@ -38,6 +39,31 @@ async function records(storeName, eventId) {
     if (record?.eventId === eventId) out.push(record);
   }
   return out;
+}
+
+// Strict, bounded-concurrency production audit reads: never silently skip a
+// missing or corrupted historical record. Strong consistency and a complete
+// list are mandatory before a 200-ticket commissioning transaction.
+async function auditedRecords(storeName, eventId) {
+  const store = blobStore(storeName);
+  const keys = await historicalBlobKeys(store, eventId);
+  const records = Array(keys.length);
+  let cursor = 0;
+  await Promise.all(Array.from({ length: Math.min(10, keys.length) }, async () => {
+    while (true) {
+      const at = cursor++;
+      if (at >= keys.length) break;
+      const record = await store.get(keys[at], { type: 'json', consistency: 'strong' });
+      if (!record || record.eventId !== eventId) {
+        throw new Error('A historical Blob record was unreadable or had the wrong event scope.');
+      }
+      records[at] = record;
+    }
+  }));
+  if (records.length !== keys.length || records.some(record => !record)) {
+    throw new Error('Historical Blob reads did not match the complete listing.');
+  }
+  return records;
 }
 
 function configured(...keys) { return keys.every((key) => Boolean(env(key))); }
@@ -259,6 +285,24 @@ export default async (req) => {
   const eventId = String(url.searchParams.get('eventId') || listEvents({ includeHidden: true })[0]?.eventId || '');
   const event = getEvent(eventId);
   if (!event) return json({ error: 'Unknown event.' }, 400);
+  if (req.method === 'GET' && url.searchParams.get('audit') === '1') {
+    if (globalThis.Netlify?.context?.deploy?.context !== 'production' ||
+        url.hostname !== 'enterwildones.com') return json({
+      error:'Historical ticket auditing is restricted to the published production site.'
+    },403);
+    // Admin-only complete read of event-scoped production Blobs. This endpoint is
+    // strictly read-only: it cannot reserve admission or commission inventory.
+    const [tickets, payments, invitations, inventory] = await Promise.all([
+      auditedRecords(STORES.tickets, eventId),
+      auditedRecords(STORES.payments, eventId),
+      auditedRecords(STORES.invitations, eventId),
+      getAdmissionInventory(eventId)
+    ]);
+    const audit = auditHistoricalAdmission({
+      eventId,capacity:admissionCapacity(eventId),tickets,payments,invitations,inventory
+    });
+    return json({event:toPublicEvent(event),audit,generatedAt:new Date().toISOString()});
+  }
   if (req.method === 'GET') {
     const [live, runbook, inventory] = await Promise.all([snapshot(event), rehearsal(eventId), getAdmissionInventory(eventId)]);
     const ready = readiness(event, runbook, inventory, live);
@@ -273,6 +317,10 @@ export default async (req) => {
   const current = await store.get(eventId, { type: 'json' }).catch(() => null) || { eventId, items: {} };
   const now = new Date().toISOString();
   if (body.action === 'commission_inventory') {
+    if (globalThis.Netlify?.context?.deploy?.context !== 'production' ||
+        url.hostname !== 'enterwildones.com') return json({
+      error:'Inventory commissioning is restricted to the published production site.'
+    },403);
     // No unattended commissioning. Explicit admin confirmation + approved number,
     // while paid sales are still closed, are mandatory.
     const approved = admissionCapacity(eventId);
@@ -281,7 +329,18 @@ export default async (req) => {
       !approved || Number(body.approvedCapacity) !== approved) {
       return json({ error: 'Explicit authorization and the exact approved event capacity are required.' }, 403);
     }
-    const all = await records(STORES.tickets, eventId);
+    const [all, historicalPayments, historicalInvitations, databaseInventory] = await Promise.all([
+      auditedRecords(STORES.tickets,eventId), auditedRecords(STORES.payments,eventId),
+      auditedRecords(STORES.invitations,eventId), getAdmissionInventory(eventId)
+    ]);
+    const audit = auditHistoricalAdmission({
+      eventId,capacity:approved,tickets:all,payments:historicalPayments,
+      invitations:historicalInvitations,inventory:databaseInventory
+    });
+    if (!audit.ready) return json({
+      error:'Historical ticket reconciliation failed. Resolve all audit findings before commissioning.',
+      code:'HISTORICAL_RECONCILIATION_REQUIRED',audit
+    },409);
     const recognized = new Set(['paid', 'checked_in', 'disputed', 'refund_pending', 'refunded', 'revoked', 'void']);
     if (all.some((ticket) => !recognized.has(ticket.status))) {
       return json({ error: 'Historical tickets contain unknown statuses; reconciliation requires explicit review.' }, 409);
