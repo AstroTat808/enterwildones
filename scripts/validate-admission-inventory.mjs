@@ -19,8 +19,8 @@ try {
     set(envKey,bad);
     assert.equal(admissionCapacity(eventId),null,`Invalid capacity must fail closed: ${bad}`);
   }
-  set(envKey,'350');
-  assert.equal(admissionCapacity(eventId),350);
+  set(envKey,'200');
+  assert.equal(admissionCapacity(eventId),200);
   set(envKey,'1');
   assert.equal(admissionCapacity(eventId),1);
 
@@ -31,7 +31,7 @@ try {
   const { ticketPricingSchedule, currentTicketOffer } = await import('../netlify/functions/_payments.mjs');
   const phase = {
     TICKET_PHASE1_NAME:'FIRST LIGHT RELEASE', TICKET_PHASE1_PRICE_CENTS:'5500',
-    TICKET_PHASE1_ENDS_AT:'2026-10-16T00:00:00-10:00',
+    TICKET_PHASE1_ENDS_AT:'2027-01-10T00:00:00-10:00',
     TICKET_PHASE2_NAME:'FULL RADIANCE', TICKET_PHASE2_PRICE_CENTS:'7000',
     TICKET_PHASE2_ENDS_AT:'', TICKET_PHASE3_NAME:'', TICKET_PHASE3_PRICE_CENTS:''
   };
@@ -39,9 +39,16 @@ try {
   const schedule=ticketPricingSchedule(eventId);
   assert.equal(schedule.tiered,true);
   assert.equal(schedule.complete,true);
-  assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T23:59:59-10:00')).priceCents,5500);
-  assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-16T00:00:00-10:00')).priceCents,7000);
-  assert.equal(currentTicketOffer(eventId,Date.parse('2026-10-15T12:00:00-10:00')).next.priceCents,7000);
+  assert.equal(currentTicketOffer(eventId,Date.parse('2027-01-09T23:59:59-10:00')).priceCents,5500);
+  assert.equal(currentTicketOffer(eventId,Date.parse('2027-01-10T00:00:00-10:00')).priceCents,7000);
+  assert.equal(currentTicketOffer(eventId,Date.parse('2027-01-09T12:00:00-10:00')).next.priceCents,7000);
+  // Stale October cutoff and obsolete early ticket prices must fail closed.
+  set(envPrefix+'TICKET_PHASE1_ENDS_AT','2026-10-16T00:00:00-10:00');
+  assert.equal(ticketPricingSchedule(eventId).complete,false,'Historical phase deadline must fail validation');
+  set(envPrefix+'TICKET_PHASE1_ENDS_AT','2027-01-10T00:00:00-10:00');
+  set(envPrefix+'TICKET_PHASE1_PRICE_CENTS','3500');
+  assert.equal(ticketPricingSchedule(eventId).complete,false,'Obsolete First Light price must fail validation');
+  set(envPrefix+'TICKET_PHASE1_PRICE_CENTS','5500');
   set(envPrefix+'TICKET_PHASE3_PRICE_CENTS','8000');
   assert.equal(ticketPricingSchedule(eventId).complete,false,'A partially configured ZENITH phase must fail validation');
 
