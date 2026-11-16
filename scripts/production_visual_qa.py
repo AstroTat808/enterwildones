@@ -523,11 +523,16 @@ def state_checks(page,case,width=None,browser_name="chromium"):
   if unloaded:f.append("Passport realm images must be fully decoded before audit")
  return f
 
-def mobile_menu(page,width):
+def mobile_menu(page,width,browser_name="chromium"):
  if width>850 or page.locator("details.mobile-menu summary").count()==0:return None
- s=page.locator("details.mobile-menu summary").first;s.click();page.wait_for_timeout(60)
+ s=page.locator("details.mobile-menu summary").first
+ def activate():
+  # Touch-only WebKit uses tap instead of synthetic mouse hover/click.
+  if browser_name=="webkit" and width<900:s.tap(timeout=10000)
+  else:s.click(timeout=10000)
+ activate();page.wait_for_timeout(60)
  ok=page.locator("details.mobile-menu").first.get_attribute("open") is not None and page.locator("details.mobile-menu[open] nav a:visible").count()>0
- if ok:s.click()
+ if ok:activate()
  return ok
 
 def viewport_groups(browser_name, group):
@@ -552,18 +557,28 @@ def guarded_browser_cleanup(close, root, label, browser_name):
  try: return close()
  finally: watchdog.cancel()
 
-def browser_mode(suite,browser_name,viewport_group="all"):
+def browser_mode(suite,browser_name,viewport_group="all",case_name=None,viewport_name=None):
  from playwright.sync_api import sync_playwright
  groups=viewport_groups(browser_name,viewport_group)
+ if viewport_name:
+  groups=[vp for vp in groups if vp[0]==viewport_name]
+  if not groups:raise ValueError("Requested viewport is not in the selected browser shard")
+ cases=SUITES[suite]
+ if case_name:
+  cases=[case for case in cases if case.name==case_name]
+  if not cases:raise ValueError("Requested test case is not in the selected suite")
  suffix="" if viewport_group=="all" else "-shard"+viewport_group
+ if viewport_name:suffix+="-"+viewport_name
+ if case_name:suffix+="-"+case_name
  root=OUT/(suite+"-"+browser_name+suffix);root.mkdir(parents=True,exist_ok=True);results=[]
  progress=root/"progress.jsonl"
  with sync_playwright() as p:
   browser=getattr(p,browser_name).launch()
   for vp,w,h,dpr in groups:
    ctx=browser.new_context(viewport={"width":w,"height":h},device_scale_factor=dpr,is_mobile=w<900,has_touch=w<900,color_scheme="dark")
-   for case in SUITES[suite]:
-    page=ctx.new_page();errors=[];console=[];reqfail=[];assetfail=[]
+   for case in cases:
+    page=ctx.new_page();errors=[];console=[];reqfail=[];assetfail=[];crashes=[]
+    page.on("crash",lambda _:crashes.append("WebKit renderer crashed"))
     page.on("pageerror",lambda e:errors.append(str(e)))
     page.on("console",lambda m:console.append(m.text) if m.type=="error" and "challenges.cloudflare.com" not in m.text and not (case.state=="passport-login" and "401 (Unauthorized)" in m.text) else None)
     page.on("requestfailed",lambda r:reqfail.append(r.url) if same_origin(r.url) and not (r.resource_type=="image" and "ERR_ABORTED" in str(r.failure).upper()) else None)
@@ -586,16 +601,19 @@ def browser_mode(suite,browser_name,viewport_group="all"):
 }""")
       if images_ready:break
       page.wait_for_timeout(500)
-     checks=state_checks(page,case,w)
+     checks=state_checks(page,case,w,browser_name)
      if not images_ready:checks.append("visible images did not finish decoding within 10 seconds")
-     audit=dom(page);menu=mobile_menu(page,w)
+     audit=dom(page);menu=mobile_menu(page,w,browser_name)
      rep.update(audit);rep.update({"pageErrors":errors,"consoleErrors":console,"requestFailures":reqfail,"assetFailures":assetfail,"stateFailures":checks,"mobileMenuOk":menu})
      rep["failed"]=any([rep["status"]>=400,errors,console,reqfail,assetfail,audit["overflow"],audit["dups"],audit["unlabeled"],audit["unnamed"],audit["broken"],audit["missingAlt"],not audit["title"],not audit["h1"],audit["text"]<20,checks,menu is False])
     except Exception as e:
      rep["exception"]=str(e);rep["failed"]=True
     if vp in SHOTS[browser_name] or rep["failed"]:
-     try:page.screenshot(path=str(root/(vp+"-"+case.name+".png")),full_page=True,animations="disabled",caret="hide",timeout=18000)
+     # DOM assertions still scan the full page. Full-page regression images
+     # are captured separately; cap WebKit browser evidence at viewport size.
+     try:page.screenshot(path=str(root/(vp+"-"+case.name+".png")),full_page=(browser_name!="webkit"),animations="disabled",caret="hide",timeout=12000)
      except Exception as e:rep["screenshotError"]=str(e);rep["failed"]=True
+    if crashes:rep["crashes"]=crashes;rep["failed"]=True
     if browser_name=="webkit" and rep.get("failed"):
      try:
       rep["scrollDiagnostics"]=page.evaluate("""() => ({scrollY:window.scrollY,scrollHeight:document.documentElement.scrollHeight,viewportHeight:innerHeight,compact:document.body.classList.contains('masthead-scrolled')})""")
@@ -636,7 +654,7 @@ def browser_mode(suite,browser_name,viewport_group="all"):
   guarded_browser_cleanup(c.close,root,"motion_context",browser_name)
   guarded_browser_cleanup(b.close,root,"motion_browser",browser_name)
  (root/"report.json").write_text(json.dumps(results,indent=2),encoding="utf-8")
- expected=len(groups)*len(SUITES[suite])+1
+ expected=len(groups)*len(cases)+1
  if len(results)!=expected: raise RuntimeError(f"Missing browser cases: expected {expected}, got {len(results)}")
  failures=[r for r in results if r.get("failed")];print(json.dumps({"checks":len(results),"failures":len(failures),"tinyWarnings":sum(len(r.get("tiny",[])) for r in results)},indent=2))
  if failures:print(json.dumps(failures[:12],indent=2))
@@ -812,10 +830,10 @@ def wait_mode(before):
  s,h,b=get("/");ok=s==200 and len(b)>100;print(json.dumps({"productionReachable":ok,"status":s},indent=2));return 0 if ok else 1
 
 def main():
- p=argparse.ArgumentParser();p.add_argument("--mode",choices=("source","wait","smoke","browser"),required=True);p.add_argument("--suite",choices=tuple(SUITES),default="public");p.add_argument("--browser",choices=tuple(VIEWPORTS),default="chromium");p.add_argument("--viewport-group",choices=("all","0","1","2","3"),default="all");p.add_argument("--before",default=os.environ.get("BEFORE_SHA",""));a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument("--mode",choices=("source","wait","smoke","browser"),required=True);p.add_argument("--suite",choices=tuple(SUITES),default="public");p.add_argument("--browser",choices=tuple(VIEWPORTS),default="chromium");p.add_argument("--viewport-group",choices=("all","0","1","2","3"),default="all");p.add_argument("--viewport-name",default=None);p.add_argument("--case-name",default=None);p.add_argument("--before",default=os.environ.get("BEFORE_SHA",""));a=p.parse_args()
  if a.mode=="source":return source_mode()
  if a.mode=="wait":return wait_mode(a.before)
  if a.mode=="smoke":return smoke_mode()
- return browser_mode(a.suite,a.browser,a.viewport_group)
+ return browser_mode(a.suite,a.browser,a.viewport_group,a.case_name,a.viewport_name)
 
 if __name__=="__main__":sys.exit(main())
