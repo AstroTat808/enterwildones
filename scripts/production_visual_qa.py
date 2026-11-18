@@ -709,6 +709,23 @@ def browser_mode(suite,browser_name,viewport_group="all",case_name=None,viewport
      # are captured separately; cap WebKit browser evidence at viewport size.
      try:page.screenshot(path=str(root/(vp+"-"+case.name+".png")),full_page=(browser_name!="webkit"),animations="disabled",caret="hide",timeout=12000)
      except Exception as e:rep["screenshotError"]=str(e);rep["failed"]=True
+    # Assert a real guest click transition in both browsers, at phone and desktop
+    # widths, without changing the screenshot or other existing browser gates.
+    if case.name=="home" and vp in ("phone","desktop") and not rep.get("failed"):
+     try:
+      access=page.locator('#aureva .v2-meta a[data-event-status]')
+      if access.count()!=1 or access.get_attribute("href")!="/apply/aureva":
+       raise AssertionError("AUREVA Request Access must be a unique link to /apply/aureva")
+      with page.expect_navigation(wait_until="domcontentloaded",timeout=15000) as nav:
+       access.click(timeout=12000)
+      res=nav.value
+      if not res or res.status>=400 or not page.url.split("?")[0].endswith("/apply/aureva"):
+       raise AssertionError("AUREVA access click did not load the application route successfully")
+      page.locator("#gateNotice").wait_for(state="visible",timeout=10000)
+      rep["aurevaAccessNavigation"]={"url":page.url,"status":res.status}
+     except Exception as e:
+      rep["aurevaAccessNavigationError"]=str(e)
+      rep["failed"]=True
     if crashes:rep["crashes"]=crashes;rep["failed"]=True
     if browser_name=="webkit" and rep.get("failed"):
      try:
