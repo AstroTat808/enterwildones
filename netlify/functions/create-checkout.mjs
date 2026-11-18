@@ -174,23 +174,27 @@ export default async (req) => {
     // Never expose Stripe's internal messages, API URLs or idempotency keys to guests.
     // Log safe diagnostics for operators without including the request body or secrets.
     const stripeStatus = Number(error?.stripeHttpStatus) || null;
-    const definitiveStripeRejection = stripeStatus >= 400 && stripeStatus < 500;
+    const definitiveStripeRejection = stripeStatus >= 400 && stripeStatus < 500
+      && stripeStatus !== 429 && error?.stripeCode !== 'idempotency_error';
     console.error('Admission checkout failed', {
       eventId: event.eventId, attempt, stripeStatus,
       stripeCode: error?.stripeCode || null, stripeRequestId: error?.stripeRequestId || null
     });
-    // A definitive Stripe 4xx rejection did not create a session. Network
-    // errors, Stripe 5xx, and post-creation persistence failures are ambiguous:
-    // preserve the seat hold until the checkout can be reconciled.
+    // Idempotency conflicts and rate limits do NOT prove that an earlier
+    // Checkout session was never created. Retain the hold for reconciliation.
+    // On a definitive rejection, permit a retry only after the database
+    // confirms its corresponding held admission was actually released.
+    let holdReleased = false;
     if (definitiveStripeRejection) {
-      await releaseAdmission({ eventId: event.eventId, invitationId: invitation.invitationId }).catch(() => {});
+      holdReleased = await releaseAdmission({ eventId: event.eventId, invitationId: invitation.invitationId }).catch(() => false);
     }
+    const retryAllowed = definitiveStripeRejection && holdReleased;
     return json({
-      error: definitiveStripeRejection
+      error: retryAllowed
         ? 'Secure checkout could not be prepared. Please try again.'
         : 'We could not confirm your checkout status. Please contact support before trying another payment.',
-      code: definitiveStripeRejection ? 'CHECKOUT_UNAVAILABLE' : 'CHECKOUT_RECONCILIATION_REQUIRED'
-    }, definitiveStripeRejection ? 502 : 503);
+      code: retryAllowed ? 'CHECKOUT_UNAVAILABLE' : 'CHECKOUT_RECONCILIATION_REQUIRED'
+    }, retryAllowed ? 502 : 503);
   }
 };
 
