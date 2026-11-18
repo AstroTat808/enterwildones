@@ -559,6 +559,7 @@ def state_checks(page,case,width=None,browser_name="chromium"):
     widgetSize:frame.dataset.turnstileQaWidget,visible:getComputedStyle(host).display!=='none'
    };
   }""",spec)
+  print("TURNSTILE_LAYOUT "+json.dumps({"case":case.name,"browser":browser_name,"viewport":width,"measurements":layout}),flush=True)
   if not layout:f.append(case.name+" Turnstile verification widget is missing")
   else:
    if not layout["visible"]:f.append(case.name+" Turnstile verification is hidden")
