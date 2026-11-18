@@ -4,6 +4,7 @@ import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
 import { setBundledAddonStatus } from './_bundled-addons.mjs';
 import { trackedEmail } from './_email-service.mjs';
+import { renderInvitationEmail, renderBrandedNoticeEmail } from './_mail-templates.mjs';
 import { getEvent, listEvents, toPublicEvent } from './_events.mjs';
 import { createInvitation } from './_invitations.mjs';
 import { existingTicketForUser, loadApplication, loadTicket } from './_payments.mjs';
@@ -42,24 +43,48 @@ function csvResponse(rows) {
   const text = rows.map((row) => row.map(csvCell).join(',')).join('\n');
   return new Response(text, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="wild-ones-export.csv"', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 }
-async function email({ eventId, kind, to, subject, text, key }) {
-  const result = await trackedEmail({ eventId, kind, to, subject, text, key, retryable: false });
+async function email({ eventId, kind, to, subject, text, html, key }) {
+  const result = await trackedEmail({ eventId, kind, to, subject, text, html, key, retryable: false });
   return { sent: result.sent, id: result.id || null, reason: result.reason || null };
 }
 async function sendInvite(event, application, code, invite) {
   const site = (env('WILDONES_SITE_URL') || 'https://enterwildones.com').replace(/\/$/, '');
-  const name = application?.preferredName || application?.fullName || 'Wild Ones guest';
-  return email({ eventId: event.eventId, kind: 'invitation_reissue', to: application?.email || invite.email, subject: `${event.name}: your Wild Ones invitation`, key: `wildones-admin-invite-${invite.invitationId}`, text: [`${name},`, '', `Your ${event.name} invitation is ready.`, `Invitation code: ${code}`, `Redeem it here: ${site}/invite`, '', `This code expires ${invite.expiresAt}.`, 'Keep this invitation private.'].join('\n') });
+  const name = application?.preferredName || application?.fullName || 'Wild One';
+  const mail = renderInvitationEmail({
+    event, name, code, expiresAt: invite.expiresAt, site,
+    support: env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')
+  });
+  return email({
+    eventId: event.eventId, kind: 'invitation_reissue',
+    to: application?.email || invite.email, subject: mail.subject,
+    text: mail.text, html: mail.html,
+    key: `wildones-admin-invite-${invite.invitationId}`
+  });
 }
 async function sendTicketReminder(event, ticket, application, kind) {
   const token = makeTicketToken(ticket);
   if (!token) throw new Error('Ticket token could not be generated.');
   const site = (env('WILDONES_SITE_URL') || 'https://enterwildones.com').replace(/\/$/, '');
   const url = `${site}/ticket?token=${encodeURIComponent(token)}`;
-  const name = application?.preferredName || application?.fullName || 'Wild Ones guest';
-  const subject = kind === 'waiver' ? `${event.name}: sign your waiver before entry` : `${event.name}: your digital ticket`;
-  const text = kind === 'waiver' ? [`${name},`, '', `Your ${event.name} admission is confirmed, but your QR remains locked until the required waiver is signed.`, `Open your ticket and sign now: ${url}`, '', 'Keep your ticket link private.'].join('\n') : [`${name},`, '', `Your ${event.name} digital ticket is ready.`, `Open it here: ${url}`, '', 'Keep your ticket link private.'].join('\n');
-  return email({ eventId: event.eventId, kind: kind === 'waiver' ? 'waiver_reminder' : 'ticket_reminder', to: application?.email, subject, text, key: `wildones-${kind}-${event.eventId}-${ticket.ticketId}-${new Date().toISOString().slice(0, 10)}` });
+  const name = application?.preferredName || application?.fullName || 'Wild One';
+  const waiver = kind === 'waiver';
+  const mail = renderBrandedNoticeEmail({
+    event, name, title: waiver ? 'Your Waiver Awaits' : 'Your Digital Ticket Is Ready',
+    subject: waiver ? `${event.name}: sign your waiver before entry` : `${event.name}: your digital ticket`,
+    preview: waiver ? 'Complete the required waiver to unlock your secure entry QR.' : 'Your digital Wild Ones credential is ready.',
+    introduction: waiver ? 'One final step before entering your realm.' : 'Your place in the realm is secured.',
+    message: waiver ? `Your ${event.name} admission is confirmed, but your QR remains locked until the required waiver is signed.` :
+      `Your ${event.name} digital ticket is ready.`,
+    actionUrl: url,
+    actionLabel: waiver ? 'Open Ticket & Sign Waiver' : 'Open Digital Ticket',
+    note: 'Keep this private ticket link secure. Only the ticket holder should use it.',
+    support: env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')
+  });
+  return email({
+    eventId: event.eventId, kind: waiver ? 'waiver_reminder' : 'ticket_reminder',
+    to: application?.email, subject: mail.subject, text: mail.text, html: mail.html,
+    key: `wildones-${kind}-${event.eventId}-${ticket.ticketId}-${new Date().toISOString().slice(0, 10)}`
+  });
 }
 async function snapshot(eventId) {
   const [applications, invitations, tickets, payments, entitlements, checkins] = await Promise.all([
