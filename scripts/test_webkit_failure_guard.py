@@ -85,6 +85,9 @@ class WebKitCleanups(unittest.TestCase):
         self.assertIn("setInterval(()=>{if(!document.hidden)apply();},250)", source)
         self.assertIn("document.body.classList.contains('masthead-scrolled')!==compact", source)
         self.assertIn("window.addEventListener('pagehide',()=>clearInterval(recovery)", source)
+        self.assertIn("if(top>2)observedPhysicalScroll=true", source)
+        self.assertIn("if(!observedPhysicalScroll && !compact)return", source)
+        self.assertIn("if(top<=2)observedPhysicalScroll=false", source)
 
     def test_webkit_masthead_requires_actual_scroll_class(self):
         source = SRC.read_text(encoding="utf-8")
