@@ -134,7 +134,7 @@ assert.match(notice.html, /&lt;paid &amp; active&gt;/);
 assert.ok(!notice.html.includes('src="' + site + '/ticket?token='), 'Private tokens must never appear in remote asset URLs.');
 assert.match(notice.text, /private-sample/);
 assert.throws(() => renderBrandedNoticeEmail({ title: 'Unsafe', subject: 'Unsafe', actionUrl: 'javascript:alert(1)' }), /secure transactional action URL/);
-const [scheduler, operations, applicationNotice, mailService, applyMarkup, inviteMarkup, addonsMarkup, addonsJs, successStyles] =
+const [scheduler, operations, applicationNotice, mailService, applyMarkup, inviteMarkup, addonsMarkup, passportConfirmation, addonsJs, successStyles] =
   await Promise.all([
     'netlify/functions/aureva-email-scheduler.mjs',
     'netlify/functions/admin-operations.mjs',
@@ -143,6 +143,7 @@ const [scheduler, operations, applicationNotice, mailService, applyMarkup, invit
     'site/apply.html',
     'site/invite.html',
     'site/ticket-addons.html',
+    'site/passport-check-email.html',
     'site/assets/js/ticket-addons.js',
     'site/assets/css/transactional-success.css'
   ].map(read));
@@ -165,7 +166,8 @@ assert.match(mailService, /TERMINAL_FAILURES/, 'Delivery-alert suppression and e
 for (const [name, markup, id] of [
   ['access request', applyMarkup, 'success'],
   ['invite redemption', inviteMarkup, 'granted'],
-  ['add-on return', addonsMarkup, 'addon-confirmation']
+  ['add-on return', addonsMarkup, 'addon-confirmation'],
+  ['Passport email confirmation', passportConfirmation, 'confirmation-title']
 ]) {
   assert.ok(markup.includes('id="' + id + '"'), name + ' success panel missing.');
   assert.ok(markup.includes('/assets/css/transactional-success.css'), name + ' must load shared styles.');
