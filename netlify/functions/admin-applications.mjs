@@ -1,5 +1,6 @@
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
+import { trackedEmail } from './_email-service.mjs';
 import { isAdmin } from './_admin-auth.mjs';
 import { createInvitation } from './_invitations.mjs';
 import { getEvent, listEvents, toPublicEvent } from './_events.mjs';
@@ -16,34 +17,22 @@ async function load(eventId) {
 }
 
 async function sendInvitationEmail({ application, event, code, expiresAt }) {
-  if (!env('RESEND_API_KEY') || !env('WILDONES_EMAIL_FROM') || !application?.email) return { sent: false, error: 'Invitation email is not configured.' };
   const site = (env('WILDONES_SITE_URL') || 'https://enterwildones.com').replace(/\/$/, '');
   const name = application.preferredName || application.fullName || 'Wild One';
-  const body = [
-    `${name},`,
-    '',
-    `Your access request for ${event.name} has been approved.`,
-    '',
-    `Invitation code: ${code}`,
-    `Redeem it here: ${site}/invite`,
-    `Expires: ${new Date(expiresAt).toLocaleString('en-US', { timeZone: event.timezone || 'Pacific/Honolulu' })}`,
-    '',
-    'This invitation is tied to your approved Wild Ones profile and can only be redeemed once. Keep the code private.',
-    '',
-    `Support: ${env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')}`
+  const text = [
+    name + ',', '', 'Your access request for ' + event.name + ' has been approved.', '',
+    'Invitation code: ' + code, 'Redeem it here: ' + site + '/invite',
+    'Expires: ' + new Date(expiresAt).toLocaleString('en-US', { timeZone: event.timezone || 'Pacific/Honolulu' }),
+    '', 'This invitation is tied to your approved Wild Ones profile and can only be redeemed once. Keep the code private.',
+    '', 'Support: ' + env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')
   ].join('\n');
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${env('RESEND_API_KEY')}`, 'Content-Type': 'application/json', 'Idempotency-Key': `wildones-invite-${application.applicationId}`.slice(0, 256) },
-      body: JSON.stringify({ from: env('WILDONES_EMAIL_FROM'), to: [application.email], subject: `${event.name} Invitation Approved`, text: body })
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) return { sent: false, error: `Email provider returned ${response.status}.` };
-    return { sent: true, id: payload.id || null };
-  } catch (error) {
-    return { sent: false, error: String(error.message || error).slice(0, 300) };
-  }
+  const result = await trackedEmail({
+    eventId: event.eventId, kind: 'invitation', to: application.email,
+    subject: event.name + ' Invitation Approved', text,
+    key: 'wildones-invite-' + application.applicationId,
+    sourceId: application.applicationId, retryable: false
+  });
+  return { sent: result.sent, id: result.id || null, error: result.sent ? null : result.reason };
 }
 
 export default async (req) => {
