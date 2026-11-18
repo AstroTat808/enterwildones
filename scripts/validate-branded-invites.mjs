@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { renderInvitationEmail, renderTicketEmail, invitationRedemptionUrl, invitationExpiry, escapeEmailHtml } from '../netlify/functions/_mail-templates.mjs';
+import { renderInvitationEmail, renderTicketEmail, renderBrandedNoticeEmail, invitationRedemptionUrl, invitationExpiry, escapeEmailHtml } from '../netlify/functions/_mail-templates.mjs';
 import { walletAddonFields } from '../netlify/functions/_apple-wallet.mjs';
 
 const event = {
@@ -109,5 +109,74 @@ assert.match(headers, /Referrer-Policy = "no-referrer"/);
 assert.match(walletEndpoint, /activeAddons/);
 assert.match(walletEndpoint, /addOns:activeAddons/);
 assert.match(walletEndpoint, /\['drink_package','late_stay'\]/);
+
+
+const notice = renderBrandedNoticeEmail({
+  event, name: 'Wild <One>',
+  title: 'Your Digital Ticket Is Ready',
+  subject: 'AUREVA: your digital ticket',
+  preview: 'Private digital ticket.',
+  introduction: 'The realm is waiting.',
+  message: 'Use your secure credential below.',
+  actionUrl: site + '/ticket?token=private-sample',
+  actionLabel: 'Open Digital Ticket',
+  details: [{ label: 'Status', value: '<paid & active>' }],
+  note: 'Never forward your ticket.',
+  support: 'help@enterwildones.com'
+});
+assert.match(notice.html, /assets\/images\/brand\/enter-wild-ones-email\.png/);
+assert.match(notice.html, /aureva-1200\.webp/);
+assert.match(notice.html, /@media screen and \(max-width:620px\)/);
+assert.match(notice.html, /Open Digital Ticket/);
+assert.ok(notice.html.includes('href="' + site + '/ticket?token=private-sample"'));
+assert.match(notice.html, /Wild &lt;One&gt;/);
+assert.match(notice.html, /&lt;paid &amp; active&gt;/);
+assert.ok(!notice.html.includes('src="' + site + '/ticket?token='), 'Private tokens must never appear in remote asset URLs.');
+assert.match(notice.text, /private-sample/);
+assert.throws(() => renderBrandedNoticeEmail({ title: 'Unsafe', subject: 'Unsafe', actionUrl: 'javascript:alert(1)' }), /secure transactional action URL/);
+const [scheduler, operations, applicationNotice, mailService, applyMarkup, inviteMarkup, addonsMarkup, passportConfirmation, addonsJs, successStyles] =
+  await Promise.all([
+    'netlify/functions/aureva-email-scheduler.mjs',
+    'netlify/functions/admin-operations.mjs',
+    'netlify/functions/apply.mjs',
+    'netlify/functions/_email-service.mjs',
+    'site/apply.html',
+    'site/invite.html',
+    'site/ticket-addons.html',
+    'site/passport-check-email.html',
+    'site/assets/js/ticket-addons.js',
+    'site/assets/css/transactional-success.css'
+  ].map(read));
+for (const [name, contents] of [
+  ['scheduled reminders', scheduler],
+  ['admin operations', operations],
+  ['application notifications', applicationNotice],
+  ['delivery alerts', mailService]
+]) {
+  assert.match(contents, /renderBrandedNoticeEmail/, name + ' must use branded email.');
+  assert.match(contents, /html:\s*mail\.html/, name + ' must include HTML delivery payload.');
+  assert.match(contents, /text:\s*mail\.text/, name + ' must preserve text fallback.');
+}
+assert.match(operations, /renderInvitationEmail/, 'Reissued invitations must share the approved invitation template.');
+assert.match(operations, /invitation_reissue/, 'Invite audit and idempotency kind must remain intact.');
+assert.match(scheduler, /marketingOptIn === false/, 'Unpaid invitation reminder opt-in gate must remain.');
+assert.match(scheduler, /if \(event\.ticketSalesOpen\)/, 'Unpaid invite reminders must respect sales state.');
+assert.match(scheduler, /waiverMissing/, 'Waiver warning must be preserved.');
+assert.match(mailService, /TERMINAL_FAILURES/, 'Delivery-alert suppression and escalation boundaries must remain.');
+for (const [name, markup, id] of [
+  ['access request', applyMarkup, 'success'],
+  ['invite redemption', inviteMarkup, 'granted'],
+  ['add-on return', addonsMarkup, 'addon-confirmation'],
+  ['Passport email confirmation', passportConfirmation, 'confirmation-title']
+]) {
+  assert.ok(markup.includes('id="' + id + '"'), name + ' success panel missing.');
+  assert.ok(markup.includes('/assets/css/transactional-success.css'), name + ' must load shared styles.');
+  assert.ok(markup.includes('tx-success-panel'), name + ' must use shared success card.');
+  assert.ok(markup.includes('tx-success-mark'), name + ' must display a confirmation mark.');
+}
+assert.match(addonsJs, /d\.addons\.some\(a=>a\.purchased\)/, 'Add-on confirmation must be gated on server-reported ownership.');
+assert.match(addonsJs, /searchParams\.delete\('addon'\)/, 'Return marker must be cleared after loading.');
+assert.match(successStyles, /@media\(max-width:600px\)/, 'Success cards must adapt to small phones.');
+console.log('Branded guest, admin and reminder email plus shared success-state regression checks passed.');
 
 console.log('Branded, privacy-preserving auto-fill invitations and bundled ticket receipt templates validated.');
