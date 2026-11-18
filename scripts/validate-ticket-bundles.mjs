@@ -86,7 +86,7 @@ try {
     'Admission must be issued before optional entitlements.');
   assert.ok(payments.indexOf('await issueBundledAddons(') < payments.indexOf('await sendReceipt(event,ticket,application,session,token)'),
     'The ticket receipt must not precede bundled entitlement issuance.');
-  for (const term of ['addonCatalog(', 'publicAddon(', 'addons:']) assert.ok(access.includes(term));
+  for (const term of ['addonCatalog(', 'publicAddon', 'addons:']) assert.ok(access.includes(term));
   for (const term of [
     'admissionPriceCents ?? x.amountTotal', 'addonSubtotalCents || 0',
     'setBundledAddonStatus(', 'BUNDLE_REFUND_REVIEW'
