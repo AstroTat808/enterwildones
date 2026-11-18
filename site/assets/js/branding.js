@@ -174,15 +174,19 @@
   function mastheadScrollState(){
     if(!guestMasthead)return;
     let pending=false;
+    let observedPhysicalScroll=false;
     const apply=()=>{
-      // window.scrollY may change without a window "scroll" event in mobile
-      // WebKit (notably after scrollTo and touch-driven scrolling). Keep the
-      // actual position authoritative rather than relying on an event alone.
+      // Mobile WebKit can suppress window scroll events. Keep actual scroll
+      // geometry authoritative after physical movement; preserve a deliberate
+      // compact preview class at scrollY=0 until any movement really occurs.
       const root=document.scrollingElement||document.documentElement;
       const top=Math.max(window.scrollY||0,root.scrollTop||0,document.body.scrollTop||0);
       const compact=top>72;
+      if(top>2)observedPhysicalScroll=true;
+      if(!observedPhysicalScroll && !compact)return;
       if(document.body.classList.contains('masthead-scrolled')!==compact)
         document.body.classList.toggle('masthead-scrolled',compact);
+      if(top<=2)observedPhysicalScroll=false;
     };
     const schedule=()=>{
       if(pending)return;
