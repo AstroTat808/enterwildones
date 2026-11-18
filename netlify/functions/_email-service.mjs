@@ -131,12 +131,19 @@ export async function updateDeliveryEvent(event) {
   let index = await store.get('provider/' + providerId, { type: 'json' }).catch(() => null);
   if (!index) {
     const tags = data.tags || {};
-    const eventId = Array.isArray(tags)
+    const taggedEvent = Array.isArray(tags)
       ? tags.find((t) => t.name === 'event')?.value
       : tags.event;
+    // Account-initiated QA deliveries lack the application's provider index and
+    // Resend does not guarantee tags in webhook payloads. Map only an explicit
+    // AUREVA QA subject from the exact authorized sending address.
+    const sender = String(data.from || '').trim().toLowerCase();
+    const qa = /^\\[aureva qa\\]/i.test(String(data.subject || '')) &&
+      (sender === 'access@mail.enterwildones.com' || sender.endsWith('<access@mail.enterwildones.com>'));
+    const eventId = getEvent(taggedEvent) ? taggedEvent : qa ? 'aureva-2026' : null;
     if (!getEvent(eventId)) return { ignored: true, unmatched: true };
     index = { eventId, recordKey: eventKey(eventId, 'orphan/' + providerId),
-      kind: Array.isArray(tags) ? tags.find((t) => t.name === 'workflow')?.value : tags.workflow };
+      kind: qa ? 'delivery_qa' : (Array.isArray(tags) ? tags.find((t) => t.name === 'workflow')?.value : tags.workflow) || 'external' };
     await store.setJSON('provider/' + providerId, index);
   }
   const eventId = index.eventId;
