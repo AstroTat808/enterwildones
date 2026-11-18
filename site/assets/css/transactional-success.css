@@ -1,0 +1,87 @@
+/* Shared visual standard for successful guest transactions.
+   These styles activate only after the existing JS unlocks success panels. */
+.wo-success-panel{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border:1px solid rgba(230,200,121,.38)!important;
+  border-radius:24px!important;
+  padding:clamp(26px,4vw,42px)!important;
+  background:radial-gradient(circle at 50% -20%,rgba(230,200,121,.14),transparent 45%),linear-gradient(180deg,rgba(12,13,18,.95),rgba(6,7,11,.97))!important;
+  box-shadow:0 22px 66px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.05);
+}
+.wo-success-panel::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:0 15% auto;
+  height:1px;
+  background:linear-gradient(90deg,transparent,#e8ca89,#80e2ee,#ff9551,#b78eff,transparent);
+}
+.wo-success-panel .wo-success-icon{
+  display:grid;
+  place-items:center;
+  width:66px;
+  height:66px;
+  margin:0 0 20px;
+  border:1px solid rgba(230,200,121,.55);
+  border-radius:50%;
+  color:#efdaaa;
+  background:rgba(230,200,121,.09);
+}
+.wo-success-panel .wo-success-icon svg{display:block;width:34px;height:34px}
+.wo-success-panel .wo-success-kicker{
+  margin:0 0 12px;
+  color:#e8ca89;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+}
+.wo-success-panel .wo-success-title{
+  margin:0 0 18px;
+  color:#f6eddd;
+  font-family:var(--tx-font-display,Georgia,serif);
+  font-size:clamp(32px,4vw,48px);
+  font-weight:400;
+  line-height:1.08;
+  letter-spacing:-.03em;
+}
+.wo-success-panel .wo-success-copy{
+  max-width:630px;
+  margin:0 0 16px;
+  color:#cfc5b5;
+  font-size:clamp(14px,1.4vw,16px);
+  line-height:1.75;
+}
+.wo-success-panel .wo-success-copy strong{color:#fff1d0}
+.wo-success-panel .wo-success-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:26px;
+}
+.wo-success-panel .wo-success-actions .button{
+  min-height:48px;
+  border-radius:999px;
+  padding:14px 23px;
+}
+.wo-success-panel .wo-success-actions .button:not(.ghost){
+  color:#151109;
+  background:#e7cb8e;
+  border-color:#e7cb8e;
+}
+.wo-success-panel .wo-success-actions .button.ghost{
+  color:#f2dfb9;
+  border-color:rgba(230,200,121,.37);
+  background:rgba(230,200,121,.04);
+}
+@media(max-width:560px){
+  .wo-success-panel{padding:24px 20px!important}
+  .wo-success-panel .wo-success-actions{align-items:stretch;flex-direction:column}
+  .wo-success-panel .wo-success-actions .button{width:100%;text-align:center}
+}
+@media(prefers-reduced-motion:reduce){
+  .wo-success-panel .button{transition:none!important}
+}
