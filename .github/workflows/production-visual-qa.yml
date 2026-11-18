@@ -245,12 +245,24 @@ jobs:
           python -m playwright install webkit
       - name: Exercise actual mobile header and menu interactions
         env:
-          PRODUCTION_BASE_URL: https://enterwildones.com
+          # On PRs, verify the checked-out SHA, not yesterday's production build.
+          # Post-merge browser-qa continues to test the real production domain.
+          PRODUCTION_BASE_URL: http://127.0.0.1:8765
           VISUAL_RESULTS: visual-results
-        run: >-
-          python scripts/production_visual_qa.py
-          --mode browser --suite ${{ matrix.suite }} --browser webkit
-          --viewport-name ${{ matrix.viewport }} --case-name ${{ matrix.case }}
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/serve_pr_visual_qa.py
+          python scripts/serve_pr_visual_qa.py --port 8765 > /tmp/wildones-pr-webkit-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 25); do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:8765/passport; then break; fi
+            if [ "$attempt" -eq 25 ]; then cat /tmp/wildones-pr-webkit-server.log; exit 1; fi
+            sleep 1
+          done
+          python scripts/production_visual_qa.py \
+            --mode browser --suite ${{ matrix.suite }} --browser webkit \
+            --viewport-name ${{ matrix.viewport }} --case-name ${{ matrix.case }}
       - name: Save full case verdict and mobile crash evidence
         uses: actions/upload-artifact@v4
         if: always()
