@@ -185,3 +185,77 @@ body #realms.passport-grid > article.passport-card > a.button{
   .passport-page .passport-filter button{min-height:54px}
 }
 
+/* Redeemed invitations always present an explicit, safe next step.
+   Keep the purchase action visible when locked without permitting checkout. */
+body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:11px;
+  align-items:stretch;
+  width:100%;
+  margin-top:auto;
+  padding-top:8px;
+}
+body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  min-height:52px;
+  margin:0;
+  border-radius:999px;
+  padding:14px 20px;
+  text-align:center;
+  white-space:normal;
+  line-height:1.35;
+  transition:background .2s ease,border-color .2s ease,transform .2s ease,box-shadow .2s ease;
+}
+body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .passport-purchase-cta:not(:disabled),
+body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .passport-ticket-cta{
+  background:linear-gradient(110deg,#dec080 0%,#f7e2ac 52%,#d5ac5d 100%);
+  border:1px solid #efce86;
+  color:#110e08;
+  box-shadow:0 12px 36px rgba(216,173,85,.16),inset 0 1px rgba(255,255,255,.35);
+}
+body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .passport-purchase-cta:not(:disabled):hover,
+body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .passport-ticket-cta:hover{
+  transform:translateY(-2px);
+  box-shadow:0 16px 42px rgba(216,173,85,.22);
+}
+body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .passport-purchase-cta:disabled{
+  opacity:1;
+  background:rgba(231,201,140,.055);
+  border:1px dashed rgba(231,201,140,.38);
+  color:#aa9a7d;
+  box-shadow:none;
+  cursor:not-allowed;
+}
+body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .passport-explore-cta{
+  background:rgba(255,255,255,.012);
+  border:1px solid rgba(246,230,198,.19);
+  color:#e6d7bb;
+  box-shadow:none;
+}
+body.passport-page #realms.passport-grid > article.passport-card .passport-purchase-message{
+  width:100%;
+  margin:12px 0 0;
+  color:#b9ae9e;
+  font-size:12px;
+  line-height:1.6;
+  text-align:center;
+  text-wrap:pretty;
+}
+body.passport-page #realms.passport-grid > article.passport-card .passport-purchase-message[data-state="error"]{
+  color:#f2baa8;
+}
+body.passport-page #realms.passport-grid > article.passport-card .passport-purchase-message[data-state="loading"]{
+  color:#f5dca8;
+}
+@media (max-width:560px){
+  body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions{gap:10px}
+  body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .button{min-height:50px;padding:13px 15px}
+}
+@media (prefers-reduced-motion:reduce){
+  body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .button{transition:none}
+  body.passport-page #realms.passport-grid > article.passport-card .passport-card-actions > .button:hover{transform:none}
+}
