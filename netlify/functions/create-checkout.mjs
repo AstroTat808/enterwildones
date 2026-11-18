@@ -111,6 +111,9 @@ export default async (req) => {
 
   const params = {
     mode: 'payment',
+    // Event admission is an in-person service, not an eligible digital Managed Payments product.
+    // Stripe may enable Managed Payments by default on new accounts; explicitly opt out.
+    'managed_payments[enabled]': 'false',
     success_url: `${site}/ticket-confirmed?session_id={CHECKOUT_SESSION_ID}&return_token=${encodeURIComponent(returnToken)}`,
     cancel_url: `${site}/events/${event.slug}?checkout=cancelled`,
     client_reference_id: invitation.invitationId,
