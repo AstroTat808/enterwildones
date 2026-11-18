@@ -24,6 +24,10 @@ assert.equal(new URL(message.redeemUrl).searchParams.get('code'), code);
 assert.match(message.html, /AUREVA/);
 assert.match(message.html, /Realm I/);
 assert.match(message.html, /assets\/images\/realms\/aureva-1200\.webp/);
+assert.match(message.html, /assets\/images\/brand\/enter-wild-ones-email\.png/);
+const png = await readFile(new URL('../site/assets/images/brand/enter-wild-ones-email.png', import.meta.url));
+assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'Email brand logo must be a real PNG for legacy mail clients');
+
 assert.match(message.html, /background:#e7cb8e/);
 assert.match(message.html, /Redeem Your Invitation/);
 assert.match(message.html, /aria|role="presentation"/);
