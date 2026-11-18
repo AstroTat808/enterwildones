@@ -1,5 +1,6 @@
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
+import { renderBrandedNoticeEmail } from './_mail-templates.mjs';
 import { getEvent } from './_events.mjs';
 import { pendingReceiptRetries, sendTicketReceipt, trackedEmail } from './_email-service.mjs';
 import { makeTicketToken } from './_ticket-token.mjs';
@@ -52,16 +53,27 @@ async function processReminders() {
       const app = appMap.get(invite.applicationId);
       if (!app?.email || app.marketingOptIn === false) { skipped++; continue; }
       // Reminder references an existing invitation, but never stores or reissues a raw code.
+      const mail = renderBrandedNoticeEmail({
+        event,
+        name: app.preferredName || app.fullName || 'Wild One',
+        title: 'Your Invitation Is Waiting',
+        subject: 'AUREVA: your approved invitation is awaiting checkout',
+        preview: 'Your private AUREVA invitation is approved. Complete admission checkout when you are ready.',
+        introduction: 'Your place in the realm is waiting.',
+        message: 'Your approved AUREVA invitation is still awaiting admission checkout. Use your existing private invitation code to continue.',
+        actionUrl: site + '/invite',
+        actionLabel: 'Redeem Your Invitation',
+        details: [
+          { label: 'First Light', value: '$55 until January 9, 2027 at 11:59 PM HST' },
+          { label: 'Full Radiance', value: '$70 from January 10, 2027' }
+        ],
+        note: 'If you have already purchased, no action is needed. If your code has expired, contact support. We never reissue a private code in a reminder.',
+        support: env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')
+      });
       const result = await trackedEmail({
         eventId: EVENT_ID, kind: 'unpaid_invitation_reminder', sourceId: invite.invitationId,
         key: 'wildones-unpaid-' + invite.invitationId + '-' + today,
-        to: app.email, subject: 'AUREVA: your approved invitation is awaiting checkout',
-        text: [(app.preferredName || app.fullName || 'Wild One') + ',', '',
-          'Your approved AUREVA invitation is still awaiting admission checkout.',
-          'First Light is $55 until January 9, 2027 at 11:59 PM HST; Full Radiance is $70 from January 10.',
-          'Redeem your existing private code: ' + site + '/invite',
-          'If you have already purchased, no action is needed.',
-          'If your code has expired, contact ' + env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')].join('\n')
+        to: app.email, subject: mail.subject, text: mail.text, html: mail.html
       });
       if (result.sent && !result.alreadyAccepted) sent++;
       else if (!result.sent) failed++;
@@ -83,16 +95,24 @@ async function processReminders() {
       if (!token) { skipped++; continue; }
       const url = site + '/ticket?token=' + encodeURIComponent(token);
       const waiverMissing = !ticket.waiverSignedAt;
+      const mail = renderBrandedNoticeEmail({
+        event,
+        name: app.preferredName || app.fullName || 'Wild One',
+        title: reminderKind === '24h' ? 'Tomorrow Is Your Night' : 'The Realm Is Approaching',
+        subject: 'AUREVA: ' + (reminderKind === '24h' ? 'tomorrow is your night' : 'your event is approaching'),
+        preview: 'Your AUREVA admission reminder. Open your private digital ticket.',
+        introduction: 'The countdown to AUREVA continues.',
+        message: 'AUREVA runs Saturday, January 23, 2027 at 7 PM through Sunday, January 24 at 3 AM HST. Optional late checkout is until Sunday at 10 AM.',
+        actionUrl: url,
+        actionLabel: waiverMissing ? 'Open Ticket & Sign Waiver' : 'Open Your Digital Ticket',
+        note: (waiverMissing ? 'IMPORTANT: Sign the required waiver to unlock your entry QR. ' : 'Have your digital ticket ready for check-in. ') +
+          'Keep the ticket link private. Venue details are available only through authorized ticket access.',
+        support: env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')
+      });
       const result = await trackedEmail({
         eventId: EVENT_ID, kind: 'event_reminder', sourceId: ticket.ticketId,
         key: 'wildones-event-' + EVENT_ID + '-' + ticket.ticketId + '-' + reminderKind,
-        to: app.email, subject: 'AUREVA: ' + (reminderKind === '24h' ? 'tomorrow is your night' : 'your event is approaching'),
-        text: [(app.preferredName || app.fullName || 'Wild One') + ',', '',
-          'AUREVA is Saturday, January 23, 2027, 7 PM through Sunday, January 24, 3 AM HST.',
-          'Optional late checkout is until Sunday at 10 AM.',
-          'Your private digital admission: ' + url,
-          waiverMissing ? 'IMPORTANT: Sign your required waiver to unlock your entry QR.' : 'Have your digital ticket ready for check-in.',
-          'Keep this link private. Event venue details are disclosed only through authorized ticket access.'].join('\n')
+        to: app.email, subject: mail.subject, text: mail.text, html: mail.html
       });
       if (result.sent && !result.alreadyAccepted) sent++;
       else if (!result.sent) failed++;
