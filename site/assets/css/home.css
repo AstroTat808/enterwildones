@@ -584,7 +584,7 @@ body.cinematic-home .v2-realm h2{
 }
 body.cinematic-home .v2-realm-copy>p{max-width:535px;margin:0;color:var(--home-copy);font-size:17px;line-height:1.88}
 body.cinematic-home .v2-meta{display:flex;flex-wrap:wrap;gap:9px;margin:34px 0 26px}
-body.cinematic-home .v2-meta span{display:inline-flex;align-items:center;min-height:33px;padding:0 11px;border:1px solid rgba(255,255,255,.075);border-radius:2px;background:rgba(255,255,255,.012);color:#aba296;font-size:8px;letter-spacing:.13em}
+body.cinematic-home .v2-meta :is(span,a[data-event-status]){display:inline-flex;align-items:center;min-height:33px;padding:0 11px;border:1px solid rgba(255,255,255,.075);border-radius:2px;background:rgba(255,255,255,.012);color:#aba296;font-size:8px;letter-spacing:.13em}
 body.cinematic-home .v2-realm-link{
   display:inline-flex;
   align-items:center;
@@ -816,7 +816,7 @@ body.cinematic-home .site-footer nav a:focus-visible{color:#efe5d7}
   body.cinematic-home .v2-realm h2{margin:19px 0 15px;font-size:clamp(44px,12.8vw,60px);line-height:1}
   body.cinematic-home .v2-realm-copy>p{max-width:34rem;margin:0 auto;color:#b9b0a5;font-size:14px;line-height:1.78}
   body.cinematic-home .v2-meta{justify-content:center;gap:7px;margin:24px 0 21px}
-  body.cinematic-home .v2-meta span{min-height:31px;padding:0 10px;border-radius:999px;font-size:7px}
+  body.cinematic-home .v2-meta :is(span,a[data-event-status]){min-height:31px;padding:0 10px;border-radius:999px;font-size:7px}
   body.cinematic-home .v2-realm-link{min-height:48px;font-size:9px;letter-spacing:.14em}
   body.cinematic-home .v2-realm-art::after{opacity:.48}
 

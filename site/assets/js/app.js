@@ -9,7 +9,29 @@
         const card=document.querySelector(`[data-event-id="${CSS.escape(e.eventId)}"]`);if(!card)continue;
         const date=card.querySelector('[data-event-date]'),status=card.querySelector('[data-event-status]');
         if(date)date.textContent=fmt.format(new Date(e.startsAt)).toUpperCase();
-        if(status)status.textContent=e.ticketSalesOpen?(e.accessMode==='public'?'TICKETS OPEN':'INVITED GUEST CHECKOUT'):e.applicationOpen?'REQUEST ACCESS':String(e.status||'COMING SOON').replaceAll('_',' ').toUpperCase();
+        if(status){
+          const label=e.ticketSalesOpen?(e.accessMode==='public'?'TICKETS OPEN':'INVITED GUEST CHECKOUT'):e.applicationOpen?'REQUEST ACCESS':String(e.status||'COMING SOON').replaceAll('_',' ').toUpperCase();
+          // Status chips are links only when their corresponding guest action is available.
+          const href=e.ticketSalesOpen?(e.accessMode==='public'?`/public-tickets/${encodeURIComponent(e.slug)}`:'/invite')
+            :e.applicationOpen?(e.routes?.apply||`/apply/${encodeURIComponent(e.slug)}`):null;
+          if(href){
+            if(status.tagName==='A'){
+              status.href=href;
+              status.textContent=label;
+            }else{
+              const link=document.createElement('a');
+              link.dataset.eventStatus='';
+              link.href=href;
+              link.textContent=label;
+              status.replaceWith(link);
+            }
+          }else if(status.tagName==='A'){
+            const badge=document.createElement('span');
+            badge.dataset.eventStatus='';
+            badge.textContent=label;
+            status.replaceWith(badge);
+          }else status.textContent=label;
+        }
       }
     }catch{/* Server-rendered event summaries remain readable if hydration fails. */}
   }

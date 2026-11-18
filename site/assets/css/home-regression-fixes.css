@@ -207,7 +207,7 @@ body.cinematic-home .v2-progress a{
 /* Festival metadata and discovery CTA: convert the undersized text link into a
    proper premium action while keeping each realm's accent color. */
 body.cinematic-home .v2-meta{gap:10px;margin:34px 0 28px}
-body.cinematic-home .v2-meta span{
+body.cinematic-home .v2-meta :is(span,a[data-event-status]){
   min-height:38px;
   padding:0 14px;
   font-size:9.5px;
@@ -294,7 +294,7 @@ body.cinematic-home .v2-passport h2{text-shadow:0 16px 48px rgba(0,0,0,.36)}
     letter-spacing:.14em;
   }
 
-  body.cinematic-home .v2-meta span{
+  body.cinematic-home .v2-meta :is(span,a[data-event-status]){
     min-height:36px;
     padding:0 12px;
     font-size:8.5px;
@@ -322,4 +322,25 @@ body.cinematic-home .v2-passport h2{text-shadow:0 16px 48px rgba(0,0,0,.36)}
   body.cinematic-home .v2-cycle{padding-inline:14px}
   body.cinematic-home .v2-progress a{font-size:7.5px;letter-spacing:.11em}
   body.cinematic-home .v2-realm-nav a{padding-inline:13px}
+}
+
+/* The status chip keeps the same resting appearance as its non-interactive
+   siblings, while open registration and checkout states are actionable. */
+body.cinematic-home .v2-meta a[data-event-status]{
+  text-decoration:none;
+  cursor:pointer;
+  transition:color .2s ease,border-color .2s ease,background .2s ease;
+}
+body.cinematic-home .v2-meta a[data-event-status]:hover,
+body.cinematic-home .v2-meta a[data-event-status]:focus-visible{
+  color:#f5e7c6;
+  border-color:color-mix(in srgb,var(--realm) 55%,rgba(255,255,255,.08));
+  background:color-mix(in srgb,var(--realm) 9%,rgba(255,255,255,.012));
+}
+body.cinematic-home .v2-meta a[data-event-status]:focus-visible{
+  outline:2px solid var(--realm);
+  outline-offset:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  body.cinematic-home .v2-meta a[data-event-status]{transition:none}
 }
