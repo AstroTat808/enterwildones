@@ -228,7 +228,9 @@
       status.textContent='Sending your secure sign-in link...';
       const r=await fetch('/api/passport/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:q('#email').value.trim(),turnstileToken:token})}),d=await r.json();
       if(!r.ok)throw new Error(d.error||'Sign-in request failed.');
-      status.textContent=d.message||'Check your inbox for your sign-in link.';
+      // A successful request always leads to the same confirmation page, without
+      // disclosing whether the supplied email belongs to an active Passport.
+      window.location.assign('/passport/check-email');
     }catch(e){status.textContent=e.message||'Sign-in request failed.';}
     finally{b.disabled=false;if(api()&&widget!==null)api().reset(widget);}
   });
