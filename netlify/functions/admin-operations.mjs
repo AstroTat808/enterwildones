@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { isAdmin } from './_admin-auth.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
+import { setBundledAddonStatus } from './_bundled-addons.mjs';
 import { trackedEmail } from './_email-service.mjs';
 import { getEvent, listEvents, toPublicEvent } from './_events.mjs';
 import { createInvitation } from './_invitations.mjs';
@@ -79,8 +80,8 @@ async function snapshot(eventId) {
     checkedIn: hydratedTickets.filter((x) => x.status === 'checked_in' || x.checkedInAt).length,
     comps: hydratedTickets.filter((x) => x.ticketSource === 'comp' && ACTIVE_TICKET.has(x.status)).length,
     refunded: hydratedTickets.filter((x) => x.status === 'refunded').length,
-    admissionRevenueCents: payments.filter((x) => x.status === 'paid' && x.purchaseType !== 'addon').reduce((n, x) => n + Number(x.amountTotal || 0), 0),
-    addonRevenueCents: payments.filter((x) => x.status === 'paid' && x.purchaseType === 'addon').reduce((n, x) => n + Number(x.amountTotal || 0), 0),
+    admissionRevenueCents: payments.filter((x) => x.status === 'paid' && x.purchaseType !== 'addon').reduce((n, x) => n + Number(x.admissionPriceCents ?? x.amountTotal ?? 0), 0),
+    addonRevenueCents: payments.filter((x) => x.status === 'paid').reduce((n, x) => n + Number(x.purchaseType === 'addon' ? x.amountTotal : (x.addonSubtotalCents || 0)), 0),
     activeAddons: entitlements.filter((x) => x.status === 'active').length,
     checkins: checkins.length
   };
@@ -181,7 +182,10 @@ export default async (req) => {
     await blobStore(STORES.tickets).setJSON(eventKey(eventId, ticket.ticketId), { ...ticket, status: nextStatus, ...(settled ? {refundedAt:now} : {}), refundId: refund.id, updatedAt: now });
     await payments.setJSON(paymentKey, { ...payment, status: nextStatus, ...(settled ? {refundedAt:now} : {}), refundId: refund.id, updatedAt: now });
     // Stripe's pending refund must keep occupying a seat until final settlement.
-    if (settled) await releaseAdmission({eventId,invitationId:ticket.invitationId,sessionId:ticket.paymentId,issued:true});
+    if (settled) {
+      await releaseAdmission({eventId,invitationId:ticket.invitationId,sessionId:ticket.paymentId,issued:true});
+      await setBundledAddonStatus({eventId,ticketId:ticket.ticketId,paymentId:ticket.paymentId,selected:payment.selectedAddons||[],status:'refunded'});
+    }
     await writeAudit({ eventId, action: settled ? 'ticket.refunded' : 'ticket.refund_pending', actor: 'admin', targetType: 'ticket', targetId: ticket.ticketId, detail: { paymentId: payment.paymentId, refundId: refund.id } });
     return json({ ok: true, refundId: refund.id, status: nextStatus });
   }
@@ -193,6 +197,11 @@ export default async (req) => {
     if (ent.addonType === 'drink_package' && (Number(ent.creditsRedeemed || 0) > 0 || ent.wristbandActivatedAt)) return json({ error: 'A used or activated drink package requires manual review.' }, 409);
     const paymentKey = eventKey(eventId, ent.paymentId), payments = blobStore(STORES.payments), payment = await payments.get(paymentKey, { type: 'json' }).catch(() => null);
     if (!payment?.stripePaymentIntentId || payment.status !== 'paid') return json({ error: 'A refundable paid Stripe add-on payment was not found.' }, 409);
+    // A bundled item shares the admission's single payment intent; blindly
+    // refunding it here would refund the ticket and all other add-ons as well.
+    // Partial refunds need item-specific reconciliation and consumption review.
+    if (payment.purchaseType !== 'addon' || (payment.selectedAddons||[]).some(x=>x.addonType===addonType))
+      return json({ error: 'This add-on was purchased with admission. Partial bundle refunds require manual payment review; use the whole-order refund to cancel everything.' , code: 'BUNDLE_REFUND_REVIEW' }, 409);
     const refund = await stripePost('refunds', { payment_intent: payment.stripePaymentIntentId, reason: 'requested_by_customer', 'metadata[event_id]': eventId, 'metadata[admin_action]': 'addon_refund', 'metadata[addon_type]': addonType }, `wildones-admin-addon-refund-${payment.paymentId}`);
     await entStore.setJSON(entitlementKey, { ...ent, status: 'refunded', refundedAt: now, refundId: refund.id, updatedAt: now });
     await payments.setJSON(paymentKey, { ...payment, status: 'refunded', refundedAt: now, refundId: refund.id, updatedAt: now });

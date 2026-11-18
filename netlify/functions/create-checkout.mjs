@@ -1,5 +1,6 @@
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
+import { selectBundledAddons, addonSubtotal, bundleTypes } from './_bundled-addons.mjs';
 import { resolveEvent } from './_events.mjs';
 import { readInviteAccess } from './_invitations.mjs';
 import { checkoutAllowed } from './_checkout-access.mjs';
@@ -17,7 +18,7 @@ const CURRENCY = 'usd';
 function validSessionId(value = '') { return /^cs_[A-Za-z0-9_]+$/.test(String(value)); }
 function sessionMatches(session, eventId, invitationId) { return session?.metadata?.event_id === eventId && session?.metadata?.invitation_id === invitationId && session?.metadata?.purchase_type === 'admission'; }
 
-async function inspectLatestCheckout(latest, event, invitation) {
+async function inspectLatestCheckout(latest, event, invitation, requestedAddons = []) {
   if (!latest?.paymentId || !validSessionId(latest.paymentId)) return null;
   let session;
   try { session = await stripeGet(`checkout/sessions/${encodeURIComponent(latest.paymentId)}`); }
@@ -34,7 +35,11 @@ async function inspectLatestCheckout(latest, event, invitation) {
       return { error: 'Your prior payment may already be complete. Open your confirmation link or contact support before starting another checkout.', status: 409 };
     }
   }
-  if (session.status === 'open' && session.url) return { checkoutUrl: session.url, reused: true, paid: false };
+  if (session.status === 'open' && session.url) {
+    if (bundleTypes(latest.selectedAddons || []) !== bundleTypes(requestedAddons))
+      return { error: 'A secure checkout is already open with a different add-on selection. Complete that checkout or wait until it expires before changing your order.', code: 'CART_LOCKED', status: 409 };
+    return { checkoutUrl: session.url, reused: true, paid: false };
+  }
   if (session.status && session.status !== 'expired') return { error: 'Your previous checkout is still being resolved. Try again shortly.', status: 409 };
   if (session.status === 'expired') {
     // A signed Stripe response is authoritative. Never release on an unverified timer alone.
@@ -80,12 +85,20 @@ export default async (req) => {
     return json({ error: 'This event access has already been used for admission.', ticketId: existing?.ticketId || null }, 409);
   }
 
+  // Never accept prices or quantities from the browser. Optional add-ons are
+  // selected by identifier and repriced from the current protected catalog.
+  let selectedAddons;
+  try { selectedAddons = selectBundledAddons(event.eventId, body.addons ?? []); }
+  catch { return json({ error: 'Select only the available add-ons, one of each.', code: 'INVALID_ADDONS' }, 400); }
+  const addonTotal = addonSubtotal(selectedAddons);
+  const orderTotal = price + addonTotal;
+
   const latestKey = eventKey(event.eventId, `checkout-latest/${invitation.invitationId}`);
   const payments = blobStore(STORES.payments);
   const latest = await payments.get(latestKey, { type: 'json' }).catch(() => null);
-  const prior = await inspectLatestCheckout(latest, event, invitation);
+  const prior = await inspectLatestCheckout(latest, event, invitation, selectedAddons);
   if (prior) {
-    if (prior.error) return json({ error: prior.error }, prior.status || 409);
+    if (prior.error) return json({ error: prior.error, code: prior.code || 'CHECKOUT_UNAVAILABLE' }, prior.status || 409);
     return json({ ok: true, checkoutUrl: prior.checkoutUrl, reused: true, paid: Boolean(prior.paid) });
   }
 
@@ -126,7 +139,10 @@ export default async (req) => {
     'metadata[application_id]': invitation.applicationId,
     'metadata[user_id]': invitation.userId,
     'metadata[purchase_type]': 'admission',
-    'metadata[expected_amount]': String(price),
+    'metadata[expected_amount]': String(orderTotal),
+    'metadata[admission_amount]': String(price),
+    'metadata[addon_amount]': String(addonTotal),
+    'metadata[bundle_addon_types]': bundleTypes(selectedAddons),
     'metadata[expected_currency]': CURRENCY,
     'metadata[ticket_tier]': String(tierPhase),
     'metadata[ticket_tier_name]': tierName,
@@ -136,9 +152,20 @@ export default async (req) => {
     'payment_intent_data[metadata][application_id]': invitation.applicationId,
     'payment_intent_data[metadata][user_id]': invitation.userId,
     'payment_intent_data[metadata][purchase_type]': 'admission',
+    'payment_intent_data[metadata][bundle_addon_types]': bundleTypes(selectedAddons),
     'payment_intent_data[metadata][ticket_tier]': String(tierPhase),
     'payment_intent_data[metadata][ticket_tier_name]': tierName
   };
+
+  // One Stripe charge, itemized separately for admission and each selected extra.
+  selectedAddons.forEach((item, offset) => {
+    const index = offset + 1;
+    params[`line_items[${index}][quantity]`] = '1';
+    params[`line_items[${index}][price_data][currency]`] = CURRENCY;
+    params[`line_items[${index}][price_data][unit_amount]`] = String(item.priceCents);
+    params[`line_items[${index}][price_data][product_data][name]`] = item.name;
+    params[`line_items[${index}][price_data][product_data][description]`] = item.description;
+  });
 
   // An earlier failed attempt may have reused this attempt number with different
   // Stripe parameters. Hash the exact payload to avoid Stripe's idempotency conflict.
@@ -158,7 +185,11 @@ export default async (req) => {
       attempt,
       checkoutUrl: session.url,
       expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : new Date(stripeExpiresAt * 1000).toISOString(),
-      amountTotal: price,
+      amountTotal: orderTotal,
+      admissionPriceCents: price,
+      addonSubtotalCents: addonTotal,
+      selectedAddons,
+      purchaseType: 'admission',
       currency: CURRENCY,
       ticketTier: tierPhase,
       ticketTierName: tierName,
@@ -168,7 +199,7 @@ export default async (req) => {
       updatedAt: now
     };
     await Promise.all([payments.setJSON(eventKey(event.eventId, session.id), record), payments.setJSON(latestKey, record)]);
-    await writeAudit({ eventId: event.eventId, action: 'checkout.created', actor: 'guest', targetType: 'payment', targetId: session.id, detail: { invitationId: invitation.invitationId, attempt, ticketTier: tierPhase, ticketTierName: tierName, amountTotal: price, commissioning: !event.ticketSalesOpen } });
+    await writeAudit({ eventId: event.eventId, action: 'checkout.created', actor: 'guest', targetType: 'payment', targetId: session.id, detail: { invitationId: invitation.invitationId, attempt, ticketTier: tierPhase, ticketTierName: tierName, admissionPriceCents: price, addonSubtotalCents: addonTotal, amountTotal: orderTotal, addonTypes: bundleTypes(selectedAddons), commissioning: !event.ticketSalesOpen } });
     return json({ ok: true, checkoutUrl: session.url, reused: false });
   } catch (error) {
     // Never expose Stripe's internal messages, API URLs or idempotency keys to guests.
