@@ -164,4 +164,31 @@ assert.equal(final.summary.failed, 1);
 assert.equal(final.summary.delivered, 2);
 assert.equal(final.messages.some((row) => String(row.recipient).includes(guestEmail)), false, 'Recipient must remain masked');
 
+
+// 6. Account-initiated AUREVA QA bounce can be attributed without trusting arbitrary subjects.
+const externalBounceId = 'qa-provider-bounce-0001';
+const externalBounce = await updateDeliveryEvent({
+  type: 'email.bounced', created_at: new Date(Date.now() + 4000).toISOString(),
+  data: {
+    email_id: externalBounceId,
+    from: 'Wild Ones <access@mail.enterwildones.com>',
+    to: ['bounced@resend.dev'],
+    subject: '[AUREVA QA] Provider bounce test'
+  }
+});
+assert.equal(externalBounce.status, 'bounced');
+assert.equal(externalBounce.record.kind, 'delivery_qa');
+assert.equal(externalBounce.shouldAlert, true);
+const qaAlert = await dispatchFailureAlert({ type: 'email.bounced',
+  record: externalBounce.record, providerId: externalBounceId });
+assert.equal(qaAlert.sent, true);
+assert.equal(mockMessages.length, 5);
+assert.equal((await emailHealth(eventId)).summary.failed, 2);
+const unknownProvider = await updateDeliveryEvent({
+  type: 'email.bounced',
+  data: { email_id: 'unmatched-other-event-01',
+    from: 'Someone <test@unrelated.example>', subject: '[AUREVA QA] Other domain' }
+});
+assert.equal(unknownProvider.ignored, true, 'Untrusted senders may not create AUREVA QA records');
+
 console.log('PASS: Isolated AUREVA approval -> email invitation -> redemption with sales closed -> simulated paid record -> signed ticket receipt -> delivery tracking -> failure alert. No real network, admission, or charge.');
