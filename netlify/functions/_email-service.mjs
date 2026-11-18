@@ -35,8 +35,10 @@ export async function trackedEmail({ eventId, kind, to, subject, text, key, sour
   const recordKey = storeKey(eventId, idempotencyKey);
   const previous = await store.get(recordKey, { type: 'json' }).catch(() => null);
   if (previous?.providerId) return { sent: true, id: previous.providerId, status: previous.status, alreadyAccepted: true };
-  if (previous?.status === 'api_failed' && (!previous.retryable || previous.attempts >= MAX_ATTEMPTS))
+  if (previous?.status === 'api_failed' && (!previous.retryable || !previous.nextRetryAt || previous.attempts >= MAX_ATTEMPTS))
     return { sent: false, reason: previous.reason || 'retry_limit', exhausted: true };
+  if (previous?.status === 'api_failed' && previous.nextRetryAt && Date.parse(previous.nextRetryAt) > Date.now())
+    return { sent: false, reason: 'retry_not_due', nextRetryAt: previous.nextRetryAt };
   const keyPresent = Boolean(env('RESEND_API_KEY') && env('WILDONES_EMAIL_FROM'));
   if (!keyPresent) return { sent: false, reason: 'email_not_configured' };
   const attempts = Number(previous?.attempts || 0) + 1;
