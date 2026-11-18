@@ -3,6 +3,7 @@ import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
 import { getEvent, requireEvent } from './_events.mjs';
 import { makeTicketToken } from './_ticket-token.mjs';
+import { renderTicketEmail } from './_mail-templates.mjs';
 
 const MAX_ATTEMPTS = 5;
 const RETRY_DELAYS = [300000, 1800000, 7200000, 21600000];
@@ -27,7 +28,7 @@ function retryTime(attempts) {
 function stripError(error) {
   return String(error?.message || error || 'unknown_error').replace(/re_[A-Za-z0-9]+/g, '[redacted]').slice(0, 140);
 }
-export async function trackedEmail({ eventId, kind, to, subject, text, key, sourceId = null, retryable = false }) {
+export async function trackedEmail({ eventId, kind, to, subject, text, html = null, key, sourceId = null, retryable = false }) {
   requireEvent(eventId);
   if (!validAddress(to) || !key || !subject || !text) return { sent: false, reason: 'invalid_email_request' };
   const idempotencyKey = String(key).slice(0, 256);
@@ -58,6 +59,7 @@ export async function trackedEmail({ eventId, kind, to, subject, text, key, sour
       },
       body: JSON.stringify({
         from: env('WILDONES_EMAIL_FROM'), to: [to], subject, text,
+        ...(html ? { html } : {}),
         tags: [{ name: 'event', value: eventId }, { name: 'workflow', value: kind }]
       }),
       signal: AbortSignal.timeout(9000)
@@ -117,11 +119,16 @@ export async function sendTicketReceipt(eventId, ticketId) {
     ''
   ] : [];
   const name = application.preferredName || application.fullName || 'Wild One';
+  const ticketUrl = site + '/ticket?token=' + encodeURIComponent(token);
+  const html = renderTicketEmail({
+    event, name, ticket, payment, ticketUrl,
+    support: env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')
+  });
   return trackedEmail({
     eventId, kind: 'ticket_receipt', sourceId: ticket.ticketId,
     key: 'wildones-ticket-' + (ticket.paymentId || ticket.ticketId),
     to: application.email, subject: 'Your ' + event.name + ' Ticket Is Confirmed',
-    retryable: true,
+    retryable: true, html,
     text: [name + ',', '', 'Your ' + event.name + ' ticket is confirmed.',
       'Admission: ' + (ticket.ticketTierName || 'General Admission'),
       'Ticket ID: ' + ticket.ticketId,

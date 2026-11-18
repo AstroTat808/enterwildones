@@ -52,7 +52,7 @@ globalThis.fetch = async (input, options = {}) => {
   const same = mockMessages.find((msg) => msg.key === idempotencyKey);
   if (same) return Response.json({ id: same.id });
   const id = 'qa-mock-message-' + String(mockMessages.length + 1).padStart(4, '0');
-  mockMessages.push({ id, key: idempotencyKey, to: body.to, subject: body.subject, text: body.text, tags: body.tags });
+  mockMessages.push({ id, key: idempotencyKey, to: body.to, subject: body.subject, text: body.text, html: body.html || null, tags: body.tags });
   return Response.json({ id }, { status: 200 });
 };
 
@@ -95,6 +95,13 @@ assert.match(approved.invite.code, /^AUR-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
 assert.equal(mockMessages.length, 1, 'Approval sent exactly one mocked invitation');
 assert.match(mockMessages[0].text, new RegExp(approved.invite.code));
 assert.match(mockMessages[0].text, /\/invite/);
+assert.ok(mockMessages[0].html, 'Invitation email should include an HTML body.');
+assert.ok(mockMessages[0].html.includes('href="https://enterwildones.com/invite?code=' + approved.invite.code + '"'),
+  'Branded invitation must contain the exact one-time prefilled code.');
+assert.match(mockMessages[0].html, /aureva-1200\.webp/);
+assert.match(mockMessages[0].html, /Redeem Your Invitation/);
+assert.match(mockMessages[0].text, new RegExp('invite\\?code=' + approved.invite.code));
+
 
 // 2. Guest redeems code, but public checkout stays closed.
 const redemption = await handleInviteRedeem(request('/api/redeem-invite', { code: approved.invite.code }));

@@ -1,6 +1,7 @@
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
 import { trackedEmail } from './_email-service.mjs';
+import { renderInvitationEmail } from './_mail-templates.mjs';
 import { isAdmin } from './_admin-auth.mjs';
 import { createInvitation } from './_invitations.mjs';
 import { getEvent, listEvents, toPublicEvent } from './_events.mjs';
@@ -19,16 +20,13 @@ async function load(eventId) {
 async function sendInvitationEmail({ application, event, code, expiresAt }) {
   const site = (env('WILDONES_SITE_URL') || 'https://enterwildones.com').replace(/\/$/, '');
   const name = application.preferredName || application.fullName || 'Wild One';
-  const text = [
-    name + ',', '', 'Your access request for ' + event.name + ' has been approved.', '',
-    'Invitation code: ' + code, 'Redeem it here: ' + site + '/invite',
-    'Expires: ' + new Date(expiresAt).toLocaleString('en-US', { timeZone: event.timezone || 'Pacific/Honolulu' }),
-    '', 'This invitation is tied to your approved Wild Ones profile and can only be redeemed once. Keep the code private.',
-    '', 'Support: ' + env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')
-  ].join('\n');
+  const message = renderInvitationEmail({
+    event, name, code, expiresAt, site,
+    support: env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')
+  });
   const result = await trackedEmail({
     eventId: event.eventId, kind: 'invitation', to: application.email,
-    subject: event.name + ' Invitation Approved', text,
+    subject: message.subject, text: message.text, html: message.html,
     key: 'wildones-invite-' + application.applicationId,
     sourceId: application.applicationId, retryable: false
   });
