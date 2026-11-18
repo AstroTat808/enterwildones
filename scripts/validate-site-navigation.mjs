@@ -111,7 +111,8 @@ for(const page of htmlFiles){
   }
   pages.push(path.relative(SITE,page));
 }
-assert.equal(inventory.pages,24,'Expected all 24 current site pages in the audit; update inventory when adding routes');
+assert.equal(inventory.pages,25,'Expected all 25 current site pages in the audit; update inventory when adding routes');
+assert.ok(pages.includes('passport-check-email.html'),'The Passport email confirmation page must remain in the navigation audit.');
 if(errors.length){
   console.error('Navigation audit found '+errors.length+' issue(s) in '+inventory.pages+' pages:');
   for(const item of errors)console.error('- '+item);
