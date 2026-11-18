@@ -8,6 +8,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 import argparse
+import json
 
 SITE = (Path(__file__).resolve().parents[1] / "site").resolve()
 ROUTES = {
@@ -19,6 +20,31 @@ ROUTES = {
 class Handler(SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
+
+    def do_GET(self):
+        # The local pre-merge server has no Netlify functions. Serve the exact
+        # mock event-summary contract expected by the homepage hydration script
+        # instead of generating a spurious browser-console 404.
+        pathname = urlparse(self.path).path
+        if pathname == "/api/events":
+            payload = {
+                "cycle": {"name": "The Wild Ones Cycle", "statement": "Four realms. One cycle."},
+                "events": [
+                    {"eventId": "aureva-2026", "slug": "aureva", "startsAt": "2027-01-23T19:00:00-10:00", "status": "upcoming", "ticketSalesOpen": False, "applicationOpen": True, "accessMode": "invitation"},
+                    {"eventId": "halora-2027", "slug": "halora", "startsAt": "2027-04-01T19:00:00-10:00", "status": "coming_soon", "ticketSalesOpen": False, "applicationOpen": False, "accessMode": "invitation"},
+                    {"eventId": "sunveil-2027", "slug": "sunveil", "startsAt": "2027-07-01T19:00:00-10:00", "status": "coming_soon", "ticketSalesOpen": False, "applicationOpen": False, "accessMode": "public"},
+                    {"eventId": "nocturne-2027", "slug": "nocturne", "startsAt": "2027-09-01T19:00:00-10:00", "status": "coming_soon", "ticketSalesOpen": False, "applicationOpen": False, "accessMode": "invitation"}
+                ]
+            }
+            body = json.dumps(payload).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        super().do_GET()
 
     def translate_path(self, path):
         pathname = urlparse(path).path
