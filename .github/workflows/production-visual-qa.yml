@@ -25,9 +25,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # v4 isolates this full QA run from a superseded v3 screenshot runner stuck
-  # cancelling. This does not skip or weaken any quality gate.
-  group: production-visual-qa-v4-${{ github.ref }}
+  # v5 isolates the final all-viewport Turnstile matrix from superseded
+  # screenshot runner cancellation. Every existing check is still mandatory.
+  group: production-visual-qa-v5-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
