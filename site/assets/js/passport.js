@@ -18,7 +18,10 @@
         s.onerror=()=>reject(new Error('Security verification could not load. Please refresh.'));
         document.head.append(s);
       });
-      widget=api().render('#passport-turnstile-widget',{sitekey:d.turnstileSiteKey,action:'passport_login',theme:'dark'});
+      // At narrow widths, the 300px widget would exceed the Passport panel.
+      // Cloudflare's compact widget keeps verification fully visible and usable.
+      const availableWidth=q('#passport-turnstile-widget').getBoundingClientRect().width;
+      widget=api().render('#passport-turnstile-widget',{sitekey:d.turnstileSiteKey,action:'passport_login',theme:'dark',size:availableWidth<300?'compact':'normal'});
     })();
     return securityPromise;
   }
