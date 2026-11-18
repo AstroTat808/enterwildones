@@ -7,19 +7,10 @@ on:
   # All pull requests must run required QA, even for workflow or documentation changes.
   pull_request:
     branches: [main]
+  # Release Certification requires Production QA Gate on every exact main SHA.
+  # Do not path-filter pushes: script-only or CI-only releases must receive it too.
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/production-visual-qa.yml'
-      - 'site/**'
-      - 'netlify/functions/**'
-      - 'netlify.toml'
-      - 'scripts/production_visual_qa.py'
-      - 'scripts/visual_regression.py'
-      - 'lighthouserc.cjs'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.nvmrc'
   schedule:
     - cron: '17 14 * * *'
   workflow_dispatch:
