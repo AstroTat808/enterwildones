@@ -37,3 +37,18 @@ html{scroll-padding-top:100px}body{overflow-x:clip;font-family:Inter,ui-sans-ser
     padding:0 15px;
   }
 }
+
+/* Shared Cloudflare verification: centered, unclipped, and separate from the CTA. */
+.turnstile-slot{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  width:100%;
+  min-width:0;
+  min-height:65px;
+}
+.application-form > .turnstile-slot{margin:24px auto 0}
+.public-ticket-page .ticket-form > .turnstile-slot{
+  grid-column:1/-1;
+  margin:6px auto;
+}

@@ -25,9 +25,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # v3 isolates the pinned-container screenshot QA from a superseded v2
-  # apt-install job that is stuck cancelling. Every existing gate still runs.
-  group: production-visual-qa-v3-${{ github.ref }}
+  # v7 runs the finalized responsive Cloudflare size patch without inheriting
+  # a superseded screenshot worker. All existing quality gates remain mandatory.
+  group: production-visual-qa-v7-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -35,9 +35,10 @@ permissions:
   actions: read
 
 env:
-  # v14 approves ONLY the intentionally changed Launch Control inventory section.
-  # All other cases are seeded from exact production main and remain regression-gated.
-  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v14
+  # v15 explicitly approves only the three intentional Turnstile form layout
+  # screenshots plus the previously approved Launch Control view. Every other
+  # case remains based on exact production main and regression-gated.
+  VISUAL_BASELINE_KEY: enterwildones-approved-visual-baseline-v15-turnstile
   APPROVED_REALM_VISUAL_CASES: home-desktop,home-passport-close-desktop,home-footer-desktop,home-footer-phone,home-footer-wide,masthead-home-320,masthead-home-phone,masthead-home-430,masthead-home-768,masthead-home-1024,masthead-home-1366,masthead-home-1440,masthead-home-1920,masthead-event-phone,masthead-quiz-phone,masthead-passport-phone,masthead-invite-phone,masthead-apply-phone,realm-quiz-intro-desktop,realm-quiz-result-desktop,realm-quiz-intro-1366,realm-quiz-question-1366,realm-quiz-aureva-result-1366,realm-quiz-halora-result-1366,realm-quiz-sunveil-result-1366,realm-quiz-nocturne-result-1366,application-open-desktop,application-gated-desktop,passport-auth-desktop,passport-login-phone,master-cycle-card-320,master-cycle-card-390,master-cycle-card-430,master-cycle-card-pro-max,master-cycle-card-desktop,master-cycle-ceremony-320,master-cycle-ceremony-390,master-cycle-ceremony-430,master-cycle-ceremony-pro-max,master-cycle-ceremony-desktop,invite-desktop,ticket-access-desktop,public-ticket-desktop,ticket-addons-desktop,admin-applications-desktop,admin-packages-desktop,admin-operations-desktop,admin-event-day-desktop,admin-live-desktop,admin-launch-desktop,admin-rehearsal-desktop
 
 jobs:
@@ -64,6 +65,8 @@ jobs:
         run: python -m unittest discover -s scripts -p 'test_webkit_viewport_shards.py' -v
       - name: Verify fail-closed WebKit case and browser-cleanup guards
         run: python -m unittest discover -s scripts -p 'test_webkit_failure_guard.py' -v
+      - name: Verify exact PR preview routes for all Turnstile forms
+        run: python -m unittest discover -s scripts -p 'test_pr_visual_routes.py' -v
       - name: Static source, asset, route, and regression audit
         env:
           VISUAL_RESULTS: visual-results
@@ -124,7 +127,7 @@ jobs:
           --mode seed-approved-preview
           --baseline-dir .visual-baselines
           --production-baseline-dir .visual-baselines-production
-          --approved-cases "admin-launch-desktop"
+          --approved-cases "admin-launch-desktop,passport-login-phone,application-open-desktop,public-ticket-desktop"
       - name: Seed approved baseline from deployed production
         if: steps.baseline.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
         run: python scripts/visual_regression.py --mode capture-production --baseline-dir .visual-baselines
@@ -276,10 +279,63 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
+  turnstile-form-qa:
+    name: Turnstile forms · ${{ matrix.browser }}
+    if: github.event_name == 'pull_request'
+    needs: source-audit
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ matrix.image }}
+      options: --ipc=host
+    timeout-minutes: 28
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            image: mcr.microsoft.com/playwright/python:v1.55.0-noble
+            version: '1.55.0'
+          - browser: webkit
+            image: mcr.microsoft.com/playwright/python:v1.65.0-noble
+            version: '1.65.2'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install approved browser binary
+        run: |
+          python -m pip install playwright==${{ matrix.version }}
+          python -m playwright install ${{ matrix.browser }}
+      - name: Exercise all guest Turnstile forms at every viewport
+        env:
+          PRODUCTION_BASE_URL: http://127.0.0.1:8765
+          VISUAL_RESULTS: visual-results
+        run: |
+          set -eu
+          python scripts/serve_pr_visual_qa.py --port 8765 > /tmp/wildones-pr-turnstile.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 25); do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:8765/passport; then break; fi
+            if [ "$attempt" -eq 25 ]; then cat /tmp/wildones-pr-turnstile.log; exit 1; fi
+            sleep 1
+          done
+          python scripts/production_visual_qa.py --mode browser --suite transactional --browser ${{ matrix.browser }} --case-name passport-login
+          python scripts/production_visual_qa.py --mode browser --suite transactional --browser ${{ matrix.browser }} --case-name public-tickets
+          python scripts/production_visual_qa.py --mode browser --suite public --browser ${{ matrix.browser }} --case-name apply-aureva
+      - name: Preserve all viewport measurements and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: turnstile-form-qa-${{ matrix.browser }}-${{ github.run_id }}
+          path: visual-results
+          retention-days: 14
+          if-no-files-found: warn
+
   production-qa-gate:
     name: Production QA Gate
     if: always()
-    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa, webkit-mobile-contract]
+    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa, webkit-mobile-contract, turnstile-form-qa]
     runs-on: ubuntu-latest
     steps:
       - name: Enforce pre-merge critical gates
@@ -289,6 +345,7 @@ jobs:
           LIGHTHOUSE_RESULT: ${{ needs.lighthouse-ci.result }}
           MASTHEAD_BROWSER_RESULT: ${{ needs.masthead-browser-qa.result }}
           WEBKIT_MOBILE_RESULT: ${{ needs.webkit-mobile-contract.result }}
+          TURNSTILE_FORMS_RESULT: ${{ needs.turnstile-form-qa.result }}
           IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
         run: |
           echo "Source + build audit: $SOURCE_RESULT"
@@ -299,7 +356,10 @@ jobs:
           test "$VISUAL_RESULT" = "success"
           test "$LIGHTHOUSE_RESULT" = "success"
           test "$MASTHEAD_BROWSER_RESULT" = "success"
-          if [ "$IS_PULL_REQUEST" = "true" ]; then test "$WEBKIT_MOBILE_RESULT" = "success"; fi
+          if [ "$IS_PULL_REQUEST" = "true" ]; then
+            test "$WEBKIT_MOBILE_RESULT" = "success"
+            test "$TURNSTILE_FORMS_RESULT" = "success"
+          fi
 
   deploy-sync:
     name: Confirm production deployment
