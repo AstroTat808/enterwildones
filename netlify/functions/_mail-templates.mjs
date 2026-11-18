@@ -189,3 +189,50 @@ ${actionButton(parsed.href, 'Open Your Passport')}
   ].join('\n');
   return { subject: 'ENTER WILD ONES · Open Your Passport', html, text };
 }
+
+/**
+ * Shared HTML + plain-text treatment for guest reminders and internal operations
+ * notices. All user-controlled content is escaped. Private action URLs appear
+ * exclusively in the email CTA/plain-text fallback, never in image requests.
+ */
+export function renderBrandedNoticeEmail({
+  event = null, name = 'Wild One', title, subject, preview = '',
+  introduction = '', message = '', actionUrl = null, actionLabel = 'Continue',
+  details = [], note = '', support = 'help@enterwildones.com'
+}) {
+  if (!title || !subject) throw new Error('A transactional email title and subject are required.');
+  let href = null;
+  if (actionUrl) {
+    const url = new URL(String(actionUrl));
+    if (url.protocol !== 'https:' && url.hostname !== 'localhost')
+      throw new Error('A secure transactional action URL is required.');
+    href = url.toString();
+  }
+  const safeDetails = (Array.isArray(details) ? details : [])
+    .filter(entry => entry && entry.label && entry.value !== undefined && entry.value !== null && entry.value !== '')
+    .map(entry => ({ label: String(entry.label), value: String(entry.value) }));
+  const detailTable = safeDetails.length ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:0 0 22px;border-top:1px solid #4b412c">${safeDetails.map(entry =>
+    `<tr><td valign="top" style="padding:12px 8px 12px 0;border-bottom:1px solid #3a352c;color:#c6b58a;font-size:12px;font-weight:700;width:38%">${escapeEmailHtml(entry.label)}</td><td style="padding:12px 0;border-bottom:1px solid #3a352c;color:#f2eadd;font-size:14px;line-height:1.5;word-break:break-word">${escapeEmailHtml(entry.value)}</td></tr>`
+  ).join('')}</table>` : '';
+  const content = [
+    `<p style="color:#f4e6c8;font-size:16px;line-height:1.6;margin:0 0 18px"><strong>Aloha ${escapeEmailHtml(name)},</strong></p>`,
+    message ? `<p style="color:#e9e4d9;font-size:16px;line-height:1.7;margin:0 0 23px">${escapeEmailHtml(message)}</p>` : '',
+    detailTable,
+    href ? actionButton(href, actionLabel) : '',
+    note ? `<p style="color:#bdb6ac;font-size:13px;line-height:1.75;margin:0">${escapeEmailHtml(note)}</p>` : ''
+  ].join('');
+  const html = layout({
+    event, title, preview: preview || subject,
+    introduction: introduction || 'A message from the Enter Wild Ones team.',
+    content, support
+  });
+  const text = [
+    'Aloha ' + name + ',', '',
+    introduction || 'A message from the Enter Wild Ones team.', '',
+    message,
+    ...safeDetails.map(entry => entry.label + ': ' + entry.value),
+    href ? actionLabel + ': ' + href : '',
+    note, '', 'Support: ' + support
+  ].filter((line, index, arr) => line !== '' || (index && arr[index - 1] !== '')).join('\n');
+  return { html, text, subject };
+}
