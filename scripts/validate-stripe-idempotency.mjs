@@ -58,6 +58,9 @@ assert.ok(admission.includes('checkoutIdempotencyKey(`wildones-${event.eventId}-
 assert.ok(admission.indexOf('const params = {') < admission.indexOf('const idempotency = checkoutIdempotencyKey('), 'Compute key only after all Stripe params have been finalized');
 assert.ok(admission.includes('CHECKOUT_RECONCILIATION_REQUIRED'), 'Ambiguous checkout attempts must fail closed');
 assert.ok(admission.includes('await releaseAdmission('), 'Definitively rejected Checkout requests must release the admission hold');
+assert.ok(admission.includes("error?.stripeCode !== 'idempotency_error'"), 'Idempotency conflicts must preserve the seat hold for reconciliation');
+assert.ok(admission.includes('stripeStatus !== 429'), 'Rate limits must preserve the seat hold for reconciliation');
+assert.ok(admission.includes('retryAllowed = definitiveStripeRejection && holdReleased'), 'Only confirmed hold release may offer a retry');
 const checkoutStripeHandler = admission.slice(admission.indexOf('const idempotency = checkoutIdempotencyKey('));
 assert.ok(!/return json\(\{\s*error:\s*error\.message/.test(checkoutStripeHandler), 'Never leak raw Stripe API errors to ticket buyers');
 const addOn = await readFile(new URL('../netlify/functions/create-addon-checkout.mjs', import.meta.url), 'utf8');
