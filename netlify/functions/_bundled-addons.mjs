@@ -40,6 +40,7 @@ export function bundleTypes(selected = []) {
 // already-paid orders when the admin updates the catalog later.
 export function verifyBundleSnapshot(selected = [], admissionPriceCents, totalCents) {
   if (!Array.isArray(selected) || selected.length > BUNDLED_TYPES.length ||
+      selected.some(item => !item || typeof item !== 'object') ||
       new Set(selected.map(x => x.addonType)).size !== selected.length ||
       selected.some(item => !item || !BUNDLED_TYPES.includes(item.addonType) ||
         !Number.isSafeInteger(item.priceCents) || item.priceCents < 50 ||
