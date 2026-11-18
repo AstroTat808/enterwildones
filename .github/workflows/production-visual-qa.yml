@@ -277,10 +277,63 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
+  turnstile-form-qa:
+    name: Turnstile forms · ${{ matrix.browser }}
+    if: github.event_name == 'pull_request'
+    needs: source-audit
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ matrix.image }}
+      options: --ipc=host
+    timeout-minutes: 28
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            image: mcr.microsoft.com/playwright/python:v1.55.0-noble
+            version: '1.55.0'
+          - browser: webkit
+            image: mcr.microsoft.com/playwright/python:v1.65.0-noble
+            version: '1.65.2'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install approved browser binary
+        run: |
+          python -m pip install playwright==${{ matrix.version }}
+          python -m playwright install ${{ matrix.browser }}
+      - name: Exercise all guest Turnstile forms at every viewport
+        env:
+          PRODUCTION_BASE_URL: http://127.0.0.1:8765
+          VISUAL_RESULTS: visual-results
+        run: |
+          set -eu
+          python scripts/serve_pr_visual_qa.py --port 8765 > /tmp/wildones-pr-turnstile.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 25); do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:8765/passport; then break; fi
+            if [ "$attempt" -eq 25 ]; then cat /tmp/wildones-pr-turnstile.log; exit 1; fi
+            sleep 1
+          done
+          python scripts/production_visual_qa.py --mode browser --suite transactional --browser ${{ matrix.browser }} --case-name passport-login
+          python scripts/production_visual_qa.py --mode browser --suite transactional --browser ${{ matrix.browser }} --case-name public-tickets
+          python scripts/production_visual_qa.py --mode browser --suite public --browser ${{ matrix.browser }} --case-name apply-aureva
+      - name: Preserve all viewport measurements and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: turnstile-form-qa-${{ matrix.browser }}-${{ github.run_id }}
+          path: visual-results
+          retention-days: 14
+          if-no-files-found: warn
+
   production-qa-gate:
     name: Production QA Gate
     if: always()
-    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa, webkit-mobile-contract]
+    needs: [source-audit, visual-regression, lighthouse-ci, masthead-browser-qa, webkit-mobile-contract, turnstile-form-qa]
     runs-on: ubuntu-latest
     steps:
       - name: Enforce pre-merge critical gates
@@ -290,6 +343,7 @@ jobs:
           LIGHTHOUSE_RESULT: ${{ needs.lighthouse-ci.result }}
           MASTHEAD_BROWSER_RESULT: ${{ needs.masthead-browser-qa.result }}
           WEBKIT_MOBILE_RESULT: ${{ needs.webkit-mobile-contract.result }}
+          TURNSTILE_FORMS_RESULT: ${{ needs.turnstile-form-qa.result }}
           IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
         run: |
           echo "Source + build audit: $SOURCE_RESULT"
@@ -300,7 +354,10 @@ jobs:
           test "$VISUAL_RESULT" = "success"
           test "$LIGHTHOUSE_RESULT" = "success"
           test "$MASTHEAD_BROWSER_RESULT" = "success"
-          if [ "$IS_PULL_REQUEST" = "true" ]; then test "$WEBKIT_MOBILE_RESULT" = "success"; fi
+          if [ "$IS_PULL_REQUEST" = "true" ]; then
+            test "$WEBKIT_MOBILE_RESULT" = "success"
+            test "$TURNSTILE_FORMS_RESULT" = "success"
+          fi
 
   deploy-sync:
     name: Confirm production deployment
