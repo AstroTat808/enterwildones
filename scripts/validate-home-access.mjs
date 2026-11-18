@@ -36,6 +36,7 @@ async function hydrate(event,initialTag){
   const context={
     document,
     CSS:{escape:s=>s},
+    window:{},
     Intl,Date,
     matchMedia:()=>({matches:true}),
     fetch:async()=>({ok:true,json:async()=>({events:[event]})}),
