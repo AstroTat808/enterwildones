@@ -14,6 +14,8 @@ SITE = (Path(__file__).resolve().parents[1] / "site").resolve()
 ROUTES = {
     "/": "index.html",
     "/passport": "passport.html",
+    "/apply/aureva": "apply.html",
+    "/public-tickets/sunveil": "public-tickets.html",
     "/admin": "admin.html",
 }
 
