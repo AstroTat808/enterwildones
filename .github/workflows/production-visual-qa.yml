@@ -25,9 +25,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # v6 isolates verified candidate-site route changes from superseded screenshot
-  # cancellation. All browser, screenshot and security checks remain mandatory.
-  group: production-visual-qa-v6-${{ github.ref }}
+  # v7 runs the finalized responsive Cloudflare size patch without inheriting
+  # a superseded screenshot worker. All existing quality gates remain mandatory.
+  group: production-visual-qa-v7-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
