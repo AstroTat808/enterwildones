@@ -21,7 +21,7 @@ async function listRecords(storeName) {
 }
 
 function validTime(start, now) {
-  return Number.isFinite(start) && now < start && now >= start - 45 * DAY;
+  return Number.isFinite(start) && now < start && now >= start - 90 * DAY;
 }
 function isValidInvite(invite, now) {
   return Boolean(
