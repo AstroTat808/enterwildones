@@ -25,9 +25,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # v2 isolates the current QA contract from legacy runs that predate
-  # cancel-in-progress, so stale screenshot jobs cannot block fresh PR checks.
-  group: production-visual-qa-v2-${{ github.ref }}
+  # v3 isolates the pinned-container screenshot QA from a superseded v2
+  # apt-install job that is stuck cancelling. Every existing gate still runs.
+  group: production-visual-qa-v3-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -82,18 +82,21 @@ jobs:
     needs: [source-audit, deploy-sync]
     if: always() && needs.source-audit.result == 'success' && (github.event_name == 'pull_request' || needs.deploy-sync.result == 'success')
     runs-on: ubuntu-24.04
+    # The pinned official image includes Chromium's OS dependencies; avoid
+    # sporadic apt mirror stalls while preserving the exact browser and baselines.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
+      options: --ipc=host
     timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      # No setup-python: its host toolcache interpreter would differ from pip.
       - name: Install visual regression dependencies
         run: |
-          pip install playwright==1.55.0 pillow==11.3.0
-          python -m playwright install --with-deps chromium
+          python -m pip install playwright==1.55.0 pillow==11.3.0
+          python -m playwright install chromium
       - name: Restore approved screenshot baseline
         id: baseline
         uses: actions/cache/restore@v4

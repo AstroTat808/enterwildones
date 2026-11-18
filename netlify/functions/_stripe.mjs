@@ -1,8 +1,23 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { env } from './_env.mjs';
 
 function safeEqual(a = '', b = '') { const x = Buffer.from(String(a)); const y = Buffer.from(String(b)); return x.length === y.length && timingSafeEqual(x, y); }
 export function stripeConfigured() { return Boolean(env('STRIPE_SECRET_KEY') && env('STRIPE_WEBHOOK_SECRET')); }
+
+// Stripe will reject an idempotency key reused with even one changed field.
+// Bind each new checkout attempt to the exact request payload (including the
+// signed return URL, price and expiration). Retrying an identical payload
+// retains the same key; changed payloads never reuse an old Stripe key.
+// The admission reservation protects against parallel checkout sessions.
+export function checkoutIdempotencyKey(scope, params) {
+  const entries = [...new URLSearchParams(params).entries()]
+    .sort(([a, aValue], [b, bValue]) => a.localeCompare(b) || aValue.localeCompare(bValue));
+  const encoded = new URLSearchParams(entries).toString();
+  const digest = createHash('sha256').update('POST /v1/checkout/sessions\n' + encoded).digest('hex');
+  const prefix = String(scope).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 150);
+  if (!prefix) throw new Error('Checkout idempotency scope is required.');
+  return `${prefix}-${digest}`;
+}
 export async function stripePost(path, body, idempotencyKey = '') {
   const secret = env('STRIPE_SECRET_KEY');
   if (!secret) throw new Error('Stripe is not configured.');
@@ -11,6 +26,8 @@ export async function stripePost(path, body, idempotencyKey = '') {
   if (!response.ok) {
     const error = new Error(data?.error?.message || `Stripe returned ${response.status}.`);
     error.stripeHttpStatus = response.status;
+    error.stripeCode = data?.error?.code || '';
+    error.stripeRequestId = response.headers.get('request-id') || '';
     throw error;
   }
   return data;
