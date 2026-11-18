@@ -3,7 +3,7 @@ import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
 import { getEvent, requireEvent } from './_events.mjs';
 import { makeTicketToken } from './_ticket-token.mjs';
-import { renderTicketEmail } from './_mail-templates.mjs';
+import { renderTicketEmail, renderBrandedNoticeEmail } from './_mail-templates.mjs';
 
 const MAX_ATTEMPTS = 5;
 const RETRY_DELAYS = [300000, 1800000, 7200000, 21600000];
@@ -187,19 +187,31 @@ export async function dispatchFailureAlert({ type, record, providerId }) {
   if (!record || record.kind === 'delivery_alert' || !getEvent(record.eventId)) return { skipped: true };
   const to = env('WILDONES_EMAIL_ALERT_TO');
   if (!validAddress(to)) return { skipped: true, reason: 'alert_recipient_not_configured' };
-  const result = await trackedEmail({
+  const mail = renderBrandedNoticeEmail({
+    event: getEvent(record.eventId),
+    name: 'Wild Ones Operations',
+    title: 'Email Delivery Needs Review',
+    subject: 'Wild Ones email delivery alert: ' + String(type).replace('email.', ''),
+    preview: 'An email delivery event needs attention in the operations dashboard.',
+    introduction: 'An email delivery event requires review.',
+    message: 'Use the private admin dashboard to inspect the delivery record and resolve the issue.',
+    details: [
+      { label: 'Event', value: record.eventId },
+      { label: 'Workflow', value: record.kind },
+      { label: 'Recipient', value: record.toMasked },
+      { label: 'Delivery state', value: record.status },
+      { label: 'Provider ID', value: providerId }
+    ],
+    actionUrl: (env('WILDONES_SITE_URL') || 'https://enterwildones.com').replace(/\/$/, '') + '/admin/email',
+    actionLabel: 'Review Email Health',
+    note: 'This notification is intended for authorized event operators.',
+    support: env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')
+  });
+  return trackedEmail({
     eventId: record.eventId, kind: 'delivery_alert',
     to, key: 'wildones-email-alert-' + providerId + '-' + type,
-    subject: 'Wild Ones email delivery alert: ' + String(type).replace('email.', ''),
-    text: ['An email delivery event requires review.',
-      'Event: ' + record.eventId,
-      'Workflow: ' + record.kind,
-      'Recipient: ' + record.toMasked,
-      'Delivery state: ' + record.status,
-      'Provider ID: ' + providerId,
-      'Review: ' + (env('WILDONES_SITE_URL') || 'https://enterwildones.com') + '/admin/email'].join('\n')
+    subject: mail.subject, text: mail.text, html: mail.html
   });
-  return result;
 }
 export async function emailHealth(eventId) {
   requireEvent(eventId);
