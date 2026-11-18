@@ -1,0 +1,73 @@
+/* Shared black-and-gold success treatment for guest journeys.
+   Keeps the underlying form, invitation, checkout and entitlement state machines intact. */
+.tx-success-panel{
+  position:relative;
+  isolation:isolate;
+  width:min(780px,100%);
+  margin:28px auto;
+  padding:clamp(26px,4vw,42px);
+  border:1px solid rgba(229,198,129,.32);
+  border-radius:22px;
+  background:radial-gradient(circle at 50% 0%,rgba(231,198,132,.12),transparent 44%),linear-gradient(180deg,#111116,#07080b);
+  box-shadow:0 26px 74px rgba(0,0,0,.4),inset 0 1px rgba(255,255,255,.045);
+  color:#f7f0e5;
+  overflow:hidden;
+}
+.tx-success-panel[hidden],.tx-success-panel.hidden{display:none!important}
+.tx-success-panel::before{
+  content:"";
+  position:absolute;
+  inset:0 16% auto;
+  height:1px;
+  background:linear-gradient(90deg,transparent,#e7ca89,#7ad2d9,#d09fe2,transparent);
+  pointer-events:none;
+}
+.tx-success-mark{
+  display:grid;
+  place-items:center;
+  width:66px;
+  height:66px;
+  margin:0 0 20px;
+  border:1px solid rgba(231,202,137,.6);
+  border-radius:50%;
+  background:rgba(231,202,137,.10);
+  color:#f7dfa5;
+  font-family:Arial,sans-serif;
+  font-size:32px;
+  line-height:1;
+  box-shadow:0 0 24px rgba(222,188,117,.08);
+}
+.tx-success-panel .eyebrow,
+.tx-success-panel .tx-label{
+  color:#dfc58e;
+}
+.tx-success-panel h2{
+  margin:10px 0 17px;
+  color:#f6e9d3;
+  font-family:"Iowan Old Style",Baskerville,Georgia,serif;
+  font-weight:400;
+  font-size:clamp(28px,4vw,45px);
+  line-height:1.12;
+  letter-spacing:-.025em;
+  text-wrap:balance;
+}
+.tx-success-panel .intro,
+.tx-success-panel .tx-body,
+.tx-success-panel .tx-subheadline{
+  color:#c8c0b2;
+  font-size:clamp(14px,1.5vw,17px);
+  line-height:1.7;
+}
+.tx-success-panel .button{margin-top:16px;min-height:48px}
+.tx-success-panel:focus-visible{outline:2px solid #e7ca89;outline-offset:5px}
+.invite-page #granted.tx-success-panel{max-width:620px;text-align:left}
+.ticket-addons-page #addon-confirmation.tx-success-panel{max-width:900px}
+.ticket-addons-page #addon-confirmation h2{font-size:clamp(26px,3vw,35px)}
+@media(max-width:600px){
+  .tx-success-panel{padding:25px 20px;border-radius:18px}
+  .tx-success-mark{width:58px;height:58px;margin-bottom:15px;font-size:28px}
+  .tx-success-panel .button{width:100%;justify-content:center}
+}
+@media(prefers-reduced-motion:reduce){
+  .tx-success-panel{scroll-behavior:auto}
+}
