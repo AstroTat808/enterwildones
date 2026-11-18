@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { env } from './_env.mjs';
 import { dispatchFailureAlert, updateDeliveryEvent } from './_email-service.mjs';
 
-function validSignature(raw, req) {
+export function validSignature(raw, req) {
   const secret = env('WILDONES_RESEND_WEBHOOK_SECRET');
   if (!secret || !secret.startsWith('whsec_')) return false;
   const id = req.headers.get('svix-id') || '';
