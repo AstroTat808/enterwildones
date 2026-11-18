@@ -32,4 +32,4 @@ for(const needle of ["purchase_type==='addon'",'finalizeAddonSession','paymentIn
 if(!text.event.includes("e.accessMode==='public'&&e.ticketSalesOpen"))fail('Event page must gate public ticket CTA.');
 for(const route of ['/public-tickets/:event','/ticket/addons','/admin/packages','/bar'])if(!text.netlify.includes(route))fail(`Missing route: ${route}`);
 if(!text.netlify.includes('camera=(self)'))fail('Operational camera permission override is missing.');
-console.log('Validated public-sale isolation, one-user admission boundary, checkout snapshots, add-on payment separation, secure return tokens, transactional drink-credit locking, reporting auth, webhook routing and Netlify routes.');
+console.log('Validated public-sale isolation, one-user admission boundary, checkout snapshots, add-on payment separation, secure return tokens, transactional drink-credit locking, reporting auth, webhook routing, standard Stripe Checkout for in-person sales, and Netlify routes.');
