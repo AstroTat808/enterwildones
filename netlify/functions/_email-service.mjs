@@ -105,6 +105,17 @@ export async function sendTicketReceipt(eventId, ticketId) {
   if (!token) return { sent: false, reason: 'ticket_token_unavailable' };
   const site = (env('WILDONES_SITE_URL') || 'https://enterwildones.com').replace(/\/$/, '');
   const amount = payment ? 'USD ' + (Number(payment.amountTotal || ticket.ticketPriceCents || 0) / 100).toFixed(2) : 'Complimentary';
+  const bundle = Array.isArray(payment?.selectedAddons) ? payment.selectedAddons : [];
+  const dollars = cents => 'USD ' + (Number(cents || 0) / 100).toFixed(2);
+  const itemized = bundle.length ? [
+    'Admission subtotal: ' + dollars(payment.admissionPriceCents ?? ticket.ticketPriceCents),
+    '',
+    'Selected add-ons:',
+    ...bundle.map(item => '• ' + item.name + ': ' + dollars(item.priceCents) +
+      (item.addonType === 'drink_package' ? ' (' + item.credits + ' credits)' : (item.departureTime ? ' (until ' + item.departureTime + ' HST)' : ''))),
+    'Add-on subtotal: ' + dollars(payment.addonSubtotalCents),
+    ''
+  ] : [];
   const name = application.preferredName || application.fullName || 'Wild One';
   return trackedEmail({
     eventId, kind: 'ticket_receipt', sourceId: ticket.ticketId,
@@ -114,7 +125,8 @@ export async function sendTicketReceipt(eventId, ticketId) {
     text: [name + ',', '', 'Your ' + event.name + ' ticket is confirmed.',
       'Admission: ' + (ticket.ticketTierName || 'General Admission'),
       'Ticket ID: ' + ticket.ticketId,
-      'Amount: ' + amount,
+      ...itemized,
+      'Total paid: ' + amount,
       'Open your digital ticket: ' + site + '/ticket?token=' + encodeURIComponent(token),
       '', 'Your QR code remains locked until you sign the required waiver. Keep this ticket link private.',
       'Support: ' + env('WILDONES_HELP_EMAIL', 'help@enterwildones.com')].join('\n')
