@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { renderInvitationEmail, renderTicketEmail, invitationRedemptionUrl, invitationExpiry, escapeEmailHtml } from '../netlify/functions/_mail-templates.mjs';
+import { walletAddonFields } from '../netlify/functions/_apple-wallet.mjs';
 
 const event = {
   eventId: 'aureva-2026',
@@ -65,13 +66,27 @@ for(const price of ['USD 55.00','USD 75.00','USD 25.00','USD 155.00'])
 assert.match(htmlTicket, /Open Your Digital Ticket/);
 assert.match(htmlTicket, /https:\/\/enterwildones-staging.netlify.app\/ticket\?token=example-test-token/);
 
+const walletItems = walletAddonFields([
+  { addonType:'drink_package', status:'active', creditsPurchased:6, creditsRemaining:4 },
+  { addonType:'late_stay', status:'active', departureTime:'10:00 AM' }
+]);
+assert.equal(walletItems.auxiliary.length, 2);
+assert.deepEqual(walletItems.auxiliary.map(x=>x.key), ['drinkCredits','lateStay']);
+assert.match(walletItems.auxiliary[0].value, /4 of 6/);
+assert.match(walletItems.auxiliary[1].value, /10:00 AM HST/);
+assert.equal(walletItems.back.length, 2);
+assert.equal(walletAddonFields([{addonType:'drink_package',status:'refunded',creditsPurchased:6}]).auxiliary.length, 0);
+assert.equal(walletAddonFields([{addonType:'late_stay',status:'disputed',departureTime:'10:00 AM'}]).auxiliary.length, 0);
+assert.equal(walletAddonFields([{addonType:'drink_package',status:'active',creditsPurchased:6,creditsRemaining:7}]).auxiliary.length, 0);
+
 const read = path => readFile(new URL('../' + path, import.meta.url), 'utf8');
-const [admin, service, client, markup, headers] = await Promise.all([
+const [admin, service, client, markup, headers, walletEndpoint] = await Promise.all([
   'netlify/functions/admin-applications.mjs',
   'netlify/functions/_email-service.mjs',
   'site/assets/js/invite.js',
   'site/invite.html',
-  'netlify.toml'
+  'netlify.toml',
+  'netlify/functions/ticket-wallet.mjs'
 ].map(read));
 assert.match(admin, /renderInvitationEmail/);
 assert.match(admin, /html: message\.html/);
@@ -87,4 +102,8 @@ assert.ok(!/form\.requestSubmit\(/.test(client), 'Mail link scanners must never 
 assert.match(markup, /meta name="referrer" content="no-referrer"/);
 assert.match(headers, /for = "\/invite\*"/);
 assert.match(headers, /Referrer-Policy = "no-referrer"/);
+assert.match(walletEndpoint, /activeAddons/);
+assert.match(walletEndpoint, /addOns:activeAddons/);
+assert.match(walletEndpoint, /\['drink_package','late_stay'\]/);
+
 console.log('Branded, privacy-preserving auto-fill invitations and bundled ticket receipt templates validated.');
