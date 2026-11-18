@@ -138,7 +138,7 @@ export async function updateDeliveryEvent(event) {
     // Resend does not guarantee tags in webhook payloads. Map only an explicit
     // AUREVA QA subject from the exact authorized sending address.
     const sender = String(data.from || '').trim().toLowerCase();
-    const qa = /^\\[aureva qa\\]/i.test(String(data.subject || '')) &&
+    const qa = /^\[aureva qa\]/i.test(String(data.subject || '')) &&
       (sender === 'access@mail.enterwildones.com' || sender.endsWith('<access@mail.enterwildones.com>'));
     const eventId = getEvent(taggedEvent) ? taggedEvent : qa ? 'aureva-2026' : null;
     if (!getEvent(eventId)) return { ignored: true, unmatched: true };
