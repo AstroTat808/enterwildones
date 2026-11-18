@@ -32,6 +32,7 @@ form.addEventListener('submit',async e=>{
     form.classList.add('hidden');
     const g=document.getElementById('granted');
     g.classList.remove('hidden');
+    g.focus({preventScroll:true});
     g.querySelector('[data-granted-name]').textContent=ev.name;
     const purchaseAvailable=Boolean(d.purchaseAvailable);
     g.querySelector('[data-granted-copy]').textContent=purchaseAvailable?'Your invitation is verified. Taking you to secure ticket access…':'Your invitation is verified. Ticket sales for this realm are not open yet.';
