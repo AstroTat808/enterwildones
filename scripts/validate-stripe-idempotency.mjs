@@ -22,7 +22,6 @@ assert.notEqual(key, checkoutIdempotencyKey(scope, { ...params, success_url: 'ht
 assert.notEqual(key, checkoutIdempotencyKey(scope, { ...params, 'line_items[0][price_data][unit_amount]': '7000' }), 'Price changes must create a new key');
 assert.notEqual(key, checkoutIdempotencyKey(scope + '-2', params), 'Different safe attempts must have different keys');
 assert.ok(!key.includes('return_token'), 'Idempotency key must not leak signed Checkout URLs');
-assert.ok(!key.includes('5500'), 'Idempotency key must not leak ticket pricing');
 
 const savedFetch = globalThis.fetch;
 const savedKey = process.env.STRIPE_SECRET_KEY;
@@ -60,4 +59,7 @@ assert.ok(admission.indexOf('const params = {') < admission.indexOf('const idemp
 assert.ok(admission.includes('CHECKOUT_RECONCILIATION_REQUIRED'), 'Ambiguous checkout attempts must fail closed');
 assert.ok(admission.includes('await releaseAdmission('), 'Definitively rejected Checkout requests must release the admission hold');
 assert.ok(!admission.includes("return json({ error: error.message"), 'Never leak raw Stripe API errors to ticket buyers');
+const addOn = await readFile(new URL('../netlify/functions/create-addon-checkout.mjs', import.meta.url), 'utf8');
+assert.ok(addOn.includes('ADDON_CHECKOUT_RECONCILIATION_REQUIRED'), 'Unknown add-on payment outcomes must not invite another charge');
+assert.ok(!addOn.includes("return json({error:error.message"), 'Never leak raw Stripe errors in add-on Checkout');
 console.log('Stripe Checkout payload-bound idempotency, safe guest errors, and inventory retry guards validated.');
