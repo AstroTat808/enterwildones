@@ -3,6 +3,7 @@ import { isAdmin } from './_admin-auth.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
 import { setBundledAddonStatus } from './_bundled-addons.mjs';
+import { refundBundledAddon, withRefundPaymentLock } from './_bundle-refunds.mjs';
 import { trackedEmail } from './_email-service.mjs';
 import { renderInvitationEmail, renderBrandedNoticeEmail } from './_mail-templates.mjs';
 import { getEvent, listEvents, toPublicEvent } from './_events.mjs';
@@ -106,7 +107,12 @@ async function snapshot(eventId) {
     comps: hydratedTickets.filter((x) => x.ticketSource === 'comp' && ACTIVE_TICKET.has(x.status)).length,
     refunded: hydratedTickets.filter((x) => x.status === 'refunded').length,
     admissionRevenueCents: payments.filter((x) => x.status === 'paid' && x.purchaseType !== 'addon').reduce((n, x) => n + Number(x.admissionPriceCents ?? x.amountTotal ?? 0), 0),
-    addonRevenueCents: payments.filter((x) => x.status === 'paid').reduce((n, x) => n + Number(x.purchaseType === 'addon' ? x.amountTotal : (x.addonSubtotalCents || 0)), 0),
+    addonRevenueCents: payments.filter((x) => x.status === 'paid').reduce((n, x) => n +
+      Number(x.purchaseType === 'addon' ? x.amountTotal : (x.addonSubtotalCents || 0)) -
+      (x.purchaseType === 'addon' ? 0 : (x.partialRefunds || []).filter(r => r.status === 'succeeded')
+        .reduce((sum, r) => sum + Number(r.amount || 0), 0)), 0),
+    refundedBundleAddonsCents: payments.reduce((n, x) => n + (x.partialRefunds || [])
+      .filter(r => r.status === 'succeeded').reduce((sum,r) => sum + Number(r.amount||0),0), 0),
     activeAddons: entitlements.filter((x) => x.status === 'active').length,
     checkins: checkins.length
   };
@@ -200,7 +206,15 @@ export default async (req) => {
     if (ticket.status === 'refunded') return json({ error: 'Admission is already refunded.' }, 409);
     const paymentKey = eventKey(eventId, ticket.paymentId), payments = blobStore(STORES.payments), payment = await payments.get(paymentKey, { type: 'json' }).catch(() => null);
     if (!payment?.stripePaymentIntentId || payment.status !== 'paid') return json({ error: 'A refundable paid Stripe payment was not found.' }, 409);
-    const refund = await stripePost('refunds', { payment_intent: payment.stripePaymentIntentId, reason: 'requested_by_customer', 'metadata[event_id]': eventId, 'metadata[admin_action]': 'admission_refund' }, `wildones-admin-admission-refund-${payment.paymentId}`);
+    const refund = await withRefundPaymentLock(eventId, payment.paymentId, async () => {
+      // Re-evaluate the payment after acquiring the lock, not just before it.
+      const current = await payments.get(paymentKey, { type: 'json' });
+      if (!current || current.status !== 'paid' || (current.partialRefunds || []).some(r => r.status !== 'failed'))
+        throw new Error('Existing partial refunds require manual whole-order refund reconciliation.');
+      return stripePost('refunds', { payment_intent: current.stripePaymentIntentId, reason: 'requested_by_customer',
+        'metadata[event_id]': eventId, 'metadata[admin_action]': 'admission_refund' },
+        `wildones-admin-admission-refund-${current.paymentId}`);
+    });
     if (!['succeeded','pending'].includes(refund.status)) return json({error:'Refund needs manual reconciliation before ticket state changes.',refundId:refund.id},409);
     const settled = refund.status === 'succeeded';
     const nextStatus = settled ? 'refunded' : 'refund_pending';
@@ -225,8 +239,21 @@ export default async (req) => {
     // A bundled item shares the admission's single payment intent; blindly
     // refunding it here would refund the ticket and all other add-ons as well.
     // Partial refunds need item-specific reconciliation and consumption review.
-    if (payment.purchaseType !== 'addon' || (payment.selectedAddons||[]).some(x=>x.addonType===addonType))
-      return json({ error: 'This add-on was purchased with admission. Partial bundle refunds require manual payment review; use the whole-order refund to cancel everything.' , code: 'BUNDLE_REFUND_REVIEW' }, 409);
+    if (ent.purchaseSource === 'admission_bundle') {
+      try {
+        const ticket = await loadTicket(eventId, ticketId);
+        if (!ticket) return json({ error:'Ticket not found.' },404);
+        const refunded = await refundBundledAddon({ eventId,ticketId,addonType,ticket,payment,entitlement:ent });
+        return json(refunded);
+      } catch(error) {
+        console.error('Bundled partial refund requires reconciliation', { eventId,ticketId,addonType,code:error.code||null });
+        return json({ error:error.status ? error.message : 'Refund status needs operator reconciliation before trying again.',
+          code:error.code||'REFUND_RECONCILIATION_REQUIRED' },error.status||503);
+      }
+    }
+    if (payment.purchaseType !== 'addon') return json({
+      error:'The add-on payment type is inconsistent; manual review is required.',
+      code:'BUNDLE_REFUND_REVIEW' },409);
     const refund = await stripePost('refunds', { payment_intent: payment.stripePaymentIntentId, reason: 'requested_by_customer', 'metadata[event_id]': eventId, 'metadata[admin_action]': 'addon_refund', 'metadata[addon_type]': addonType }, `wildones-admin-addon-refund-${payment.paymentId}`);
     await entStore.setJSON(entitlementKey, { ...ent, status: 'refunded', refundedAt: now, refundId: refund.id, updatedAt: now });
     await payments.setJSON(paymentKey, { ...payment, status: 'refunded', refundedAt: now, refundId: refund.id, updatedAt: now });
