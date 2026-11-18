@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><title>Email Health · ENTER WILD ONES</title>
+<link rel="stylesheet" href="/assets/css/app.css"><link rel="stylesheet" href="/assets/css/branding.css">
+<link rel="stylesheet" href="/assets/css/admin-operations.css"></head>
+<body class="ops-page" data-realm="light"><div class="ambient"></div>
+<header class="topbar"><a class="brand" href="/admin/overview"><span class="brand-label">ENTER WILD ONES<span>EMAIL DELIVERY</span></span></a>
+<nav class="desktop-nav"><a href="/admin/overview">Dashboard</a><a href="/admin/operations">Operations</a><a href="/admin/launch">Launch Control</a></nav></header>
+<main class="ops-shell"><section class="ops-hero"><p class="eyebrow">WILD ONES · DELIVERY INTELLIGENCE</p>
+<h1>EMAIL<br><em>HEALTH.</em></h1><p>Provider-confirmed delivery, failures and pending retries. API acceptance alone is not delivery.</p></section>
+<section id="loginNote" class="panel"><h2>Administrator sign-in required</h2><p>Authenticate through the existing admin console to view protected email reports.</p><a class="button" href="/admin">Admin Sign-In</a></section>
+<section id="emailPanel" class="hidden"><div class="ops-toolbar">
+<label>Realm<select id="emailEvent"><option value="aureva-2026">AUREVA</option><option value="halora-2027">HALORA</option><option value="sunveil-2027">SUNVEIL</option><option value="nocturne-2027">NOCTURNE</option></select></label>
+<button class="button ghost" id="emailRefresh" type="button">Refresh Delivery Status</button></div>
+<div id="emailSummary" class="ops-metrics" aria-live="polite"></div>
+<div class="ops-view-head"><div><p class="eyebrow">TRANSACTIONAL DELIVERY</p><h2>Latest messages</h2></div></div>
+<p id="emailStatus" role="status"></p><div id="emailRows" class="ops-list"></div>
+<p class="ops-help">Records begin when this service is deployed. Addresses are masked and private ticket links are never displayed. Webhook failures must be investigated before email launch certification.</p></section>
+</main><script src="/assets/js/admin-email.js" defer></script></body></html>

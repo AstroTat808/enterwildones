@@ -173,8 +173,34 @@
 
   function mastheadScrollState(){
     if(!guestMasthead)return;
-    const apply=()=>document.body.classList.toggle('masthead-scrolled',window.scrollY>72);
-    addEventListener('scroll',apply,{passive:true});
+    let pending=false;
+    let observedPhysicalScroll=false;
+    const apply=()=>{
+      // Mobile WebKit can suppress window scroll events. Keep actual scroll
+      // geometry authoritative after physical movement; preserve a deliberate
+      // compact preview class at scrollY=0 until any movement really occurs.
+      const root=document.scrollingElement||document.documentElement;
+      const top=Math.max(window.scrollY||0,root.scrollTop||0,document.body.scrollTop||0);
+      const compact=top>72;
+      if(top>2)observedPhysicalScroll=true;
+      if(!observedPhysicalScroll && !compact)return;
+      if(document.body.classList.contains('masthead-scrolled')!==compact)
+        document.body.classList.toggle('masthead-scrolled',compact);
+      if(top<=2)observedPhysicalScroll=false;
+    };
+    const schedule=()=>{
+      if(pending)return;
+      pending=true;
+      requestAnimationFrame(()=>{pending=false;apply();});
+    };
+    window.addEventListener('scroll',schedule,{passive:true});
+    document.addEventListener('scroll',schedule,{passive:true,capture:true});
+    window.addEventListener('resize',schedule,{passive:true});
+    window.addEventListener('pageshow',schedule);
+    // Bounded, idempotent fallback for WebKit scroll-event suppression. This
+    // performs no DOM writes unless the true compact state has changed.
+    const recovery=setInterval(()=>{if(!document.hidden)apply();},250);
+    window.addEventListener('pagehide',()=>clearInterval(recovery),{once:true});
     apply();
   }
 

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { isAdmin } from './_admin-auth.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
+import { trackedEmail } from './_email-service.mjs';
 import { getEvent, listEvents, toPublicEvent } from './_events.mjs';
 import { createInvitation } from './_invitations.mjs';
 import { existingTicketForUser, loadApplication, loadTicket } from './_payments.mjs';
@@ -40,17 +41,14 @@ function csvResponse(rows) {
   const text = rows.map((row) => row.map(csvCell).join(',')).join('\n');
   return new Response(text, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="wild-ones-export.csv"', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 }
-async function email({ to, subject, text, key }) {
-  if (!env('RESEND_API_KEY') || !env('WILDONES_EMAIL_FROM') || !to) return { sent: false, reason: 'email_not_configured' };
-  const response = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${env('RESEND_API_KEY')}`, 'Content-Type': 'application/json', 'Idempotency-Key': String(key).slice(0, 256) }, body: JSON.stringify({ from: env('WILDONES_EMAIL_FROM'), to: [to], subject, text }) });
-  if (!response.ok) return { sent: false, reason: `provider_${response.status}` };
-  const data = await response.json().catch(() => ({}));
-  return { sent: true, id: data.id || null };
+async function email({ eventId, kind, to, subject, text, key }) {
+  const result = await trackedEmail({ eventId, kind, to, subject, text, key, retryable: false });
+  return { sent: result.sent, id: result.id || null, reason: result.reason || null };
 }
 async function sendInvite(event, application, code, invite) {
   const site = (env('WILDONES_SITE_URL') || 'https://enterwildones.com').replace(/\/$/, '');
   const name = application?.preferredName || application?.fullName || 'Wild Ones guest';
-  return email({ to: application?.email || invite.email, subject: `${event.name}: your Wild Ones invitation`, key: `wildones-admin-invite-${invite.invitationId}`, text: [`${name},`, '', `Your ${event.name} invitation is ready.`, `Invitation code: ${code}`, `Redeem it here: ${site}/invite`, '', `This code expires ${invite.expiresAt}.`, 'Keep this invitation private.'].join('\n') });
+  return email({ eventId: event.eventId, kind: 'invitation_reissue', to: application?.email || invite.email, subject: `${event.name}: your Wild Ones invitation`, key: `wildones-admin-invite-${invite.invitationId}`, text: [`${name},`, '', `Your ${event.name} invitation is ready.`, `Invitation code: ${code}`, `Redeem it here: ${site}/invite`, '', `This code expires ${invite.expiresAt}.`, 'Keep this invitation private.'].join('\n') });
 }
 async function sendTicketReminder(event, ticket, application, kind) {
   const token = makeTicketToken(ticket);
@@ -60,7 +58,7 @@ async function sendTicketReminder(event, ticket, application, kind) {
   const name = application?.preferredName || application?.fullName || 'Wild Ones guest';
   const subject = kind === 'waiver' ? `${event.name}: sign your waiver before entry` : `${event.name}: your digital ticket`;
   const text = kind === 'waiver' ? [`${name},`, '', `Your ${event.name} admission is confirmed, but your QR remains locked until the required waiver is signed.`, `Open your ticket and sign now: ${url}`, '', 'Keep your ticket link private.'].join('\n') : [`${name},`, '', `Your ${event.name} digital ticket is ready.`, `Open it here: ${url}`, '', 'Keep your ticket link private.'].join('\n');
-  return email({ to: application?.email, subject, text, key: `wildones-${kind}-${event.eventId}-${ticket.ticketId}-${new Date().toISOString().slice(0, 10)}` });
+  return email({ eventId: event.eventId, kind: kind === 'waiver' ? 'waiver_reminder' : 'ticket_reminder', to: application?.email, subject, text, key: `wildones-${kind}-${event.eventId}-${ticket.ticketId}-${new Date().toISOString().slice(0, 10)}` });
 }
 async function snapshot(eventId) {
   const [applications, invitations, tickets, payments, entitlements, checkins] = await Promise.all([

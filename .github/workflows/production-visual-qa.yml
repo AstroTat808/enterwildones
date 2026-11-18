@@ -147,26 +147,32 @@ jobs:
     name: Masthead · ${{ matrix.browser }}
     needs: source-audit
     runs-on: ubuntu-24.04
+    # Official Playwright images avoid apt mirror stalls, without changing tests.
+    container:
+      image: ${{ matrix.image }}
+      options: --ipc=host
     timeout-minutes: 18
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, webkit]
+        include:
+          - browser: chromium
+            image: mcr.microsoft.com/playwright/python:v1.55.0-noble
+          - browser: webkit
+            image: mcr.microsoft.com/playwright/python:v1.65.0-noble
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      # No setup-python: container pip and Python must resolve to one interpreter.
       - name: Install masthead browser dependencies
         run: |
           if [ "${{ matrix.browser }}" = "webkit" ]; then
-            pip install playwright==1.65.2 pillow==11.3.0
+            python -m pip install playwright==1.65.2 pillow==11.3.0
           else
-            pip install playwright==1.55.0 pillow==11.3.0
+            python -m pip install playwright==1.55.0 pillow==11.3.0
           fi
-          python -m playwright install --with-deps ${{ matrix.browser }}
+          python -m playwright install ${{ matrix.browser }}
       - name: Verify canonical masthead at all approved widths
         run: python scripts/visual_regression.py --mode verify-masthead --browser ${{ matrix.browser }}
       - uses: actions/upload-artifact@v4
@@ -208,7 +214,12 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: source-audit
     runs-on: ubuntu-24.04
-    timeout-minutes: 14
+    # Preinstalled Linux browser libraries avoid apt mirror stalls; the exact
+    # approved Playwright 1.65.2 browser binary is still installed and tested.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.65.0-noble
+      options: --ipc=host
+    timeout-minutes: 18
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -227,21 +238,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install mobile WebKit
+      # The image already supplies Python; setup-python selects a mismatched host toolcache interpreter.
+      - name: Install exact approved mobile WebKit browser
         run: |
-          pip install playwright==1.65.2
-          python -m playwright install --with-deps webkit
+          python -m pip install playwright==1.65.2
+          python -m playwright install webkit
       - name: Exercise actual mobile header and menu interactions
         env:
-          PRODUCTION_BASE_URL: https://enterwildones.com
+          # On PRs, verify the checked-out SHA, not yesterday's production build.
+          # Post-merge browser-qa continues to test the real production domain.
+          PRODUCTION_BASE_URL: http://127.0.0.1:8765
           VISUAL_RESULTS: visual-results
-        run: >-
-          python scripts/production_visual_qa.py
-          --mode browser --suite ${{ matrix.suite }} --browser webkit
-          --viewport-name ${{ matrix.viewport }} --case-name ${{ matrix.case }}
+        run: |
+          # Container jobs use POSIX sh by default; avoid bash-only pipefail.
+          set -eu
+          python -m py_compile scripts/serve_pr_visual_qa.py
+          python scripts/serve_pr_visual_qa.py --port 8765 > /tmp/wildones-pr-webkit-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 25); do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:8765/passport; then break; fi
+            if [ "$attempt" -eq 25 ]; then cat /tmp/wildones-pr-webkit-server.log; exit 1; fi
+            sleep 1
+          done
+          python scripts/production_visual_qa.py \
+            --mode browser --suite ${{ matrix.suite }} --browser webkit \
+            --viewport-name ${{ matrix.viewport }} --case-name ${{ matrix.case }}
       - name: Save full case verdict and mobile crash evidence
         uses: actions/upload-artifact@v4
         if: always()
@@ -328,6 +350,11 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: deploy-sync
     runs-on: ubuntu-24.04
+    # Retain every Chromium/WebKit suite and viewport. Docker ships OS dependencies;
+    # Playwright installs the exact selected browser version before every audit.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.65.0-noble
+      options: --ipc=host
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -423,19 +450,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      # Use the same image-provided interpreter for install and actual browser execution.
       - name: Verify all viewport shards cover every WebKit width exactly once
         run: python -m unittest discover -s scripts -p 'test_webkit_viewport_shards.py' -v
       - name: Install Playwright
         run: |
           if [ "${{ matrix.browser }}" = "webkit" ]; then
-            pip install playwright==1.65.2
+            python -m pip install playwright==1.65.2
           else
-            pip install playwright==1.55.0
+            python -m pip install playwright==1.55.0
           fi
-          python -m playwright install --with-deps ${{ matrix.browser }}
+          python -m playwright install ${{ matrix.browser }}
       - name: Full responsive production browser audit
         env:
           PRODUCTION_BASE_URL: https://enterwildones.com
