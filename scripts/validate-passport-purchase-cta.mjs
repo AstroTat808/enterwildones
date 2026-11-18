@@ -81,7 +81,7 @@ for(const invariant of [
 ]) assert.ok(access.includes(invariant),'Auth-gated Passport checkout lost: '+invariant);
 assert.match(passport, /purchaseAvailable=Boolean\(!ticket&&invitation/);
 assert.match(passport, /checkoutAllowed\(event,invitation,user\.email,application\?\.email\)/);
-assert.match(checkout, /if\(!checkoutAllowed\(event,invitation,trustedEmail\)\)/);
+assert.match(checkout, /if\s*\(!checkoutAllowed\(event,\s*invitation,\s*trustedEmail\)\)/);
 assert.match(checkout, /await reserveAdmission\(/);
 assert.match(inventory, /INVENTORY_NOT_COMMISSIONED/);
 assert.match(styles, /passport-card-actions--purchase|passport-purchase-cta/);
