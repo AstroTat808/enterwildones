@@ -25,9 +25,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # v5 isolates the final all-viewport Turnstile matrix from superseded
-  # screenshot runner cancellation. Every existing check is still mandatory.
-  group: production-visual-qa-v5-${{ github.ref }}
+  # v6 isolates verified candidate-site route changes from superseded screenshot
+  # cancellation. All browser, screenshot and security checks remain mandatory.
+  group: production-visual-qa-v6-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -65,6 +65,8 @@ jobs:
         run: python -m unittest discover -s scripts -p 'test_webkit_viewport_shards.py' -v
       - name: Verify fail-closed WebKit case and browser-cleanup guards
         run: python -m unittest discover -s scripts -p 'test_webkit_failure_guard.py' -v
+      - name: Verify exact PR preview routes for all Turnstile forms
+        run: python -m unittest discover -s scripts -p 'test_pr_visual_routes.py' -v
       - name: Static source, asset, route, and regression audit
         env:
           VISUAL_RESULTS: visual-results
