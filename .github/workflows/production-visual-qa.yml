@@ -16,9 +16,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # v7 runs the finalized responsive Cloudflare size patch without inheriting
-  # a superseded screenshot worker. All existing quality gates remain mandatory.
-  group: production-visual-qa-v7-${{ github.ref }}
+  # v8 isolates current full-release verification from a superseded screenshot
+  # worker while preserving every visual, browser, and security gate.
+  group: production-visual-qa-v8-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
