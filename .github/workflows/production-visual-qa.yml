@@ -16,9 +16,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # v8 isolates current full-release verification from a superseded screenshot
-  # worker while preserving every visual, browser, and security gate.
-  group: production-visual-qa-v8-${{ github.ref }}
+  # v9 isolates this complete refunded-main release candidate from older
+  # screenshot workers while preserving all mandatory browser and security checks.
+  group: production-visual-qa-v9-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
