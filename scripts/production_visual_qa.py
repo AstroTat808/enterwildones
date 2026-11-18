@@ -497,6 +497,21 @@ def state_checks(page,case,width=None,browser_name="chromium"):
     layout=master.evaluate("""e=>{const s=getComputedStyle(e);return {display:s.display,cols:s.gridTemplateColumns}}""")
     if layout["display"]!="grid" or layout["cols"] in ("none",""):
      f.append("desktop Master Cycle credential must use the prestige two-column layout")
+ elif case.state=="passport-login":
+  # Keep a visible gap below the CTA and center verification at every viewport.
+  layout=page.evaluate("""() => {
+   const row=document.querySelector('#passportLoginForm .loginrow'),widget=document.querySelector('#passport-turnstile-widget');
+   if(!row||!widget)return null;
+   const a=row.getBoundingClientRect(),b=widget.getBoundingClientRect();
+   return {gap:b.top-a.bottom,centerDelta:Math.abs(b.left+b.width/2-(a.left+a.width/2)),
+     innerWidth:widget.querySelector('iframe')?.getBoundingClientRect().width||0,
+     availableWidth:b.width};
+  }""")
+  if not layout:f.append("Passport login security widget layout is missing")
+  else:
+   if layout["gap"]<20:f.append("Passport Turnstile must have at least 20px clearance below CTA")
+   if layout["centerDelta"]>2:f.append("Passport Turnstile container must be centered below the login row")
+   if layout["innerWidth"]>layout["availableWidth"]+2:f.append("Passport Turnstile iframe overflows its mobile container")
  elif case.state=="ticket-access":
   if "$35" not in page.locator("#price").inner_text():f.append("ticket price did not render")
  elif case.state=="public-tickets":
