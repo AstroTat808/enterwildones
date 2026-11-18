@@ -25,9 +25,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # v2 isolates the current QA contract from legacy runs that predate
-  # cancel-in-progress, so stale screenshot jobs cannot block fresh PR checks.
-  group: production-visual-qa-v2-${{ github.ref }}
+  # v3 isolates the pinned-container screenshot QA from a superseded v2
+  # apt-install job that is stuck cancelling. Every existing gate still runs.
+  group: production-visual-qa-v3-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
