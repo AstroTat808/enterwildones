@@ -62,7 +62,7 @@ ADDONS={"event":REALMS[0],"ticketId":"WLD-AUR-QA","addons":[
  {"addonType":"parking","name":"Reserved Parking","priceCents":2500,"description":"Reserved event parking.","status":"sold_out","purchased":False}
 ]}
 ACCESS={"event":REALMS[0],"eligible":True,"purchaseAvailable":True,"priceCents":3500,"currency":"usd","offer":{"phase":2,"name":"SECOND RELEASE","priceCents":3500},"invitation":{"invitationId":"qa-invite","status":"redeemed","maxTickets":1},"existingTicketId":None}
-APP_CONFIG={"event":REALMS[2],"turnstileSiteKey":None,"applicationsReady":True}
+APP_CONFIG={"event":REALMS[2],"turnstileSiteKey":"qa","applicationsReady":True}
 IND_EVENT=[{"id":"gate","label":"Gate readiness","state":"green","detail":"Scanner ready"},{"id":"waivers","label":"Unsigned waivers","state":"yellow","detail":"4 pending"},{"id":"bar","label":"Bartender console","state":"green","detail":"Ready"},{"id":"wallet","label":"Apple Wallet","state":"yellow","detail":"Physical verification pending"}]
 IND_LAUNCH=[{"id":"core","label":"Core platform","state":"green","detail":"Configured"},{"id":"stripe","label":"Stripe live mode","state":"red","detail":"TEST mode"},{"id":"wallet","label":"Apple Wallet","state":"red","detail":"Signing pending"},{"id":"rehearsal","label":"Full rehearsal","state":"yellow","detail":"6 passed · 4 pending"}]
 READINESS={"event":REALMS[0],"events":REALMS,"config":{"database":True,"admin":True,"stripe":True,"stripeMode":"test","turnstile":True,"email":True,"ticketSigning":True,"gate":True,"bar":True,"passport":True,"venue":True,"wallet":False},"coreReady":True,"coreBlockers":[],"launchReady":False,"launchBlockers":["Stripe live mode","Apple Wallet signing"],"blockers":[],"decisions":{"eventDay":{"go":False,"label":"NO-GO","summary":"Action required."},"live":{"go":False,"label":"NO-GO","summary":"Action required."},"launch":{"go":False,"label":"NO-GO","summary":"Launch blocked."},"rehearsal":{"go":False,"label":"NO-GO","summary":"4 pending."}},"indicators":{"eventDay":IND_EVENT,"live":IND_EVENT,"launch":IND_LAUNCH,"rehearsal":IND_LAUNCH},"live":{"counts":{"applications":88,"approved":62,"invitations":54,"activeTickets":47,"checkedIn":31,"unsignedWaivers":4,"signedWaivers":43,"refundedTickets":2,"activeAddons":29,"activeDrinkPackages":21,"activeWristbands":18,"creditsRedeemed":47,"creditsRemaining":79,"checkinRecords":31},"revenue":{"admissionCents":164500,"addonCents":63800,"totalCents":228300},"recentCheckins":[{"guestName":"QA Guest","ticketId":"WLD-AUR-QA","checkedInAt":"2026-09-17T18:30:00-10:00"}],"recentWristbands":[{"ticketId":"WLD-AUR-QA","wristbandCode":"A042","creditsRedeemed":2,"creditsRemaining":4,"updatedAt":"2026-09-17T18:35:00-10:00"}]},"rehearsal":{"tester":"QA","passed":6,"failed":0,"pending":4,"percent":60,"ready":False,"items":[{"id":"wallet-install","label":"Apple Wallet","detail":"Physical test","status":"pending","note":""},{"id":"gate-scan","label":"Gate scan","detail":"Physical test","status":"pending","note":""},{"id":"bartender-redemption","label":"Bartender redemption","detail":"Physical test","status":"pending","note":""},{"id":"refund","label":"Refund","detail":"Physical test","status":"pending","note":""}]},"generatedAt":"2026-09-17T22:00:00Z"}
@@ -90,7 +90,26 @@ def fulfill(route,payload,status=200):
  route.fulfill(status=status,content_type="application/json",body=json.dumps(payload))
 
 def fixtures(page,state):
- page.add_init_script("window.turnstile={render:()=>1,getResponse:()=>'qa',reset:()=>{},remove:()=>{}}")
+ # A geometry-faithful, inert Cloudflare test iframe: never solve or bypass real challenges.
+ page.add_init_script("""(() => {
+  window.turnstile={
+   render:(selector,options={})=>{
+    const host=document.querySelector(selector);
+    if(!host)throw new Error('Missing Turnstile QA host: '+selector);
+    const compact=options.size==='compact',frame=document.createElement('iframe');
+    const w=compact?150:300,h=compact?140:65;
+    frame.title='Cloudflare security verification QA fixture';
+    frame.dataset.turnstileQaWidget=compact?'compact':'normal';
+    frame.style.cssText='display:block;border:0;flex:0 0 '+w+'px;width:'+w+'px;height:'+h+'px;max-width:none';
+    host.append(frame);
+    return 1;
+   },
+   getResponse:()=>'qa',reset:()=>{},remove:()=>{}
+  };
+  document.addEventListener('DOMContentLoaded',()=>{
+   if(typeof window.onTurnstileLoad==='function')window.onTurnstileLoad();
+  },{once:true});
+ })()""")
  page.route("https://challenges.cloudflare.com/**",lambda r:r.fulfill(status=200,content_type="application/javascript",body=""))
  if state.startswith("apply-"):
   slug=state.removeprefix("apply-")
@@ -497,21 +516,6 @@ def state_checks(page,case,width=None,browser_name="chromium"):
     layout=master.evaluate("""e=>{const s=getComputedStyle(e);return {display:s.display,cols:s.gridTemplateColumns}}""")
     if layout["display"]!="grid" or layout["cols"] in ("none",""):
      f.append("desktop Master Cycle credential must use the prestige two-column layout")
- elif case.state=="passport-login":
-  # Keep a visible gap below the CTA and center verification at every viewport.
-  layout=page.evaluate("""() => {
-   const row=document.querySelector('#passportLoginForm .loginrow'),widget=document.querySelector('#passport-turnstile-widget');
-   if(!row||!widget)return null;
-   const a=row.getBoundingClientRect(),b=widget.getBoundingClientRect();
-   return {gap:b.top-a.bottom,centerDelta:Math.abs(b.left+b.width/2-(a.left+a.width/2)),
-     innerWidth:widget.querySelector('iframe')?.getBoundingClientRect().width||0,
-     availableWidth:b.width};
-  }""")
-  if not layout:f.append("Passport login security widget layout is missing")
-  else:
-   if layout["gap"]<20:f.append("Passport Turnstile must have at least 20px clearance below CTA")
-   if layout["centerDelta"]>2:f.append("Passport Turnstile container must be centered below the login row")
-   if layout["innerWidth"]>layout["availableWidth"]+2:f.append("Passport Turnstile iframe overflows its mobile container")
  elif case.state=="ticket-access":
   if "$35" not in page.locator("#price").inner_text():f.append("ticket price did not render")
  elif case.state=="public-tickets":
@@ -531,6 +535,39 @@ def state_checks(page,case,width=None,browser_name="chromium"):
  elif case.state=="command" and page.locator("#indicatorGrid > *").count()<3:f.append("command indicators missing")
  elif case.state=="check-in" and not page.locator("#gate").is_visible():f.append("gate console missing")
  elif case.state=="bar" and not page.locator("#bar").is_visible():f.append("bar console missing")
+ if case.name in ("passport-login","apply-aureva","public-tickets"):
+  # Audit the rendered 300x65 / 150x140 iframe, not only the 100%-wide host.
+  specs={
+   "passport-login":{"widget":"#passport-turnstile-widget","button":"#send","order":"after"},
+   "apply-aureva":{"widget":"#turnstile-widget","button":"#submitButton","order":"before"},
+   "public-tickets":{"widget":"#public-turnstile-widget","button":"#public-ticket-form button[type=submit]","order":"before"},
+  }
+  spec=specs[case.name]
+  try:page.locator(spec["widget"]+" iframe[data-turnstile-qa-widget]").wait_for(state="attached",timeout=5000)
+  except Exception as e:f.append(case.name+" Turnstile mock did not render: "+str(e))
+  layout=page.evaluate("""({widget:sel,button:target,order}) => {
+   const host=document.querySelector(sel),button=document.querySelector(target),
+         frame=host?.querySelector('iframe[data-turnstile-qa-widget]');
+   if(!host||!button||!frame)return null;
+   const w=host.getBoundingClientRect(),b=button.getBoundingClientRect(),
+         i=frame.getBoundingClientRect(),margin=2;
+   return {
+    clearance:order==='after'?w.top-b.bottom:b.top-w.bottom,
+    centerDelta:Math.abs((i.left+i.width/2)-(w.left+w.width/2)),
+    fits:i.left>=w.left-margin&&i.right<=w.right+margin,
+    availableWidth:w.width,iframeWidth:i.width,iframeHeight:i.height,
+    widgetSize:frame.dataset.turnstileQaWidget,visible:getComputedStyle(host).display!=='none'
+   };
+  }""",spec)
+  if not layout:f.append(case.name+" Turnstile verification widget is missing")
+  else:
+   if not layout["visible"]:f.append(case.name+" Turnstile verification is hidden")
+   if layout["clearance"]<20:f.append(case.name+" Turnstile must have 20px clearance from the submit button")
+   if layout["centerDelta"]>2:f.append(case.name+" Turnstile iframe is not centered under the form")
+   if not layout["fits"]:f.append(case.name+" Turnstile iframe overflows its container")
+   expect="compact" if layout["availableWidth"]<300 else "normal"
+   if layout["widgetSize"]!=expect:f.append(case.name+" Turnstile should render "+expect+" at this viewport")
+   if expect=="compact" and layout["iframeHeight"]<130:f.append(case.name+" compact widget height was clipped")
  if width==320:
   if case.name=="realm-quiz-result":
    result_name=page.locator("#resultName")
