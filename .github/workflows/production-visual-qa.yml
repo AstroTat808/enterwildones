@@ -250,7 +250,8 @@ jobs:
           PRODUCTION_BASE_URL: http://127.0.0.1:8765
           VISUAL_RESULTS: visual-results
         run: |
-          set -euo pipefail
+          # Container jobs use POSIX sh by default; avoid bash-only pipefail.
+          set -eu
           python -m py_compile scripts/serve_pr_visual_qa.py
           python scripts/serve_pr_visual_qa.py --port 8765 > /tmp/wildones-pr-webkit-server.log 2>&1 &
           server_pid=$!
