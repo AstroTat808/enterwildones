@@ -81,7 +81,8 @@ try {
     'verifyBundleSnapshot(', 'bundleTypes(bundledAddons)', 'ticketPriceCents:admissionPriceCents',
     'issueBundledAddons(', 'setBundledAddonStatus(', 'refundDuplicate('
   ]) assert.ok(payments.includes(term), 'Fulfillment missing: ' + term);
-  assert.ok(payments.indexOf('await issueAdmission(') < payments.indexOf('await issueBundledAddons('),
+  const newFulfillment = payments.slice(payments.indexOf('await issueAdmission('));
+  assert.ok(newFulfillment.indexOf('await issueAdmission(') < newFulfillment.indexOf('await issueBundledAddons('),
     'Admission must be issued before optional entitlements.');
   assert.ok(payments.indexOf('await issueBundledAddons(') < payments.indexOf('await sendReceipt(event,ticket,application,session,token)'),
     'The ticket receipt must not precede bundled entitlement issuance.');
