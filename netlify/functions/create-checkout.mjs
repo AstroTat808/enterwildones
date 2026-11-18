@@ -8,7 +8,7 @@ import { currentTicketOffer, ticketPricingSchedule, ticketPriceEnv, ticketProduc
 import { makeTicketToken } from './_ticket-token.mjs';
 import { json, readBody } from './_response.mjs';
 import { sameOrigin } from './_security.mjs';
-import { stripeGet, stripePost } from './_stripe.mjs';
+import { checkoutIdempotencyKey, stripeGet, stripePost } from './_stripe.mjs';
 import { STORES, eventKey } from './_stores.mjs';
 import { writeAudit } from './_audit.mjs';
 import { reserveAdmission, attachAdmissionSession, releaseAdmission } from './_admission-inventory.mjs';
@@ -93,7 +93,6 @@ export default async (req) => {
   if (!returnToken) return json({ error: 'Secure checkout return could not be initialized.' }, 503);
   const site = (env('WILDONES_SITE_URL') || new URL(req.url).origin).replace(/\/$/, '');
   const attempt = Number(latest?.attempt || 0) + 1;
-  const idempotency = `wildones-${event.eventId}-${invitation.invitationId}-${attempt}`.slice(0, 255);
   const stripeExpiresAt = Math.floor(Date.now() / 1000) + 31 * 60;
   try {
     await reserveAdmission({
@@ -141,6 +140,9 @@ export default async (req) => {
     'payment_intent_data[metadata][ticket_tier_name]': tierName
   };
 
+  // An earlier failed attempt may have reused this attempt number with different
+  // Stripe parameters. Hash the exact payload to avoid Stripe's idempotency conflict.
+  const idempotency = checkoutIdempotencyKey(`wildones-${event.eventId}-${invitation.invitationId}-${attempt}`, params);
   try {
     const session = await stripePost('checkout/sessions', params, idempotency);
     if (!sessionMatches(session, event.eventId, invitation.invitationId) || String(session.currency || CURRENCY).toLowerCase() !== CURRENCY) throw new Error('Stripe returned a checkout identity mismatch.');
@@ -169,12 +171,26 @@ export default async (req) => {
     await writeAudit({ eventId: event.eventId, action: 'checkout.created', actor: 'guest', targetType: 'payment', targetId: session.id, detail: { invitationId: invitation.invitationId, attempt, ticketTier: tierPhase, ticketTierName: tierName, amountTotal: price, commissioning: !event.ticketSalesOpen } });
     return json({ ok: true, checkoutUrl: session.url, reused: false });
   } catch (error) {
-    // Only a definitive Stripe 4xx response proves no checkout was created.
-    // Network errors, 5xx, or persistence failures retain the hold for reconciliation.
-    if (Number(error.stripeHttpStatus) >= 400 && Number(error.stripeHttpStatus) < 500) {
+    // Never expose Stripe's internal messages, API URLs or idempotency keys to guests.
+    // Log safe diagnostics for operators without including the request body or secrets.
+    const stripeStatus = Number(error?.stripeHttpStatus) || null;
+    const definitiveStripeRejection = stripeStatus >= 400 && stripeStatus < 500;
+    console.error('Admission checkout failed', {
+      eventId: event.eventId, attempt, stripeStatus,
+      stripeCode: error?.stripeCode || null, stripeRequestId: error?.stripeRequestId || null
+    });
+    // A definitive Stripe 4xx rejection did not create a session. Network
+    // errors, Stripe 5xx, and post-creation persistence failures are ambiguous:
+    // preserve the seat hold until the checkout can be reconciled.
+    if (definitiveStripeRejection) {
       await releaseAdmission({ eventId: event.eventId, invitationId: invitation.invitationId }).catch(() => {});
     }
-    return json({ error: error.message || 'Checkout could not be created.', code: error.code || 'CHECKOUT_UNAVAILABLE' }, error.status || 502);
+    return json({
+      error: definitiveStripeRejection
+        ? 'Secure checkout could not be prepared. Please try again.'
+        : 'We could not confirm your checkout status. Please contact support before trying another payment.',
+      code: definitiveStripeRejection ? 'CHECKOUT_UNAVAILABLE' : 'CHECKOUT_RECONCILIATION_REQUIRED'
+    }, definitiveStripeRejection ? 502 : 503);
   }
 };
 
