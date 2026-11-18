@@ -76,6 +76,16 @@ class WebKitCleanups(unittest.TestCase):
         self.assertEqual(page.wheel_calls, 1)
         self.assertGreater(offset, 72)
 
+    def test_guest_masthead_recovers_from_suppressed_mobile_webkit_scroll_events(self):
+        source = (SRC.parents[1] / "site/assets/js/branding.js").read_text(encoding="utf-8")
+        self.assertIn("window.addEventListener('scroll',schedule,{passive:true})", source)
+        self.assertIn("document.addEventListener('scroll',schedule,{passive:true,capture:true})", source)
+        self.assertIn("document.scrollingElement||document.documentElement", source)
+        self.assertIn("window.scrollY||0", source)
+        self.assertIn("setInterval(()=>{if(!document.hidden)apply();},250)", source)
+        self.assertIn("document.body.classList.contains('masthead-scrolled')!==compact", source)
+        self.assertIn("window.addEventListener('pagehide',()=>clearInterval(recovery)", source)
+
     def test_webkit_masthead_requires_actual_scroll_class(self):
         source = SRC.read_text(encoding="utf-8")
         self.assertIn("page.mouse.wheel(0,top)", source)
