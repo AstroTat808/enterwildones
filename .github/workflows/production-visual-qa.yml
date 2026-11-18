@@ -208,7 +208,12 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: source-audit
     runs-on: ubuntu-24.04
-    timeout-minutes: 14
+    # Preinstalled Linux browser libraries avoid apt mirror stalls; the exact
+    # approved Playwright 1.65.2 browser binary is still installed and tested.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.65.0-noble
+      options: --ipc=host
+    timeout-minutes: 18
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -230,10 +235,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install mobile WebKit
+      - name: Install exact approved mobile WebKit browser
         run: |
           pip install playwright==1.65.2
-          python -m playwright install --with-deps webkit
+          python -m playwright install webkit
       - name: Exercise actual mobile header and menu interactions
         env:
           PRODUCTION_BASE_URL: https://enterwildones.com
@@ -328,6 +333,11 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: deploy-sync
     runs-on: ubuntu-24.04
+    # Retain every Chromium/WebKit suite and viewport. Docker ships OS dependencies;
+    # Playwright installs the exact selected browser version before every audit.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.65.0-noble
+      options: --ipc=host
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -435,7 +445,7 @@ jobs:
           else
             pip install playwright==1.55.0
           fi
-          python -m playwright install --with-deps ${{ matrix.browser }}
+          python -m playwright install ${{ matrix.browser }}
       - name: Full responsive production browser audit
         env:
           PRODUCTION_BASE_URL: https://enterwildones.com
