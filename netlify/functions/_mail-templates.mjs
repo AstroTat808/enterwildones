@@ -147,3 +147,45 @@ ${actionButton(ticketUrl, 'Open Your Digital Ticket')}
 <p style="color:#bdb6ac;font-size:13px;line-height:1.75;margin:0">Your ticket and selected add-ons are linked to one credential. Complete the participant waiver to unlock the entry QR code. This ticket link is private; do not forward it.</p>`;
   return layout({ event, title: 'Your Ticket Is Confirmed', preview: `${event.name} ticket confirmed. View your credential and included add-ons.`, introduction: 'Your place in the realm is secured.', content, support });
 }
+
+/**
+ * Passport sign-in mail. The token is included only in the CTA and the text
+ * fallback; no link or recipient details are sent to image/analytics hosts.
+ */
+export function renderPassportSignInEmail({ link, support = 'help@enterwildones.com' }) {
+  const parsed = new URL(String(link));
+  if (parsed.protocol !== 'https:' && parsed.hostname !== 'localhost') {
+    throw new Error('A secure Passport sign-in origin is required.');
+  }
+  if (parsed.pathname !== '/passport/verify' || !parsed.searchParams.get('token')) {
+    throw new Error('Invalid Passport sign-in URL.');
+  }
+  const title = 'Your Passport Awaits';
+  const content = `
+<p style="margin:0 0 22px;color:#e9e4d9;font-size:16px;line-height:1.7">Aloha Wild One,</p>
+<p style="margin:0 0 22px;color:#e9e4d9;font-size:16px;line-height:1.7">You requested a secure link to open your Enter Wild Ones Passport. Continue below to see your credentials and your journey through the Four Realms.</p>
+${actionButton(parsed.href, 'Open Your Passport')}
+<table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="border:1px solid #50432a;border-radius:12px;background:#181713;margin:0 0 22px"><tr><td style="padding:18px 20px">
+<div style="color:#f2d59b;font-size:12px;letter-spacing:1px;font-weight:700">PRIVATE ONE-TIME ACCESS</div>
+<div style="margin-top:8px;color:#ded7c9;font-size:14px;line-height:1.7">This sign-in link expires in 15 minutes and can only be used once. Keep it private.</div>
+</td></tr></table>
+<p style="margin:0 0 12px;color:#bdb6ac;font-size:13px;line-height:1.75">Did not request this email? You can safely ignore it. Your Passport will remain protected.</p>
+<p style="margin:0;color:#bdb6ac;font-size:13px;line-height:1.75">Button not opening? Copy the secure address from the plain-text version of this email into your browser.</p>`;
+  const html = layout({
+    event: { name: 'ENTER WILD ONES', copy: { eyebrow: 'ONE IDENTITY / FOUR REALMS' } },
+    title,
+    preview: 'Your private one-time Passport sign-in link is ready. Valid for 15 minutes.',
+    introduction: 'One identity. Four realms. Your journey continues.',
+    content,
+    support
+  });
+  const text = [
+    'Aloha Wild One,', '',
+    'Your secure ENTER WILD ONES Passport sign-in link is ready.',
+    'Open your Passport: ' + parsed.href, '',
+    'This private one-time link expires in 15 minutes and can only be used once.',
+    'If you did not request this link, ignore this email.',
+    'Support: ' + support
+  ].join('\n');
+  return { subject: 'ENTER WILD ONES · Open Your Passport', html, text };
+}
