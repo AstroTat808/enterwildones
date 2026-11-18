@@ -46,16 +46,17 @@
       if(!r.ok||!d.nextUrl)throw new Error(d.error||'Ticket access could not be opened.');
       location.assign(d.nextUrl);
     }catch(err){
+      button.disabled=false;
+      button.textContent=initialLabel;
       if(message){
         message.textContent=err.message||'Ticket access could not be opened.';
         message.dataset.state='error';
       }else{
         q('#progress').textContent=err.message||'Ticket access could not be opened.';
       }
-    }finally{
-      button.disabled=false;
-      button.textContent=initialLabel;
     }
+    // Keep the action disabled after a successful redirect is requested,
+    // preventing rapid double clicks while navigation begins.
   }
 
   function stateInfo(x){
