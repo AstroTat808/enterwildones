@@ -30,10 +30,10 @@ class Handler(SimpleHTTPRequestHandler):
             payload = {
                 "cycle": {"name": "The Wild Ones Cycle", "statement": "Four realms. One cycle."},
                 "events": [
-                    {"eventId": "aureva-2026", "slug": "aureva", "startsAt": "2027-01-23T19:00:00-10:00", "status": "upcoming", "ticketSalesOpen": False, "applicationOpen": True, "accessMode": "invitation"},
-                    {"eventId": "halora-2027", "slug": "halora", "startsAt": "2027-04-01T19:00:00-10:00", "status": "coming_soon", "ticketSalesOpen": False, "applicationOpen": False, "accessMode": "invitation"},
-                    {"eventId": "sunveil-2027", "slug": "sunveil", "startsAt": "2027-07-01T19:00:00-10:00", "status": "coming_soon", "ticketSalesOpen": False, "applicationOpen": False, "accessMode": "public"},
-                    {"eventId": "nocturne-2027", "slug": "nocturne", "startsAt": "2027-09-01T19:00:00-10:00", "status": "coming_soon", "ticketSalesOpen": False, "applicationOpen": False, "accessMode": "invitation"}
+                    {"eventId": "aureva-2026", "slug": "aureva", "startsAt": "2027-01-23T19:00:00-10:00", "status": "announced", "ticketSalesOpen": False, "applicationOpen": True, "accessMode": "application"},
+                    {"eventId": "halora-2027", "slug": "halora", "startsAt": "2027-03-20T15:00:00-10:00", "status": "planned", "ticketSalesOpen": False, "applicationOpen": False, "accessMode": "application_then_public"},
+                    {"eventId": "sunveil-2027", "slug": "sunveil", "startsAt": "2027-06-19T15:00:00-10:00", "status": "planned", "ticketSalesOpen": False, "applicationOpen": False, "accessMode": "public"},
+                    {"eventId": "nocturne-2027", "slug": "nocturne", "startsAt": "2027-09-05T15:00:00-10:00", "status": "planned", "ticketSalesOpen": False, "applicationOpen": False, "accessMode": "application"}
                 ]
             }
             body = json.dumps(payload).encode("utf-8")
