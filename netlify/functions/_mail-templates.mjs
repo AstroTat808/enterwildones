@@ -63,6 +63,7 @@ function layout({ event, preview, title, introduction, content, support }) {
 <table class="mail-shell" role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:600px;background:#101115;border:1px solid #4b412c;border-radius:18px">
 <tr><td align="center" class="mail-inner" style="padding:38px 38px 22px">
 <div style="font-size:11px;font-weight:800;letter-spacing:4px;color:${GOLD};text-transform:uppercase">ENTER WILD ONES</div>
+<div style="padding:8px 0 0"><img src="https://enterwildones.com/assets/images/brand/enter-wild-ones-email.png" width="180" alt="Enter Wild Ones" style="width:180px;max-width:100%;height:auto;border:0;display:block" /></div>
 <div style="padding:15px 0 6px"><img src="${logo}" alt="${brand} event logo" width="300" style="display:block;max-width:100%;height:auto;width:300px;border:0" /></div>
 <div style="font-size:11px;letter-spacing:3px;color:#d9c396;font-weight:700;text-transform:uppercase">${eyebrow}</div>
 </td></tr>
