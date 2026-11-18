@@ -9,6 +9,14 @@ const files={public:'../netlify/functions/public-ticket-access.mjs',checkout:'..
 const text={};for(const[k,p]of Object.entries(files))text[k]=await readFile(new URL(p,import.meta.url),'utf8');
 for(const needle of ["accessMode!=='public'","ticketSalesOpen","findOrCreateUser","createInvitationAccess","'public_ticket'",'sales_ended'])if(!text.public.includes(needle))fail(`Public-sale guard missing: ${needle}`);
 for(const needle of ['existingTicketForUser','user_already_ticketed','expected_currency','sales_ended'])if(!text.checkout.includes(needle))fail(`Admission uniqueness/currency/time guard missing: ${needle}`);
+// Stripe accounts can default Checkout to Managed Payments, which accepts eligible
+// digital products but rejects event admissions without a Managed Payments tax code.
+// These festival admission and on-site add-on purchases must use ordinary Checkout.
+// Validate the actual request-parameter objects, not a comment or unused string.
+if(!/mode:\s*'payment',\s*(?:\/\/[^\n]*\n\s*)*'managed_payments\\[enabled\\]':\s*'false',/.test(text.checkout))
+  fail('Admission Checkout must explicitly opt out of Managed Payments.');
+if(!/const params=\\{mode:'payment','managed_payments\\[enabled\\]':'false',/.test(text.addons))
+  fail('Festival add-on Checkout must explicitly opt out of Managed Payments.');
 for(const needle of ['existingTicketForUser',"purchaseType:'admission'",'user/${userId}','checkout-time price snapshot'])if(!text.payments.includes(needle))fail(`Admission integrity guard missing: ${needle}`);
 for(const needle of ['verifyTicketToken','sameOrigin','getAddon','entitlementFor','makeAddonReturn','expected_currency','credits:addon.credits','departureTime:addon.departureTime','addon_sales_ended'])if(!text.addons.includes(needle))fail(`Add-on checkout guard missing: ${needle}`);
 for(const needle of ["purchaseType:'addon'",'markAddonPaymentInactiveByIntent','creditsRemaining','priceCents','checkout.credits','checkout.departureTime','ensureDrinkLedger'])if(!text.addonPayments.includes(needle))fail(`Add-on payment isolation/snapshot missing: ${needle}`);
