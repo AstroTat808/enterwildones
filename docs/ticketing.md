@@ -65,3 +65,11 @@ and disputed tickets before enabling admission sales.
 **Migration:** `netlify/database/migrations/003_admission-capacity/migration.sql`.
 Testing must include a 1-seat two-buyer race, comp admission races, webhook
 replay, refund/rebuy, Stripe expiry, and reconciliation of any legacy tickets.
+
+## Waiver evidence center and late-stay policy
+
+The authenticated `/admin/waivers` page lists event-specific waiver readiness, outstanding supplemental waivers, historical evidence and hash verification. Its print view is designed for browser Save as PDF; JSON is the original evidence export. No direct PDF generator or certificate-based PDF signature is implied. Legacy signatures without exact text snapshots are explicitly labeled incomplete. Evidence access is logged with the existing best-effort audit helper; the signed records themselves are archived before unlocking admission.
+
+The independent late-stay waiver is required for every active `late_stay` entitlement, whether bundled or bought later. QR, ticket venue details, Wallet issuance and admission scan share `waiverGate`. A separate check-in mode verifies current entitlement and both agreements after admission; staff must verify matching government-issued photo ID and use this mode before assigning late-stay credentials and during the transition to overnight access. There is no offline bypass. Refunded or disputed add-ons do not confer late access. Current venue and safety rules must be communicated in person.
+
+Archive writes are content-addressed and use Netlify Blobs conditional create-only writes. This is application-level append-only, not provider-enforced WORM. Before claiming immutability, configure independent retention-locked object storage under a separate administrative account, a least-privilege writer with no delete/retention-change permissions, encryption, retention and legal-hold policies approved by counsel, verifiable replication, and a documented restore test. Never expose signature archives or ticket tokens in a public bucket. The archive is not a substitute for legal review or evidence of actual risk instruction.
