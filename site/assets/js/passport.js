@@ -4,6 +4,10 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const realmClass=realm=>['light','balance','fire','night'].includes(realm)?'realm-'+realm:'realm-cycle';
   let widget=null,securityPromise=null,records=[],activeUserId='',pendingUnlockRealms=[],pendingMasterUnlock=false;
+  const refreshInterval=5000,refreshWindow=120000,requestTimeout=15000;
+  let selectedRealm='cycle',renderedSnapshot='',filterSnapshot='';
+  let refreshTimer=null,refreshDeadline=0,loadPromise=null,loadController=null,loadSequence=0,lastLoadStarted=0;
+  let pageActive=true,signingOut=false;
   const api=()=>window.turnstile&&typeof window.turnstile.render==='function'?window.turnstile:null;
 
   async function security(){
@@ -27,24 +31,45 @@
   }
 
   async function openPurchase(eventSlug,button){
-    button.disabled=true;button.textContent='Opening secure ticket access…';
+    const message=button.closest('.passport-card')?.querySelector('.passport-purchase-message');
+    const initialLabel=button.textContent;
+    button.disabled=true;
+    button.textContent='Opening secure ticket access…';
+    if(message){
+      message.textContent='Verifying your invitation and preparing checkout…';
+      message.dataset.state='loading';
+    }
     try{
-      const r=await fetch('/api/passport/ticket-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:eventSlug})});
+      const r=await fetch('/api/passport/ticket-access',{
+        method:'POST',
+        credentials:'same-origin',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({event:eventSlug})
+      });
       const d=await r.json().catch(()=>({}));
       if(!r.ok||!d.nextUrl)throw new Error(d.error||'Ticket access could not be opened.');
       location.assign(d.nextUrl);
     }catch(err){
-      button.disabled=false;button.textContent='Purchase Ticket';
-      q('#progress').textContent=err.message||'Ticket access could not be opened.';
+      button.disabled=false;
+      button.textContent=initialLabel;
+      if(message){
+        message.textContent=err.message||'Ticket access could not be opened.';
+        message.dataset.state='error';
+      }else{
+        q('#progress').textContent=err.message||'Ticket access could not be opened.';
+      }
     }
+    // Keep the action disabled after a successful redirect is requested,
+    // preventing rapid double clicks while navigation begins.
   }
 
   function stateInfo(x){
     if(x.checkedIn)return {label:'REALM COMPLETED',kind:'complete'};
-    if(x.ticket&&['paid','checked_in'].includes(x.ticket.status))return {label:String(x.ticket.status).replaceAll('_',' ').toUpperCase(),kind:'active'};
+    if(x.ticket?.status==='checked_in')return {label:'REALM COMPLETED',kind:'complete'};
+    if(x.ticket?.status==='paid')return {label:'TICKET PURCHASED',kind:'active'};
     if(x.ticket)return {label:String(x.ticket.status||'TICKET ISSUED').replaceAll('_',' ').toUpperCase(),kind:'pending'};
-    if(x.application)return {label:String(x.application.status||'APPLICATION').replaceAll('_',' ').toUpperCase(),kind:'pending'};
     if(x.invitation&&x.invitation.status==='redeemed')return {label:'INVITATION REDEEMED',kind:'active'};
+    if(x.application)return {label:String(x.application.status||'APPLICATION').replaceAll('_',' ').toUpperCase(),kind:'pending'};
     return {label:'NOT ENTERED',kind:'locked'};
   }
 
@@ -162,7 +187,35 @@
     if(master)playMasterUnlock(q('#realms').querySelector('[data-master-cycle="unlocked"]'),realmSlugs.length*420+350);
   }
 
+  // A redeemed invitation always shows its next step; the server controls
+  // whether the Purchase Ticket action is enabled.
+  function credentialActions(x,link){
+    const event=x.event;
+    const eventName=esc(event.name);
+    const explore='<a class="button ghost passport-explore-cta" href="'+esc(event.routes.event)+'">Explore the Realm</a>';
+    const redeemed=x.invitation?.status==='redeemed'&&!x.ticket;
+    if(redeemed){
+      const allowed=x.purchaseAvailable===true;
+      const statusId='passport-purchase-help-'+esc(event.slug);
+      const purchase='<button type="button" class="button passport-purchase-cta"'+
+        (allowed?' data-purchase-event="'+esc(event.slug)+'"':' disabled aria-disabled="true" aria-describedby="'+statusId+'"')+
+        ' aria-label="Purchase '+eventName+' ticket">Purchase Ticket</button>';
+      const explanation=allowed
+        ? 'Choose your ticket and optional add-ons together in secure checkout.'
+        : 'Ticket sales have not opened yet. Your redeemed invitation is saved.';
+      return '<div class="passport-card-actions passport-card-actions--purchase">'+purchase+explore+'</div>'+
+        '<p class="passport-purchase-message" id="'+statusId+'" role="status" aria-live="polite">'+explanation+'</p>';
+    }
+    if(x.ticket&&['paid','checked_in'].includes(x.ticket.status)&&
+        typeof link==='string'&&link.startsWith('/ticket?token=')){
+      return '<div class="passport-card-actions passport-card-actions--ticket">'+
+        '<a class="button passport-ticket-cta" href="'+esc(link)+'">Open Digital Ticket</a>'+explore+'</div>';
+    }
+    return '<div class="passport-card-actions">'+explore+'</div>';
+  }
+
   function render(selected='cycle'){
+    selectedRealm=selected;
     window.WildOnesBrand?.set({realm:selected});
     q('#realmFilter').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.realm===selected)));
     const visible=records.filter(x=>selected==='cycle'||x.event.realm===selected);
@@ -176,8 +229,8 @@
       const invitationMeta=x.invitation&&x.invitation.status==='redeemed'&&!x.ticket?'<div class="passport-access-note"><span class="tx-meta-label">ACCESS</span><strong>Invitation redeemed'+(x.commissioningAccess?' · Commissioning access':'')+'</strong></div>':'';
       const activeEntitlements=(Array.isArray(x.entitlements)?x.entitlements:[]).filter(a=>a.status==='active');
       const entitlementBlock=activeEntitlements.length?'<div class="passport-entitlements"><span class="tx-meta-label">ADD-ONS</span><div class="passport-entitlement-list">'+activeEntitlements.map(a=>'<em class="tx-meta-label">'+esc(String(a.addonType).replaceAll('_',' '))+'</em>').join('')+'</div></div>':'';
-      const action=x.purchaseAvailable?'<button class="button" type="button" data-purchase-event="'+esc(e.slug)+'">Purchase Ticket</button>':'<a class="button ghost" href="'+esc(link)+'">'+(active&&link.startsWith('/ticket?')?'Open Digital Ticket':'Explore the Realm')+'</a>';
-      return '<article class="passport-card" data-event-slug="'+esc(e.slug)+'" data-brand-realm="'+esc(e.realm)+'" data-passport-state="'+esc(state.kind)+'"><div class="passport-card-topline"><span class="passport-roman">'+esc(meta?.roman||'•')+'</span><span class="passport-credential-label tx-meta-label">DIGITAL REALM CREDENTIAL</span><span class="realm-chip tx-meta-label '+cls+'">'+esc(meta?.sub||e.realm)+'</span></div><img class="passport-card-logo" src="'+esc(window.WildOnesBrand.asset(e.realm))+'" alt="'+esc(window.WildOnesBrand.label(e.realm))+'" width="768" height="768" loading="eager" decoding="async"><h2 class="realm-key tx-card-title '+cls+'">'+esc(e.name)+'</h2><strong class="passport-state tx-meta-label">'+esc(state.label)+'</strong><p class="passport-card-tagline tx-body">'+esc(e.copy.tagline)+'</p>'+ticketMeta+invitationMeta+entitlementBlock+'<div class="passport-card-actions">'+action+'</div></article>';
+      const actions=credentialActions(x,link);
+      return '<article class="passport-card" data-event-slug="'+esc(e.slug)+'" data-brand-realm="'+esc(e.realm)+'" data-passport-state="'+esc(state.kind)+'"><div class="passport-card-topline"><span class="passport-roman">'+esc(meta?.roman||'•')+'</span><span class="passport-credential-label tx-meta-label">DIGITAL REALM CREDENTIAL</span><span class="realm-chip tx-meta-label '+cls+'">'+esc(meta?.sub||e.realm)+'</span></div><img class="passport-card-logo" src="'+esc(window.WildOnesBrand.asset(e.realm))+'" alt="'+esc(window.WildOnesBrand.label(e.realm))+'" width="768" height="768" loading="eager" decoding="async"><h2 class="realm-key tx-card-title '+cls+'">'+esc(e.name)+'</h2><strong class="passport-state tx-meta-label">'+esc(state.label)+'</strong><p class="passport-card-tagline tx-body">'+esc(e.copy.tagline)+'</p>'+ticketMeta+invitationMeta+entitlementBlock+actions+'</article>';
     });
     if(selected==='cycle'){
       const master=masterCycleCard();
@@ -200,23 +253,142 @@
     q('#cycleNodes').innerHTML=records.map(cycleNode).join('');
   }
 
-  async function load(){
-    try{
-      const r=await fetch('/api/passport',{cache:'no-store'}),d=await r.json();
-      if(r.status===401||d.authenticated===false){login.hidden=false;account.hidden=true;await security();return;}
-      if(!r.ok)throw new Error('Your Passport is temporarily unavailable. Please refresh.');
-      records=Array.isArray(d.realms)?d.realms:[];
-      activeUserId=String(d.user?.userId||d.user?.email||'wild-one');
-      detectCompletionTransitions(activeUserId);
-      login.hidden=true;account.hidden=false;
-      const preferred=d.user.preferredName||d.user.fullName||'Wild One';
-      q('#welcome').textContent='Welcome, '+preferred+'.';
-      q('#progress').textContent=d.cycle.completed+' of '+d.cycle.total+' realms completed · your cycle updates automatically';
-      updateCycle(d.cycle);
-      const filters=[{realm:'cycle',name:'All Realms'},...records.map(x=>x.event)];
+  function stopRefresh(abort=false){
+    if(refreshTimer!==null)clearTimeout(refreshTimer);
+    refreshTimer=null;
+    if(abort){
+      // Invalidating the request also protects against a late response after
+      // sign-out or a page restored from the browser's back/forward cache.
+      loadSequence++;
+      loadController?.abort();
+      loadController=null;
+      loadPromise=null;
+      lastLoadStarted=0;
+    }
+  }
+
+  function canRefresh(){
+    return pageActive&&!signingOut&&document.visibilityState!=='hidden';
+  }
+
+  function awaitingTicket(){
+    return records.some(x=>!x.ticket&&(x.invitation?.status==='fulfilled'||
+      (x.invitation?.status==='redeemed'&&x.purchaseAvailable===true)));
+  }
+
+  function scheduleRefresh(){
+    stopRefresh();
+    if(!canRefresh()||!activeUserId||!awaitingTicket()||Date.now()>=refreshDeadline)return;
+    refreshTimer=setTimeout(()=>{
+      refreshTimer=null;
+      if(canRefresh()&&Date.now()<refreshDeadline)load();
+    },Math.min(refreshInterval,refreshDeadline-Date.now()));
+  }
+
+  function resumeRefresh(){
+    if(!canRefresh())return;
+    refreshDeadline=Date.now()+refreshWindow;
+    stopRefresh();
+    // Focus, visibilitychange and pageshow can arrive together. Share one
+    // request and keep one timer rather than creating parallel polling loops.
+    if(loadPromise)return;
+    if(Date.now()-lastLoadStarted<1000){scheduleRefresh();return;}
+    load();
+  }
+
+  function focusedCredentialAction(){
+    const focused=document.activeElement;
+    const card=focused?.closest?.('[data-event-slug]');
+    if(!card||!q('#realms').contains(focused))return null;
+    const kind=focused.matches('.passport-purchase-cta')?'purchase':
+      focused.matches('.passport-ticket-cta')?'ticket':
+      focused.matches('.passport-explore-cta')?'explore':null;
+    return kind?{slug:card.dataset.eventSlug,kind}:null;
+  }
+
+  function restoreCredentialFocus(focus){
+    if(!focus)return;
+    const card=[...q('#realms').querySelectorAll('[data-event-slug]')].find(x=>x.dataset.eventSlug===focus.slug);
+    const selector=focus.kind==='explore'?'.passport-explore-cta':
+      '.passport-purchase-cta:not([disabled]), .passport-ticket-cta, .passport-explore-cta';
+    card?.querySelector(selector)?.focus({preventScroll:true});
+  }
+
+  function applyPassport(d){
+    const userId=String(d.user.userId||d.user.email||'wild-one');
+    const newlyPurchased=userId===activeUserId&&d.realms.some(next=>next.ticket?.status==='paid'&&
+      records.some(previous=>previous.event.slug===next.event.slug&&!previous.ticket));
+    const snapshot=JSON.stringify({user:d.user,cycle:d.cycle,realms:d.realms});
+    const progress=d.cycle.completed+' of '+d.cycle.total+' realms completed · your cycle updates automatically';
+    q('#progress').setAttribute('aria-live','polite');
+    q('#progress').textContent=(newlyPurchased?'Ticket purchased. Your digital ticket is ready. ':'')+progress;
+    // An unchanged response must not replace controls or disturb keyboard focus.
+    if(snapshot===renderedSnapshot)return;
+    const focused=focusedCredentialAction();
+    if(activeUserId&&userId!==activeUserId)selectedRealm='cycle';
+    activeUserId=userId;
+    records=d.realms;
+    renderedSnapshot=snapshot;
+    detectCompletionTransitions(activeUserId);
+    login.hidden=true;account.hidden=false;
+    q('#welcome').textContent='Welcome, '+(d.user.preferredName||d.user.fullName||'Wild One')+'.';
+    updateCycle(d.cycle);
+    const filters=[{realm:'cycle',name:'All Realms'},...records.map(x=>x.event)];
+    const nextFilters=JSON.stringify(filters.map(e=>[e.realm,e.name]));
+    if(nextFilters!==filterSnapshot){
+      filterSnapshot=nextFilters;
       q('#realmFilter').replaceChildren(...filters.map(e=>{const b=document.createElement('button');b.type='button';b.dataset.realm=e.realm;b.className='realm-chip tx-meta-label '+realmClass(e.realm);b.textContent=e.name;b.onclick=()=>render(e.realm);return b;}));
-      render();
-    }catch(e){login.hidden=false;status.textContent=e.message||'Passport could not load. Please refresh.';}
+    }
+    if(selectedRealm!=='cycle'&&!records.some(x=>x.event.realm===selectedRealm))selectedRealm='cycle';
+    render(selectedRealm);
+    restoreCredentialFocus(focused);
+  }
+
+  function clearAccount(){
+    records=[];activeUserId='';renderedSnapshot='';filterSnapshot='';selectedRealm='cycle';
+    pendingUnlockRealms=[];pendingMasterUnlock=false;refreshDeadline=0;
+    q('#realms').replaceChildren();q('#realmFilter').replaceChildren();
+    account.hidden=true;login.hidden=false;
+  }
+
+  function load(){
+    if(loadPromise)return loadPromise;
+    if(!canRefresh())return Promise.resolve();
+    stopRefresh();
+    lastLoadStarted=Date.now();
+    const sequence=++loadSequence;
+    const controller=new AbortController();
+    loadController=controller;
+    const timeout=setTimeout(()=>controller.abort(),requestTimeout);
+    const pending=(async()=>{
+      try{
+        const r=await fetch('/api/passport',{cache:'no-store',credentials:'same-origin',signal:controller.signal});
+        if(sequence!==loadSequence||signingOut)return;
+        // Authentication expiry must clear the credential even if an upstream
+        // response has an empty or non-JSON body.
+        if(r.status===401){clearAccount();await security();return;}
+        const d=await r.json();
+        if(sequence!==loadSequence||signingOut)return;
+        if(d.authenticated===false){clearAccount();await security();return;}
+        if(!r.ok||d.authenticated!==true||!d.user||!d.cycle||!Array.isArray(d.realms))
+          throw new Error('Your Passport is temporarily unavailable. Please refresh.');
+        applyPassport(d);
+      }catch(e){
+        if(sequence!==loadSequence||signingOut)return;
+        if(activeUserId){
+          q('#progress').textContent='Your Passport could not refresh. Your current credential is still shown.';
+        }else{
+          login.hidden=false;
+          status.textContent=e.name==='AbortError'?'Your Passport took too long to load. Please refresh.':
+            e.message||'Passport could not load. Please refresh.';
+        }
+      }finally{
+        clearTimeout(timeout);
+        if(loadPromise===pending){loadPromise=null;loadController=null;scheduleRefresh();}
+      }
+    })();
+    loadPromise=pending;
+    return pending;
   }
 
   q('#passportLoginForm').addEventListener('submit',async e=>{
@@ -237,8 +409,24 @@
 
   q('#logout').addEventListener('click',async e=>{
     e.currentTarget.disabled=true;
-    try{const r=await fetch('/api/passport',{method:'DELETE'});if(!r.ok)throw 0;location.reload();}
-    catch{e.currentTarget.disabled=false;q('#progress').textContent='Sign-out failed. Please try again.';}
+    signingOut=true;stopRefresh(true);
+    try{const r=await fetch('/api/passport',{method:'DELETE'});if(!r.ok)throw 0;clearAccount();location.reload();}
+    catch{signingOut=false;e.currentTarget.disabled=false;q('#progress').textContent='Sign-out failed. Please try again.';scheduleRefresh();}
   });
+  window.addEventListener('focus',resumeRefresh);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden')stopRefresh(true);else resumeRefresh();
+  });
+  window.addEventListener('pagehide',()=>{pageActive=false;stopRefresh(true);});
+  window.addEventListener('pageshow',e=>{
+    pageActive=true;
+    if(e.persisted){
+      // Browser back can restore the disabled "Opening secure ticket access"
+      // control. Rebuild it from fresh server data even when that data is unchanged.
+      renderedSnapshot='';
+      resumeRefresh();
+    }
+  });
+  refreshDeadline=Date.now()+refreshWindow;
   load();
 })();

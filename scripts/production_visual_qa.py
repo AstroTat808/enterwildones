@@ -22,9 +22,29 @@ REALMS=[
 PASSPORT={"authenticated":True,"user":{"userId":"qa-user","preferredName":"Christopher","fullName":"Christopher Sibel"},"cycle":{"completed":2,"total":4},"realms":[
  {"event":REALMS[0],"checkedIn":True,"ticket":{"status":"checked_in","ticketId":"WLD-AUR-QA-1","ticketUrl":"/ticket?token=qa-aureva"},"waiverSigned":True,"entitlements":[{"status":"active","addonType":"drink_package"}],"purchaseAvailable":False},
  {"event":REALMS[1],"checkedIn":False,"ticket":{"status":"paid","ticketId":"WLD-HAL-QA-2","ticketUrl":"/ticket?token=qa-halora"},"waiverSigned":True,"entitlements":[{"status":"active","addonType":"late_stay"}],"purchaseAvailable":False},
- {"event":REALMS[2],"checkedIn":False,"application":{"status":"approved"},"waiverSigned":False,"entitlements":[],"purchaseAvailable":True},
+ {"event":REALMS[2],"checkedIn":False,"application":{"status":"approved"},"waiverSigned":False,"entitlements":[],"purchaseAvailable":False},
  {"event":REALMS[3],"checkedIn":False,"waiverSigned":False,"entitlements":[],"purchaseAvailable":False}
 ]}
+
+def passport_purchase_fixture(state):
+ """Authenticated contracts for the three reviewed AUREVA purchase states."""
+ if state not in {"redeemed-locked", "redeemed-eligible", "purchased"}:
+  raise ValueError("Unknown Passport purchase state: " + state)
+ paid = state == "purchased"
+ eligible = state == "redeemed-eligible"
+ realms = [{"event":{**event, "ticketSalesOpen":False}, "checkedIn":False,
+            "waiverSigned":False, "entitlements":[], "purchaseAvailable":False}
+           for event in REALMS]
+ realms[0].update({
+  "application":{"status":"approved"},
+  "invitation":{"invitationId":"qa-invite-jane", "status":"fulfilled" if paid else "redeemed", "maxTickets":1},
+  "purchaseAvailable":eligible, "commissioningAccess":eligible,
+  "ticket":{"ticketId":"WLD-AUR-QA-JANE", "status":"paid", "ticketUrl":"/ticket?token=qa-jane"} if paid else None,
+  "entitlements":[{"status":"active", "addonType":"drink_package", "creditsPurchased":6, "creditsRemaining":6},
+                  {"status":"active", "addonType":"late_stay", "departureTime":"10:00 AM HST"}] if paid else []
+ })
+ return {"authenticated":True, "user":{"userId":"qa-jane", "preferredName":"Jane", "fullName":"Jane Doe"},
+         "cycle":{"completed":0, "total":4}, "realms":realms}
 
 PASSPORT_COMPLETE={
  "authenticated":True,
@@ -116,6 +136,8 @@ def fixtures(page,state):
   event=next((x for x in REALMS if x["slug"]==slug),REALMS[0])
   cfg={"event":dict(event,applicationOpen=(slug=="aureva"),routes={"event":event["routes"]["event"],"apply":"/apply/"+slug}),"applicationsReady":True,"turnstileSiteKey":"qa"}
   page.route("**/api/app-config?*",lambda r:fulfill(r,cfg))
+ elif state in {"passport-redeemed-locked", "passport-redeemed-eligible", "passport-purchased"}:
+  page.route("**/api/passport",lambda r:fulfill(r,passport_purchase_fixture(state.removeprefix("passport-"))))
  elif state=="passport": page.route("**/api/passport",lambda r:fulfill(r,PASSPORT))
  elif state=="passport-complete":
   page.add_init_script("""try { localStorage.setItem('wildones:passport:completion:qa-user', JSON.stringify({aureva:false,halora:false,sunveil:false,nocturne:false})); } catch {}""")
