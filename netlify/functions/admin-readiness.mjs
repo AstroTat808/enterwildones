@@ -1,3 +1,4 @@
+import { waiverGate } from './_waiver-evidence.mjs';
 import { isAdmin } from './_admin-auth.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
@@ -141,7 +142,7 @@ async function snapshot(event) {
   ]);
   const appById = new Map(apps.map((app) => [app.applicationId, app]));
   const activeTickets = tickets.filter((ticket) => ACTIVE.has(ticket.status));
-  const signed = activeTickets.filter((ticket) => ticket.waiverSignedAt).length;
+  const signed = (await Promise.all(activeTickets.map(ticket=>waiverGate(ticket)))).filter(state=>state.ready).length;
   const checked = activeTickets.filter((ticket) => ticket.status === 'checked_in' || ticket.checkedInAt).length;
   const admissionRevenue = payments.filter((payment) => payment.status === 'paid' && payment.purchaseType !== 'addon').reduce((total, payment) => total + Number(payment.amountTotal || 0), 0);
   const addonRevenue = payments.filter((payment) => payment.status === 'paid' && payment.purchaseType === 'addon').reduce((total, payment) => total + Number(payment.amountTotal || 0), 0);
