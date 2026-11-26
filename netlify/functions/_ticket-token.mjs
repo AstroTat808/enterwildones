@@ -39,11 +39,12 @@ export function makeScanToken({eventId,ticketId,userId}) {
   return `${payload}.${sign(payload)}`;
 }
 export function verifyScanToken(token='') {
+  if (!secret() || typeof token !== 'string' || token.length > 4096) return null;
+  const parts=token.split('.');
+  if(parts.length!==2) return null;
   // Preserve all existing QR and native Apple passes.
   const legacy = verifyTicketToken(token);
   if (legacy) return legacy;
-  if (!secret() || typeof token !== 'string' || token.length > 4096) return null;
-  const parts=token.split('.');
   if(parts.length!==2 || !equal(parts[1],sign(parts[0]))) return null;
   try {
     const data=JSON.parse(Buffer.from(parts[0],'base64url').toString('utf8'));
