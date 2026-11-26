@@ -175,7 +175,7 @@ ${actionButton(parsed.href, 'Open Your Passport')}
   const html = layout({
     event: { name: 'ENTER WILD ONES', copy: { eyebrow: 'ONE IDENTITY / FOUR REALMS' } },
     title,
-    preview: 'Your private one-time Passport sign-in link is ready. Valid for ${PASSPORT_MAGIC_LINK_TTL_LABEL}.',
+    preview: `Your private one-time Passport sign-in link is ready. Valid for ${PASSPORT_MAGIC_LINK_TTL_LABEL}.`,
     introduction: 'One identity. Four realms. Your journey continues.',
     content,
     support
