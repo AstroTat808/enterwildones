@@ -84,3 +84,8 @@ export function signedWaiverPdf(record,digest){
   chunks.push(Buffer.from('xref\n0 '+offsets.length+'\n0000000000 65535 f \n'+offsets.slice(1).map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size '+offsets.length+' /Root '+catalog+' 0 R >>\nstartxref\n'+offset+'\n%%EOF\n'));
   return Buffer.concat(chunks);
 }
+
+export function waiverPdfResponse(record,digest){
+  try{return new Response(signedWaiverPdf(record,digest),{headers:{'Content-Type':'application/pdf','Content-Disposition':'attachment; filename="signed-waiver-'+digest+'.pdf"','Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow, noarchive'}});}
+  catch(error){return Response.json({error:error.code==='PDF_GLYPH_UNSUPPORTED'?'The PDF font cannot represent this name exactly. Use the printable Unicode agreement or original evidence JSON.':'The exact signed evidence is unavailable or failed integrity verification.'},{status:error.code==='PDF_GLYPH_UNSUPPORTED'?422:409,headers:{'Cache-Control':'no-store'}});}
+}
