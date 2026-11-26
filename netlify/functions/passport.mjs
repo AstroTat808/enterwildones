@@ -1,3 +1,5 @@
+import { waiverIsCurrent } from './_waiver.mjs';
+import { googleWalletConfig } from './_google-wallet.mjs';
 import { makeTicketToken } from './_ticket-token.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { listEvents,toPublicEvent } from './_events.mjs';
@@ -36,7 +38,8 @@ export default async(req)=>{
       commissioningAccess:Boolean(purchaseAvailable&&!event.ticketSalesOpen),
       ticket:ticket?{ticketId:ticket.ticketId,ticketUrl:['paid','checked_in'].includes(ticket.status)&&makeTicketToken(ticket)?`/ticket?token=${encodeURIComponent(makeTicketToken(ticket))}`:null,status:ticket.status,issuedAt:ticket.issuedAt,checkedInAt:ticket.checkedInAt,waiverSignedAt:ticket.waiverSignedAt}:null,
       entitlements:entitlements.map(x=>({addonType:x.addonType,status:x.status,purchasedAt:x.purchasedAt,creditsPurchased:x.creditsPurchased??null,creditsRedeemed:x.creditsRedeemed??null,creditsRemaining:x.creditsRemaining??null,departureTime:x.departureTime??null})),
-      waiverSigned:Boolean(waivers.length),
+      waiverSigned:Boolean(ticket&&waivers.some(w=>w.ticketId===ticket.ticketId&&waiverIsCurrent(w,event.eventId))),
+      googleWalletAvailable:Boolean(googleWalletConfig(event.eventId)),
       checkedIn:Boolean(checkins.length)
     });
   }
