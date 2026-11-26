@@ -64,6 +64,7 @@ for(const event of listEvents({includeHidden:true})){
   assert.equal((await participant(post('/ticket/waiver',payload))).status,200);
   assert.equal((await waiverGate(ticket)).ready,true);
   assert.equal((await qrCheck()).status,200);
+  const participantPdf=await participant(get('/ticket/waiver'+query+'&format=pdf'));assert.equal(participantPdf.status,200);assert.equal(participantPdf.headers.get('content-type'),'application/pdf');assert.equal(Buffer.from(await participantPdf.arrayBuffer()).subarray(0,8).toString(),'%PDF-1.4');
   assert.equal((await walletCheck()).status,503,'Wallet configuration not exercised; waiver gate was passed');
   const entitlementKey=eventKey(eventId,ticketId+'/late_stay');
   await store(STORES.entitlements).setJSON(entitlementKey,{eventId,ticketId,userId,addonType:'late_stay',status:'active'});
@@ -73,6 +74,7 @@ for(const event of listEvents({includeHidden:true})){
   assert.equal((await scan('scan')).status,403);
   assert.equal((await late(post('/ticket/late-stay-waiver',{...latePayload,waiverVersion:'stale'}))).status,409);
   assert.equal((await late(post('/ticket/late-stay-waiver',latePayload))).status,200);
+  const latePdf=await late(get('/ticket/late-stay-waiver'+query+'&format=pdf'));assert.equal(latePdf.status,200);assert.equal(latePdf.headers.get('content-type'),'application/pdf');
   assert.equal((await qrCheck()).status,200);
   assert.equal((await scan('late_stay')).status,403,'Late stay requires admission check-in');
   const signed=await store(STORES.waivers).get(key),digest=archiveDigest(signed);
@@ -83,6 +85,7 @@ for(const event of listEvents({includeHidden:true})){
   assert.equal((await admin(get(path))).status,401);
   const evidence=await admin(get(path,{authorization:'Bearer qa-only-admin-waiver-key'}));
   assert.equal(evidence.status,200);assert.equal((await evidence.json()).archiveDigest,digest);
+  const adminPdf=await admin(get(path.replace('format=json','format=pdf'),{authorization:'Bearer qa-only-admin-waiver-key'}));assert.equal(adminPdf.status,200);assert.equal(adminPdf.headers.get('content-type'),'application/pdf');
   await store(STORES.waiverHistory).delete(archiveKey);
   assert.equal((await qrCheck()).status,403,'Missing archived signature must block entry');
   assert.equal((await scan('scan')).status,403);
