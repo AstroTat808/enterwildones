@@ -1,3 +1,4 @@
+import { archiveLocked,lockedReceipt } from './_worm-archive.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { STORES, eventKey, sha256 } from './_stores.mjs';
 import { waiverIsCurrent,waiverText,WAIVER_VERSION,waiverHash } from './_waiver.mjs';
@@ -28,7 +29,7 @@ export async function lateEntitlement(ticket){
 export function participantRecordCurrent(record,ticket){return Boolean(waiverIsCurrent(record,ticket.eventId)&&record.kind==='participant'&&record.ticketId===ticket.ticketId&&record.userId===ticket.userId&&record.applicationId===ticket.applicationId&&record.waiverText===waiverText(ticket.eventId)&&record.electronicConsent===true&&record.affirmativeAcceptance===true&&typeof record.signerName==='string'&&record.signerName.trim()&&Number.isFinite(Date.parse(record.signedAt)));}
 export function disclosureInfo(eventId){return {participant:{waiverVersion:WAIVER_VERSION,waiverTextHash:waiverHash(eventId)},late_stay:{waiverVersion:LATE_WAIVER_VERSION,waiverTextHash:lateWaiverHash(eventId)}};}
 export function disclosureMatches(body,eventId,kind){const expected=disclosureInfo(eventId)[kind];return Boolean(expected&&body?.acknowledged===true&&body.waiverVersion===expected.waiverVersion&&body.waiverTextHash===expected.waiverTextHash);}
-export async function archivedWaiverExists(record){if(!record)return false;const digest=archiveDigest(record);const saved=await blobStore(STORES.waiverHistory).get(eventKey(record.eventId,record.ticketId+'/'+digest),{type:'json'});return Boolean(saved&&archiveDigest(saved)===digest);}
+export async function archivedWaiverExists(record){if(!record)return false;const digest=archiveDigest(record);const saved=await blobStore(STORES.waiverHistory).get(eventKey(record.eventId,record.ticketId+'/'+digest),{type:'json'});return Boolean(saved&&archiveDigest(saved)===digest&&await lockedReceipt('waivers/'+record.eventId+'/'+record.ticketId,digest));}
 export async function waiverGate(ticket){
   const store=blobStore(STORES.waivers);
   const [base,late,entitlement]=await Promise.all([
@@ -51,5 +52,6 @@ export async function archiveWaiver(record){
     const previous=await store.get(key,{type:'json'});
     if(!previous||archiveDigest(previous)!==archiveDigest(record))throw new Error('Waiver archive conflict');
   }
+  await archiveLocked('waivers/'+record.eventId+'/'+record.ticketId,record);
   return key;
 }
