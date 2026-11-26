@@ -28,6 +28,12 @@ const MANUAL_ITEMS = Object.freeze([
   ['bartender-redemption', 'Bartender redemption', 'Activate a wristband and redeem credits from the bartender console, including the final credit.'],
   ['refund', 'Admission + add-on refund', 'Refund controlled admission/add-ons and verify ticket and entitlement state.'],
   ['failed-payment', 'Failure drill', 'Exercise cancelled/failed payment behavior without issuing admission.'],
+  ['waiver-legal-approval','Legal waiver approval','Document review of both agreements, the two LLC names, event-specific hazards and Hawaiʻi law.'],
+  ['insurance-confirmed','Insurance and coverage','Verify written coverage for both LLCs, premises, entertainment, alcohol service and late stay; retain confirmation securely.'],
+  ['site-safety-inspection','Site safety inspection','Complete and record parking, walking surfaces, lighting, electrical, fire, weather and emergency-access checks.'],
+  ['safety-briefing','Risk disclosure and safety instructions','Document staff briefing, guest instructions, ability-to-participate measures and escalation procedures.'],
+  ['late-stay-verify','Late-stay waiver and scan','Verify both waivers, active entitlement, photo ID and separate late-stay staff scan.'],
+  ['waiver-archive-restore','Independent retention and restore','Verify retention-locked archive and recovery of a synthetic signed agreement; record evidence, not personal data.'],
   ['offline-fallback', 'Event-day fallback', 'Verify manual token entry and the documented recovery path if camera/network access fails.']
 ]);
 
