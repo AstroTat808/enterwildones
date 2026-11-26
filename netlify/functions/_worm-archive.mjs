@@ -98,6 +98,7 @@ function receiptMatches(r,scope,digest,ts){
 }
 export async function lockedReceipt(scope,digest){
   if(!wormRequired())return true;
+  if(!wormConfigured())return false;
   const ts=targets(),receipt=await blobStore(RECEIPTS).get(keyFor(scope,digest),{type:'json'});
   return receiptMatches(receipt,scope,digest,ts);
 }
@@ -116,7 +117,14 @@ export async function runArchiveDrill(){
   try{
     const receipt=await archiveLocked(scope,record);
     await restoreLocked(scope,receipt.digest);
-    const health={ok:true,checkedAt:new Date().toISOString(),digest:receipt.digest};
+    // Verify a bounded rotating subset of real archive receipts in addition to the synthetic canary.
+    const store=blobStore(RECEIPTS),previous=await blobStore(HEALTH).get('latest',{type:'json'});
+    const listing=await store.list({prefix:'evidence/v1/'});
+    const keys=(listing.blobs||[]).map(b=>b.key).filter(k=>!k.startsWith('evidence/v1/health/')&&k.endsWith('.json')).sort();
+    const start=Math.max(0,keys.findIndex(k=>k>String(previous?.cursor||'')));
+    const selected=keys.slice(start,start+3);
+    for(const key of selected){const item=await store.get(key,{type:'json'});if(!item)throw new Error('Missing archive receipt');await restoreLocked(item.scope,item.digest);}
+    const health={ok:true,checkedAt:new Date().toISOString(),digest:receipt.digest,verifiedActual:selected.length,cursor:selected.at(-1)||''};
     await blobStore(HEALTH).setJSON('latest',health);
     return health;
   }catch{
