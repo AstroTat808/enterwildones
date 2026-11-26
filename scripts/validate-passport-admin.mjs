@@ -11,7 +11,7 @@ const [confirmHtml, confirmCss, requestJs, clientJs] = await Promise.all([
 const expectedRoute = 'from = "/passport/check-email"';
 if (!t.netlify.includes(expectedRoute) || !t.netlify.includes('to = "/passport-check-email.html"'))
   fail('Passport confirmation route missing.');
-for (const snippet of ['Check your inbox.', '15-minute access', 'spam or promotions', 'href="/passport"', 'noindex,nofollow,noarchive']) {
+for (const snippet of ['Check your inbox.', '1-hour access', 'spam or promotions', 'href="/passport"', 'noindex,nofollow,noarchive']) {
   if (!confirmHtml.includes(snippet)) fail('Passport confirmation is missing: ' + snippet);
 }
 if (!confirmCss.includes('@media(max-width:600px)')) fail('Responsive Passport confirmation styling missing.');
@@ -23,7 +23,7 @@ if (!requestJs.includes('renderPassportSignInEmail') || !requestJs.includes('htm
   fail('Passport endpoint must send both branded HTML and text fallback.');
 const signInUrl = 'https://enterwildones.com/passport/verify?token=private-example-token';
 const signInMail = renderPassportSignInEmail({ link: signInUrl });
-for (const part of ['ENTER WILD ONES', 'Open Your Passport', '15 minutes', 'enter-wild-ones-email.png', 'enter-wild-ones-1200.webp'])
+for (const part of ['ENTER WILD ONES', 'Open Your Passport', '1 hour', 'enter-wild-ones-email.png', 'enter-wild-ones-1200.webp'])
   if (!signInMail.html.includes(part)) fail('Branded Passport email is missing: ' + part);
 if (!signInMail.html.includes('href="' + signInUrl + '"'))
   fail('Branded Passport sign-in action must use the provided one-time link.');
@@ -35,3 +35,26 @@ for (const badUrl of ['http://attacker.example/passport/verify?token=a', 'https:
   try { renderPassportSignInEmail({ link: badUrl }); fail('Invalid Passport URL accepted: ' + badUrl); }
   catch (error) { if (String(error.message).startsWith('Invalid Passport URL accepted')) throw error; }
 console.log('Validated Passport confirmation, navigation, and branded HTML/text sign-in email.');
+
+const { PASSPORT_MAGIC_LINK_TTL_SECONDS, PASSPORT_MAGIC_LINK_TTL_LABEL } = await import('../netlify/functions/_passport-link-policy.mjs');
+if (PASSPORT_MAGIC_LINK_TTL_SECONDS !== 60 * 60 || PASSPORT_MAGIC_LINK_TTL_LABEL !== '1 hour')
+  fail('Passport magic-link policy must be exactly one hour.');
+if (!t.auth.includes("PASSPORT_MAGIC_LINK_TTL_SECONDS*1000"))
+  fail('Passport token issuer must use the shared one-hour policy for signed and database expiration.');
+if (!t.auth.includes('Number(data.exp)<=Math.floor(Date.now()/1000)') ||
+    !t.auth.includes('new Date(row.expires_at).getTime()<=Date.now()') ||
+    !t.auth.includes('row.consumed_at') ||
+    !t.auth.includes('FOR UPDATE'))
+  fail('Passport magic-link signature, database expiry, and one-time consumption checks must remain intact.');
+const verifyHtmlSource = await readPassport('netlify/functions/passport-verify.mjs');
+if (!verifyHtmlSource.includes('PASSPORT_MAGIC_LINK_TTL_LABEL') ||
+    !verifyHtmlSource.includes('consumeMagicLink(token)'))
+  fail('Passport verify must show the shared one-hour policy and consume tokens securely.');
+if (!signInMail.html.includes('expires in 1 hour') ||
+    !signInMail.html.includes('Valid for 1 hour.') ||
+    !signInMail.text.includes('expires in 1 hour'))
+  fail('All branded Passport email variants must show the correct one-hour lifetime.');
+if (!confirmHtml.includes('expires after 1 hour') ||
+    confirmHtml.includes('15-minute') || confirmHtml.includes('15 minutes'))
+  fail('Confirmation page must consistently describe one-hour sign-in access.');
+console.log('Validated 3,600-second Passport magic-link lifetime, consistent email copy and single-use protections.');
