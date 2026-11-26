@@ -1,6 +1,6 @@
 import { blobStore } from './_blob-store.mjs';
 import { STORES, eventKey, sha256 } from './_stores.mjs';
-import { waiverIsCurrent } from './_waiver.mjs';
+import { waiverIsCurrent,waiverText,WAIVER_VERSION,waiverHash } from './_waiver.mjs';
 import { requireEvent } from './_events.mjs';
 
 export const LATE_WAIVER_VERSION='2026-11-25.1';
@@ -18,13 +18,17 @@ export function lateWaiverText(eventId){
 }
 export function lateWaiverHash(eventId){return sha256(lateWaiverText(eventId));}
 export function lateAcceptanceMatches(body,eventId){return body?.waiverVersion===LATE_WAIVER_VERSION&&body?.waiverTextHash===lateWaiverHash(eventId);}
-export function lateWaiverIsCurrent(record,ticket){return Boolean(record&&record.kind==='late_stay'&&record.eventId===ticket.eventId&&record.ticketId===ticket.ticketId&&record.userId===ticket.userId&&record.waiverVersion===LATE_WAIVER_VERSION&&record.waiverTextHash===lateWaiverHash(ticket.eventId)&&record.waiverText===lateWaiverText(ticket.eventId)&&record.electronicConsent===true&&record.affirmativeAcceptance===true&&record.signedAt);}
+export function lateWaiverIsCurrent(record,ticket){return Boolean(record&&record.kind==='late_stay'&&record.eventId===ticket.eventId&&record.ticketId===ticket.ticketId&&record.userId===ticket.userId&&record.applicationId===ticket.applicationId&&record.waiverVersion===LATE_WAIVER_VERSION&&record.waiverTextHash===lateWaiverHash(ticket.eventId)&&record.waiverText===lateWaiverText(ticket.eventId)&&record.electronicConsent===true&&record.affirmativeAcceptance===true&&typeof record.signerName==='string'&&record.signerName.trim()&&Number.isFinite(Date.parse(record.signedAt)));}
 export async function lateEntitlement(ticket){
   const value=await blobStore(STORES.entitlements).get(eventKey(ticket.eventId,ticket.ticketId+'/late_stay'),{type:'json'});
   if(!value||value.status!=='active')return null;
   if(value.eventId!==ticket.eventId||value.ticketId!==ticket.ticketId||value.userId!==ticket.userId||value.addonType!=='late_stay')throw new Error('Late-stay entitlement identity mismatch');
   return value;
 }
+export function participantRecordCurrent(record,ticket){return Boolean(waiverIsCurrent(record,ticket.eventId)&&record.kind==='participant'&&record.ticketId===ticket.ticketId&&record.userId===ticket.userId&&record.applicationId===ticket.applicationId&&record.waiverText===waiverText(ticket.eventId)&&record.electronicConsent===true&&record.affirmativeAcceptance===true&&typeof record.signerName==='string'&&record.signerName.trim()&&Number.isFinite(Date.parse(record.signedAt)));}
+export function disclosureInfo(eventId){return {participant:{waiverVersion:WAIVER_VERSION,waiverTextHash:waiverHash(eventId)},late_stay:{waiverVersion:LATE_WAIVER_VERSION,waiverTextHash:lateWaiverHash(eventId)}};}
+export function disclosureMatches(body,eventId,kind){const expected=disclosureInfo(eventId)[kind];return Boolean(expected&&body?.acknowledged===true&&body.waiverVersion===expected.waiverVersion&&body.waiverTextHash===expected.waiverTextHash);}
+export async function archivedWaiverExists(record){if(!record)return false;const digest=archiveDigest(record);const saved=await blobStore(STORES.waiverHistory).get(eventKey(record.eventId,record.ticketId+'/'+digest),{type:'json'});return Boolean(saved&&archiveDigest(saved)===digest);}
 export async function waiverGate(ticket){
   const store=blobStore(STORES.waivers);
   const [base,late,entitlement]=await Promise.all([
@@ -32,9 +36,9 @@ export async function waiverGate(ticket){
     store.get(eventKey(ticket.eventId,ticket.ticketId+'/late_stay'),{type:'json'}),
     lateEntitlement(ticket)
   ]);
-  const baseSigned=waiverIsCurrent(base,ticket.eventId)&&base.ticketId===ticket.ticketId&&base.userId===ticket.userId;
+  const baseSigned=participantRecordCurrent(base,ticket)&&await archivedWaiverExists(base);
   const lateRequired=Boolean(entitlement);
-  const lateSigned=lateRequired&&lateWaiverIsCurrent(late,ticket);
+  const lateSigned=lateRequired&&lateWaiverIsCurrent(late,ticket)&&await archivedWaiverExists(late);
   return {base,late,baseSigned,lateRequired,lateSigned,ready:baseSigned&&(!lateRequired||lateSigned)};
 }
 export function archiveDigest(record){return sha256(JSON.stringify(record));}
