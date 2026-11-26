@@ -227,7 +227,9 @@ function operationalStatus(ready, live, runbook) {
   const stripeDetail = !config.stripe ? 'Stripe configuration missing' : config.stripeMode === 'live' ? 'Live payments enabled' : `${String(config.stripeMode || 'configured').toUpperCase()} mode — rehearsal only`;
   const fallbackState = itemState(runbook, 'offline-fallback');
   const fallbackLight = light('fallback', 'Fallback drill', fallbackState === 'passed' ? 'green' : fallbackState === 'failed' ? 'red' : 'yellow', fallbackState === 'passed' ? 'Manual recovery path verified' : fallbackState === 'failed' ? 'Fallback drill failed' : 'Manual/offline recovery drill pending');
-  const eventDayGo = ready.coreReady && config.stripeMode === 'live' && unsigned === 0 && fallbackState !== 'failed';
+  const legalSafetyItems=['waiver-legal-approval','insurance-confirmed','site-safety-inspection','safety-briefing','late-stay-verify','waiver-archive-restore'];
+  const legalSafetyReady=legalSafetyItems.every(id=>itemState(runbook,id)==='passed');
+  const eventDayGo = ready.coreReady && config.stripeMode === 'live' && unsigned === 0 && fallbackState === 'passed' && legalSafetyReady;
   const liveGo = ready.coreReady && config.stripeMode === 'live';
   const launchGo = ready.launchReady && runbook.ready;
   const rehearsalGo = runbook.ready;
@@ -243,6 +245,7 @@ function operationalStatus(ready, live, runbook) {
     indicators: {
       eventDay: [
         light('gate', 'Gate readiness', config.gate && config.ticketSigning ? 'green' : 'red', config.gate && config.ticketSigning ? 'Scanner credentials + ticket signatures ready' : 'Gate credentials or ticket signing missing'),
+        light('legal-safety','Legal and safety readiness',legalSafetyReady?'green':'red',legalSafetyReady?'All legal, insurance, safety and archive drills passed':'Legal, insurance, safety or archive verification is outstanding'),
         light('waivers', 'Unsigned waivers', unsigned === 0 ? 'green' : 'yellow', unsigned === 0 ? 'All active tickets cleared' : `${unsigned} active ticket${unsigned === 1 ? '' : 's'} still need signatures`),
         light('bar', 'Bartender console', config.bar ? 'green' : 'red', config.bar ? 'Bar credentials configured' : 'Bar credentials missing'),
         light('stripe', 'Stripe', stripeState, stripeDetail),
