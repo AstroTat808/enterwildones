@@ -88,3 +88,7 @@ The release checklist now includes explicit legal approval, insurance, physical 
 - At admission, verify the name and age on photo ID and server-validated credential. No screenshot-only, manual override or offline admission when waiver status is unverifiable. Provide an accessible way to review and sign without coercion; arrange an approved refund or other remedy where required for guests who decline new terms. Do not force guests to drive impaired.
 - At overnight transition, use the separate late-stay scan mode; check ID, active entitlement and both current signatures; verify marked sleeping/parking areas and communicate no-idling, fire, exhaust, emergency access, and checkout procedures. Provide safe transportation options and emergency assistance.
 - Preserve incident reports, inspection records, staff briefings and evidence exports under a restricted access and counsel-approved retention/hold plan. Treat them as sensitive personal records. Never store actual guest evidence in GitHub.
+
+## Independent legal archive and evidence exports
+
+See `docs/legal-evidence-operations.md` for deployment prerequisites, legal holds, restore verification, existing-record reconciliation, PDF limitations, incident reporting and the re-sign campaign. Production acceptance now requires independently verified dual-account WORM receipts. No secrets or retention defaults are committed. Never deploy until the retention and privacy policy is approved and both accounts have passed a real restore drill.
