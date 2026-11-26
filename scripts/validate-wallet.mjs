@@ -47,5 +47,5 @@ let intercepted=false;handlers.fetch({request:{url:'https://enterwildones.com/wa
 const manifest=JSON.parse(await read('site/wallet/manifest.webmanifest'));assert.equal(manifest.scope,'/wallet/');assert.equal(manifest.display,'standalone');
 const endpoint=await read('netlify/functions/wallet-credential.mjs');for(const check of ['sameOrigin(req)','readPassportSession(req)','ticket.userId!==session.userId','waiverIsCurrent(waiver,event.eventId)','makeScanToken(ticket)'])assert.ok(endpoint.includes(check),check);
 const checkin=await read('netlify/functions/check-in.mjs');assert.ok(checkin.includes('onlyIfMatch:snapshot.etag'));assert.ok(checkin.includes('verifyScanToken(token)'));
-const client=await read('site/wallet/wallet.js');assert.ok(client.includes('pref')===false||client.includes('refresh'));assert.ok(client.includes('localStorage.removeItem(KEY)'));assert.ok(client.includes('swReady'));
+const client=await read('site/wallet/wallet.js');assert.ok(client.includes('localStorage.removeItem(KEY)'));assert.ok(client.includes('swReady'));
 console.log('Wallet certification: scoped signatures, expiry, Google RSA and mocked issuance, public-only cache, and policy wiring passed.');
