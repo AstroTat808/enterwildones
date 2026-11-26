@@ -78,6 +78,7 @@ try:
                         expect(page.locator("#tickets article")).to_have_count(1)
                     state["signed"]=False
                     page.get_by_role("button",name="Refresh").click()
+                    expect(page.locator("#tickets")).to_contain_text("Current waiver required")
                     expect(page.get_by_role("button",name="Save QR offline")).to_have_count(0)
                     expect(page.locator("#saved .qr")).to_have_count(0)
                     state["authenticated"]=False
