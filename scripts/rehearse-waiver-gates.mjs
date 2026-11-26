@@ -14,7 +14,8 @@ globalThis.__waiverStore=name=>{
     async delete(key){map.delete(key);}
   };
 };
-globalThis.Netlify={context:{deploy:{context:'production'}}};
+globalThis.Netlify={context:{deploy:{context:'deploy-preview'}}};
+process.env.WILDONES_WORM_REQUIRED='false';
 Object.assign(process.env,{WILDONES_SITE_URL:'https://waiver-qa.example.invalid',WILDONES_TICKET_ACCESS_SECRET:'qa-only-waiver-ticket-secret-32-characters',WILDONES_CHECKIN_SESSION_SECRET:'qa-only-checkin-session-secret-32-chars',WILDONES_ADMIN_KEY:'qa-only-admin-waiver-key',WILDONES_APPLE_PASS_TYPE_ID:'',WILDONES_APPLE_TEAM_ID:''});
 globalThis.fetch=async()=>{throw new Error('External network disabled during waiver rehearsal');};
 const {STORES,eventKey}=await import('../netlify/functions/_stores.mjs');
