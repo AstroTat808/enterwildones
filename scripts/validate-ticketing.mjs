@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { listEvents } from '../netlify/functions/_events.mjs';
 import { ticketPriceEnvName } from '../netlify/functions/_payments.mjs';
 import { inviteAccessCookieName } from '../netlify/functions/_invitations.mjs';
-import { waiverHash } from '../netlify/functions/_waiver.mjs';
+import { WAIVER_VERSION, waiverHash, waiverText, waiverAcceptanceMatches, waiverIsCurrent } from '../netlify/functions/_waiver.mjs';
 
 const fail=(m)=>{throw new Error(m)};
 const events=listEvents({includeHidden:true});
@@ -15,13 +15,18 @@ for(const event of events){
   if(cookieNames.has(cookie)) fail(`Duplicate invite cookie ${cookie}`);
   cookieNames.add(cookie);
   if(!/^[a-f0-9]{64}$/.test(waiverHash(event.eventId))) fail(`Bad waiver hash for ${event.eventId}`);
+  const hash=waiverHash(event.eventId), version=WAIVER_VERSION, current={eventId:event.eventId,waiverVersion:version,waiverTextHash:hash,signedAt:'2026-11-25T00:00:00Z'};
+  for(const phrase of ["Wild Ones LLC and Koa's Events LLC",'§ 663-1.54','DISCLOSURE OF RISKS','LIMITS OF RELEASE','ordinary negligence','Each Released Party is an intended beneficiary']) if(!waiverText(event.eventId).includes(phrase)) fail(`Missing waiver protection: ${phrase}`);
+  if(!waiverAcceptanceMatches(current,event.eventId)||!waiverIsCurrent(current,event.eventId)) fail('Current waiver rejected');
+  for(const invalid of [{...current,waiverVersion:'2026-09-09.1'},{...current,waiverTextHash:'0'.repeat(64)},{},null]) if(waiverAcceptanceMatches(invalid,event.eventId)||waiverIsCurrent(invalid,event.eventId)) fail('Missing or stale waiver accepted');
+  const other=events.find(e=>e.eventId!==event.eventId);if(waiverAcceptanceMatches(current,other.eventId)||waiverIsCurrent(current,other.eventId)) fail('Cross-event waiver accepted');
 }
 const checks={
   'create-checkout.mjs':['event_id','invitation_id','purchase_type','expected_amount','sameOrigin','maxTickets'],
   'stripe-webhook.mjs':['verifyStripeSignature','finalizePaidSession','charge.refunded','charge.dispute.created'],
   'ticket-confirmed.mjs':['verifyCheckoutReturn','finalizePaidSession'],
-  'ticket-view.mjs':['waiverIsCurrent','privateVenue','/ticket/qr','/ticket/wallet','ticket-credential','ticket-meta-grid','ticket-qr-panel','ticket-support-grid','activeTicketEntitlements','ticket-entitlement-badge','COLLECTED WITH THIS CREDENTIAL','creditsRemaining','departureTime'],
-  'ticket-waiver.mjs':['waiverHash','sameOrigin','signerName'],
+  'ticket-view.mjs':['waiverIsCurrent','name="waiverVersion"','name="waiverTextHash"','Read the complete waiver','privateVenue','/ticket/qr','/ticket/wallet','ticket-credential','ticket-meta-grid','ticket-qr-panel','ticket-support-grid','activeTicketEntitlements','ticket-entitlement-badge','COLLECTED WITH THIS CREDENTIAL','creditsRemaining','departureTime'],
+  'ticket-waiver.mjs':['waiverHash','sameOrigin','signerName','waiverAcceptanceMatches','waiverText:waiverText','STORES.waiverHistory','affirmativeAcceptance:true'],
   'ticket-qr.mjs':['waiverIsCurrent','verifyTicketToken'],
   'check-in.mjs':['WRONG EVENT','waiverIsCurrent','sameOrigin'],
   'ticket-wallet.mjs':['waiverIsCurrent','appleWalletConfigured']
