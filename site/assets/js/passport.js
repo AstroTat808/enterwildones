@@ -345,6 +345,7 @@
   }
 
   function clearAccount(){
+    try{localStorage.removeItem('wildones-wallet-offline-v1');}catch{}
     records=[];activeUserId='';renderedSnapshot='';filterSnapshot='';selectedRealm='cycle';
     pendingUnlockRealms=[];pendingMasterUnlock=false;refreshDeadline=0;
     q('#realms').replaceChildren();q('#realmFilter').replaceChildren();
