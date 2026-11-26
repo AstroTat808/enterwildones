@@ -210,6 +210,27 @@ jobs:
           echo "Hosted browser matrix did not complete in the certification window."
           exit 1
 
+  wallet-browser:
+    name: Release · Wallet Browser QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.55.0
+      - run: python -m playwright install --with-deps chromium webkit
+      - run: python scripts/validate-wallet-browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wallet-visual-results
+          path: wallet-visual-results/
+          retention-days: 30
+
   release-certification:
     name: Release Certification
     if: always()
@@ -219,6 +240,7 @@ jobs:
       - payment-tests
       - launch-readiness
       - security-source
+      - wallet-browser
       - production-security-smoke
       - production-browser-matrix
     runs-on: ubuntu-latest
@@ -227,6 +249,7 @@ jobs:
       QA_RESULT: ${{ needs.production-qa-gate.result }}
       PAYMENT_RESULT: ${{ needs.payment-tests.result }}
       LAUNCH_RESULT: ${{ needs.launch-readiness.result }}
+      WALLET_BROWSER_RESULT: ${{ needs.wallet-browser.result }}
       SECURITY_SOURCE_RESULT: ${{ needs.security-source.result }}
       PRODUCTION_SECURITY_RESULT: ${{ needs.production-security-smoke.result }}
       BROWSER_MATRIX_RESULT: ${{ needs.production-browser-matrix.result }}
@@ -246,12 +269,13 @@ jobs:
             echo "| Payment tests | $PAYMENT_RESULT |"
             echo "| Launch readiness rehearsal | $LAUNCH_RESULT |"
             echo "| Security source audit | $SECURITY_SOURCE_RESULT |"
+            echo "| Wallet Chromium/WebKit QA | $WALLET_BROWSER_RESULT |"
             echo "| Hosted production security smoke | $PRODUCTION_SECURITY_RESULT |"
             echo "| Hosted Chromium/WebKit browser matrix | $BROWSER_MATRIX_RESULT |"
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
-          required=("$BUILD_RESULT" "$QA_RESULT" "$PAYMENT_RESULT" "$LAUNCH_RESULT" "$SECURITY_SOURCE_RESULT")
+          required=("$BUILD_RESULT" "$QA_RESULT" "$PAYMENT_RESULT" "$LAUNCH_RESULT" "$SECURITY_SOURCE_RESULT" "$WALLET_BROWSER_RESULT")
           for result in "${required[@]}"; do
             if [ "$result" != "success" ]; then
               echo "### NO-GO" >> "$GITHUB_STEP_SUMMARY"
