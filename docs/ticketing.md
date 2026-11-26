@@ -30,7 +30,9 @@ The QR remains locked until the current event waiver is signed. Private venue na
 
 The waiver text is versioned and hashed. The signed record captures the event, ticket, user, signer name, timestamp, user agent and a hash of the client IP. Changing the waiver text/version makes older waiver records non-current and re-locks gate readiness until re-signed.
 
-The included waiver copy is an operational draft and should be finalized before a live event launch.
+The proposed waiver revision names Wild Ones LLC and Koa's Events LLC separately, discloses foreseeable festival and optional late-stay risks, and preserves non-waivable rights, including negligence claims under HRS § 663-1.54 where applicable. The signature POST requires the exact current version and event-specific text hash shown by the ticket form; missing or stale fields return 409 without recording consent. New records capture the complete accepted text and affirmative consent; the dedicated `wildones-waiver-history` store retains prior records and each new acceptance before the current record is overwritten. Historical v1 records contain a hash, not a text snapshot; retain the source revision as evidence. History is access-controlled but is not a WORM or independently timestamped evidence system.
+
+Before production release: review event-specific hazards and entity names, verify a full pre-purchase waiver preview and conspicuous notice, review legal scope and insurer requirements, provide an accessible retained copy, certify stale-form rejection and QR/Wallet/check-in re-locking using isolated fixtures, and document site safety instructions, ability-to-participate measures, and incident procedures. Existing signers of the previous version will need to review and sign the new version; never backdate or migrate signatures. Do not roll this change out during admission without an operational plan.
 
 ## Check-in
 
