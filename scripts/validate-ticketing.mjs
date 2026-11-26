@@ -1,4 +1,4 @@
-import { lateWaiverText,lateWaiverHash,lateAcceptanceMatches,lateWaiverIsCurrent,LATE_WAIVER_VERSION } from '../netlify/functions/_waiver-evidence.mjs';
+import { lateWaiverText,lateWaiverHash,lateAcceptanceMatches,lateWaiverIsCurrent,LATE_WAIVER_VERSION,participantRecordCurrent,disclosureInfo,disclosureMatches } from '../netlify/functions/_waiver-evidence.mjs';
 import { readFile } from 'node:fs/promises';
 import { listEvents } from '../netlify/functions/_events.mjs';
 import { ticketPriceEnvName } from '../netlify/functions/_payments.mjs';
@@ -20,15 +20,21 @@ for(const event of events){
   for(const phrase of ["Wild Ones LLC and Koa's Events LLC",'§ 663-1.54','DISCLOSURE OF RISKS','LIMITS OF RELEASE','ordinary negligence','Each Released Party is an intended beneficiary']) if(!waiverText(event.eventId).includes(phrase)) fail(`Missing waiver protection: ${phrase}`);
   if(!waiverAcceptanceMatches(current,event.eventId)||!waiverIsCurrent(current,event.eventId)) fail('Current waiver rejected');
   for(const invalid of [{...current,waiverVersion:'2026-09-09.1'},{...current,waiverTextHash:'0'.repeat(64)},{},null]) if(waiverAcceptanceMatches(invalid,event.eventId)||waiverIsCurrent(invalid,event.eventId)) fail('Missing or stale waiver accepted');
-  const ticket={eventId:event.eventId,ticketId:'test-ticket',userId:'test-user'};
-  const late={...ticket,kind:'late_stay',waiverVersion:LATE_WAIVER_VERSION,waiverTextHash:lateWaiverHash(event.eventId),waiverText:lateWaiverText(event.eventId),signedAt:'2026-11-25T00:00:00Z',electronicConsent:true,affirmativeAcceptance:true};
+  const ticket={eventId:event.eventId,ticketId:'test-ticket',userId:'test-user',applicationId:'test-application'};
+  const participant={...ticket,...current,kind:'participant',waiverText:waiverText(event.eventId),signerName:'Jane Doe',electronicConsent:true,affirmativeAcceptance:true};
+  if(!participantRecordCurrent(participant,ticket))fail('Current participant evidence rejected');
+  for(const bad of [{...participant,userId:'wrong'},{...participant,waiverText:'tampered'},{...participant,electronicConsent:false},{...participant,applicationId:'wrong'}])if(participantRecordCurrent(bad,ticket))fail('Invalid participant evidence accepted');
+  for(const kind of ['participant','late_stay']){const d={...disclosureInfo(event.eventId)[kind],acknowledged:true};if(!disclosureMatches(d,event.eventId,kind)||disclosureMatches({...d,acknowledged:false},event.eventId,kind)||disclosureMatches({...d,waiverTextHash:'0'.repeat(64)},event.eventId,kind))fail('Disclosure binding invalid');}
+  const late={...ticket,kind:'late_stay',waiverVersion:LATE_WAIVER_VERSION,waiverTextHash:lateWaiverHash(event.eventId),waiverText:lateWaiverText(event.eventId),signerName:'Jane Doe',signedAt:'2026-11-25T00:00:00Z',electronicConsent:true,affirmativeAcceptance:true};
   if(!lateWaiverIsCurrent(late,ticket)||!lateAcceptanceMatches(late,event.eventId)) fail('Valid late stay waiver rejected');
   for(const bad of [{...late,userId:'different'},{...late,ticketId:'different'},{...late,waiverText:'changed'},{...late,affirmativeAcceptance:false},{...late,waiverTextHash:hash},null]) if(lateWaiverIsCurrent(bad,ticket)) fail('Incorrect late waiver accepted');
   if(!lateWaiverText(event.eventId).includes("Wild Ones LLC and Koa's Events LLC"))fail('Both businesses must be released');
   const other=events.find(e=>e.eventId!==event.eventId);if(waiverAcceptanceMatches(current,other.eventId)||waiverIsCurrent(current,other.eventId)) fail('Cross-event waiver accepted');
 }
 const checks={
-  'create-checkout.mjs':['event_id','invitation_id','purchase_type','expected_amount','sameOrigin','maxTickets'],
+  'create-checkout.mjs':['event_id','invitation_id','purchase_type','expected_amount','sameOrigin','maxTickets','disclosureMatches','WAIVER_DISCLOSURE_REQUIRED'],
+  'create-addon-checkout.mjs':['disclosureMatches','WAIVER_DISCLOSURE_REQUIRED'],
+  'waiver-preview.mjs':['waiverText','lateWaiverText','PRE-PURCHASE DISCLOSURE'],
   'stripe-webhook.mjs':['verifyStripeSignature','finalizePaidSession','charge.refunded','charge.dispute.created'],
   'ticket-confirmed.mjs':['verifyCheckoutReturn','finalizePaidSession'],
   'ticket-view.mjs':['waiverGate','name="waiverVersion"','name="waiverTextHash"','Read the complete waiver','privateVenue','/ticket/qr','/ticket/wallet','ticket-credential','ticket-meta-grid','ticket-qr-panel','ticket-support-grid','activeTicketEntitlements','ticket-entitlement-badge','COLLECTED WITH THIS CREDENTIAL','creditsRemaining','departureTime'],
