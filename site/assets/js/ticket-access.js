@@ -21,6 +21,10 @@ let countdownTimer = null;
 let offerPrice = null;
 let catalog = [];
 const chosen = new Set();
+const disclosurePanel=document.querySelector('#waiver-disclosure'),participantAck=document.querySelector('#participant-waiver-ack'),lateAck=document.querySelector('#late-waiver-ack'),latePanel=document.querySelector('#late-waiver-disclosure');
+let disclosure=null,checkoutPending=false;
+function updateDisclosure(){latePanel.hidden=!chosen.has('late_stay');buy.disabled=checkoutPending||!disclosure?.participant||!participantAck.checked||(chosen.has('late_stay')&&(!disclosure?.late_stay||!lateAck.checked));}
+participantAck.addEventListener('change',updateDisclosure);lateAck.addEventListener('change',updateDisclosure);
 
 function countdownText(ms) {
   if (ms <= 0) return 'Transitioning to the next release…';
@@ -92,7 +96,7 @@ function createOption(item) {
   checkbox.addEventListener('change', () => {
     if (checkbox.checked) chosen.add(item.addonType);
     else chosen.delete(item.addonType);
-    renderTotals();
+    renderTotals();updateDisclosure();
   });
   return label;
 }
@@ -131,7 +135,7 @@ async function load() {
     offerPrice = Number.isInteger(info.priceCents) ? info.priceCents : null;
     price.textContent = offerPrice === null ? 'PRICE PENDING' : money(offerPrice);
     buy.hidden = true;
-    picker.hidden = true;
+    picker.hidden = true;disclosurePanel.hidden=true;
     if (!response.ok || !info.eligible) {
       status.textContent = info.existingTicketId
         ? 'A ticket has already been issued for this invitation.'
@@ -140,7 +144,12 @@ async function load() {
           : 'This invitation is not currently eligible for checkout.');
       return;
     }
-    renderOptions(info.addons, info.offer);
+    if(!info.waiverDisclosure?.participant||!info.waiverDisclosure?.late_stay){status.textContent='Agreement disclosure unavailable. Reload before purchasing.';return;}
+    if(JSON.stringify(disclosure)!==JSON.stringify(info.waiverDisclosure)){participantAck.checked=false;lateAck.checked=false;}
+    disclosure=info.waiverDisclosure;disclosurePanel.hidden=false;
+    document.querySelector('#participant-waiver-preview').href='/waiver-preview?eventId='+encodeURIComponent(info.event.eventId)+'&kind=participant';
+    document.querySelector('#late-waiver-preview').href='/waiver-preview?eventId='+encodeURIComponent(info.event.eventId)+'&kind=late_stay';
+    renderOptions(info.addons, info.offer);updateDisclosure();
     status.textContent = 'Your invitation is verified. Choose any optional upgrades above, then pay once for your complete order.';
     buy.hidden = false;
   } catch {
@@ -152,14 +161,14 @@ async function load() {
 
 buy.addEventListener('click', async () => {
   if (offerPrice === null || buy.disabled) return;
-  buy.disabled = true;
+  checkoutPending=true;buy.disabled = true;participantAck.disabled=true;lateAck.disabled=true;
   status.textContent = 'Preparing your complete order in secure checkout…';
   for (const checkbox of options.querySelectorAll('input')) checkbox.disabled = true;
   try {
     const response = await fetch('/api/ticket/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event, addons: [...chosen] })
+      body: JSON.stringify({ event, addons: [...chosen], waiverDisclosure:{participant:{...disclosure.participant,acknowledged:participantAck.checked},late_stay:{...disclosure.late_stay,acknowledged:lateAck.checked}} })
     });
     const result = await response.json().catch(() => ({ error: 'Checkout could not be prepared.' }));
     if (response.ok && result.checkoutUrl) {
@@ -170,7 +179,7 @@ buy.addEventListener('click', async () => {
   } catch {
     status.textContent = 'Checkout could not be prepared. Check your connection before trying again.';
   }
-  buy.disabled = false;
+  checkoutPending=false;participantAck.disabled=false;lateAck.disabled=false;updateDisclosure();
   for (const checkbox of options.querySelectorAll('input')) checkbox.disabled = false;
 });
 

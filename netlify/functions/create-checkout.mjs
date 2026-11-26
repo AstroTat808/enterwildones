@@ -1,3 +1,4 @@
+import { disclosureMatches } from './_waiver-evidence.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
 import { selectBundledAddons, addonSubtotal, bundleTypes } from './_bundled-addons.mjs';
@@ -90,6 +91,9 @@ export default async (req) => {
   let selectedAddons;
   try { selectedAddons = selectBundledAddons(event.eventId, body.addons ?? []); }
   catch { return json({ error: 'Select only the available add-ons, one of each.', code: 'INVALID_ADDONS' }, 400); }
+  const needsLateDisclosure=bundleTypes(selectedAddons).includes('late_stay');
+  if(!disclosureMatches(body.waiverDisclosure?.participant,event.eventId,'participant')||(needsLateDisclosure&&!disclosureMatches(body.waiverDisclosure?.late_stay,event.eventId,'late_stay')))return json({error:'Review and acknowledge the current required agreements before checkout.',code:'WAIVER_DISCLOSURE_REQUIRED'},409);
+  const waiverDisclosure={participant:{waiverVersion:body.waiverDisclosure.participant.waiverVersion,waiverTextHash:body.waiverDisclosure.participant.waiverTextHash,acknowledged:true},...(needsLateDisclosure?{late_stay:{waiverVersion:body.waiverDisclosure.late_stay.waiverVersion,waiverTextHash:body.waiverDisclosure.late_stay.waiverTextHash,acknowledged:true}}:{}),acknowledgedAt:new Date().toISOString()};
   const addonTotal = addonSubtotal(selectedAddons);
   const orderTotal = price + addonTotal;
 
@@ -189,6 +193,7 @@ export default async (req) => {
       admissionPriceCents: price,
       addonSubtotalCents: addonTotal,
       selectedAddons,
+      waiverDisclosure,
       purchaseType: 'admission',
       currency: CURRENCY,
       ticketTier: tierPhase,
