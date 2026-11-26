@@ -22,6 +22,15 @@ const scope={esc:escapeHtml};
 runInNewContext(client.slice(beginning,ending),scope);
 const render=scope.credentialActions;
 assert.equal(typeof render,'function');
+const stateStart=client.indexOf('  function stateInfo(x){');
+const stateEnd=client.indexOf('  function cycleNode(x){',stateStart);
+assert.ok(stateStart>0&&stateEnd>stateStart);
+runInNewContext(client.slice(stateStart,stateEnd),scope);
+assert.equal(scope.stateInfo({ticket:{status:'paid'}}).label,'TICKET PURCHASED');
+assert.equal(scope.stateInfo({ticket:{status:'checked_in'}}).label,'REALM COMPLETED');
+assert.equal(scope.stateInfo({checkedIn:true,ticket:{status:'paid'}}).label,'REALM COMPLETED');
+assert.equal(scope.stateInfo({application:{status:'approved'},invitation:{status:'redeemed'}}).label,'INVITATION REDEEMED');
+assert.equal(scope.stateInfo({ticket:{status:'refunded'}}).label,'REFUNDED');
 
 const event={name:'AUREVA',slug:'aureva',routes:{event:'/events/aureva'}};
 const invited={event,application:{status:'approved'},invitation:{status:'redeemed'},ticket:null};

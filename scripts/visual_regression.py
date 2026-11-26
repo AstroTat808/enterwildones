@@ -12,6 +12,15 @@ ROOT=Path(__file__).resolve().parents[1]
 SITE=ROOT/"site"
 OUT=ROOT/"visual-regression-results"
 
+PASSPORT_PURCHASE_VIEWPORTS=[(320,568,2),(390,844,2),(430,932,3),(768,1024,2),(1440,1000,1)]
+PASSPORT_PURCHASE_CASES=[
+ {"name":f"passport-{state}-{width}", "path":"/passport", "state":f"passport-{state}",
+  "viewport":(width,height), "dpr":dpr, "wait":"#account:not([hidden])",
+  "target":'[data-event-slug="aureva"]'}
+ for state in ("redeemed-locked","redeemed-eligible","purchased")
+ for width,height,dpr in PASSPORT_PURCHASE_VIEWPORTS
+]
+
 # One stable screenshot for every major guest, ticketing, admin and event-day state.
 CASES=[
  {"name":"home-desktop","path":"/","state":"home","viewport":(1440,1000),"dpr":1,"wait":"main"},
@@ -44,6 +53,7 @@ CASES=[
  {"name":"application-gated-desktop","path":"/apply/nocturne","state":"apply-nocturne","viewport":(1440,1000),"dpr":1,"wait":"#gateNotice"},
 
  {"name":"passport-auth-desktop","path":"/passport","state":"passport","viewport":(1440,1000),"dpr":1,"wait":"#account:not([hidden])"},
+ *PASSPORT_PURCHASE_CASES,
  {"name":"passport-login-phone","path":"/passport","state":"passport-login","viewport":(390,844),"dpr":2,"wait":"#login:not([hidden])"},
  {"name":"master-cycle-card-320","path":"/passport","state":"passport-complete","viewport":(320,568),"dpr":2,"wait":"[data-master-cycle=\"unlocked\"]","action":"master-cycle-card","target":"[data-master-cycle=\"unlocked\"]"},
  {"name":"master-cycle-card-390","path":"/passport","state":"passport-complete","viewport":(390,844),"dpr":2,"wait":"[data-master-cycle=\"unlocked\"]","action":"master-cycle-card","target":"[data-master-cycle=\"unlocked\"]"},
@@ -422,12 +432,12 @@ def normalize(src:Path,width=360):
         im=im.resize((width,h),Image.Resampling.LANCZOS)
     return im
 
-def capture(base_url:str,dest:Path):
+def capture(base_url:str,dest:Path,cases=None):
     dest.mkdir(parents=True,exist_ok=True)
     results=[]
     with sync_playwright() as p:
       browser=p.chromium.launch()
-      for case in CASES:
+      for case in CASES if cases is None else cases:
         w,h=case["viewport"]
         context=browser.new_context(viewport={"width":w,"height":h},device_scale_factor=case["dpr"],is_mobile=w<900,has_touch=w<900,color_scheme="dark",reduced_motion="reduce")
         page=context.new_page()
@@ -450,6 +460,9 @@ def capture(base_url:str,dest:Path):
             pass
           page.locator('[data-master-cycle="unlocked"]').scroll_into_view_if_needed()
         page.wait_for_timeout(550)
+        if case["name"]=="passport-auth-desktop" or case in PASSPORT_PURCHASE_CASES:
+          page.evaluate("document.fonts.ready")
+          page.locator(".passport-card-logo").evaluate_all("async images => { await Promise.all(images.map(image => image.decode())); }")
         if not case.get("preserve_scroll") and not case.get("target"):
           page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
           page.wait_for_timeout(140)
