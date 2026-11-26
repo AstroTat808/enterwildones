@@ -26,3 +26,30 @@ export function verifyTicketToken(token = '') {
     return data;
   } catch { return null; }
 }
+
+/** Scanner-only credential. Never accepted by guest ticket, waiver, or checkout APIs. */
+export function scanCredentialExpiresAt(eventId) {
+  return new Date(new Date(requireEvent(eventId).endsAt).getTime() + 8 * 3600000).toISOString();
+}
+export function makeScanToken({eventId,ticketId,userId}) {
+  if (!secret() || !userId || !/^WLD-[A-Z]{3}-TKT-[A-F0-9]{16}$/.test(String(ticketId))) return null;
+  const exp = Math.floor(new Date(scanCredentialExpiresAt(eventId)).getTime()/1000);
+  if (exp <= Math.floor(Date.now()/1000)) return null;
+  const payload = Buffer.from(JSON.stringify({v:1,typ:'wildones-scan',eventId,ticketId,userId,exp})).toString('base64url');
+  return `${payload}.${sign(payload)}`;
+}
+export function verifyScanToken(token='') {
+  // Preserve all existing QR and native Apple passes.
+  const legacy = verifyTicketToken(token);
+  if (legacy) return legacy;
+  if (!secret() || typeof token !== 'string' || token.length > 4096) return null;
+  const parts=token.split('.');
+  if(parts.length!==2 || !equal(parts[1],sign(parts[0]))) return null;
+  try {
+    const data=JSON.parse(Buffer.from(parts[0],'base64url').toString('utf8'));
+    if(data.v!==1 || data.typ!=='wildones-scan' || !data.userId || !Number.isSafeInteger(data.exp) ||
+       data.exp<=Math.floor(Date.now()/1000) || !/^WLD-[A-Z]{3}-TKT-[A-F0-9]{16}$/.test(String(data.ticketId))) return null;
+    if(data.exp!==Math.floor(new Date(scanCredentialExpiresAt(data.eventId)).getTime()/1000)) return null;
+    return data;
+  } catch { return null; }
+}
