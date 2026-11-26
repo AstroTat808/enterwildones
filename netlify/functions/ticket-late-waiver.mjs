@@ -7,7 +7,7 @@ import { json,readBody,clientIp } from './_response.mjs';
 import { sameOrigin } from './_security.mjs';
 import { STORES,eventKey,sha256 } from './_stores.mjs';
 import { writeAudit } from './_audit.mjs';
-import { LATE_WAIVER_VERSION,lateWaiverText,lateWaiverHash,lateAcceptanceMatches,lateWaiverIsCurrent,lateEntitlement,archiveWaiver } from './_waiver-evidence.mjs';
+import { LATE_WAIVER_VERSION,lateWaiverText,lateWaiverHash,lateAcceptanceMatches,lateWaiverIsCurrent,lateEntitlement,archiveWaiver,archivedWaiverExists } from './_waiver-evidence.mjs';
 const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const normalize=v=>String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
 export default async req=>{
@@ -26,7 +26,7 @@ export default async req=>{
   if(!await lateEntitlement(ticket))return json({error:'An active late checkout add-on is required.'},403);
   const key=eventKey(parsed.eventId,parsed.ticketId+'/late_stay'),store=blobStore(STORES.waivers);
   const existing=await store.get(key,{type:'json'});
-  const signed=lateWaiverIsCurrent(existing,ticket);
+  const signed=lateWaiverIsCurrent(existing,ticket)&&await archivedWaiverExists(existing);
   const text=lateWaiverText(parsed.eventId),hash=lateWaiverHash(parsed.eventId),event=getEvent(parsed.eventId);
   if(req.method==='GET'){
     if(!(req.headers.get('accept')||'').includes('text/html'))return json({waiverVersion:LATE_WAIVER_VERSION,waiverTextHash:hash,waiverText:text,signed,signedAt:signed?existing.signedAt:null});
