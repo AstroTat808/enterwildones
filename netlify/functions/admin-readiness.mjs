@@ -1,3 +1,5 @@
+import { archiveHealth } from './_worm-archive.mjs';
+import { waiverGate } from './_waiver-evidence.mjs';
 import { isAdmin } from './_admin-auth.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
@@ -27,6 +29,12 @@ const MANUAL_ITEMS = Object.freeze([
   ['bartender-redemption', 'Bartender redemption', 'Activate a wristband and redeem credits from the bartender console, including the final credit.'],
   ['refund', 'Admission + add-on refund', 'Refund controlled admission/add-ons and verify ticket and entitlement state.'],
   ['failed-payment', 'Failure drill', 'Exercise cancelled/failed payment behavior without issuing admission.'],
+  ['waiver-legal-approval','Legal waiver approval','Document review of both agreements, the two LLC names, event-specific hazards and Hawaiʻi law.'],
+  ['insurance-confirmed','Insurance and coverage','Verify written coverage for both LLCs, premises, entertainment, alcohol service and late stay; retain confirmation securely.'],
+  ['site-safety-inspection','Site safety inspection','Complete and record parking, walking surfaces, lighting, electrical, fire, weather and emergency-access checks.'],
+  ['safety-briefing','Risk disclosure and safety instructions','Document staff briefing, guest instructions, ability-to-participate measures and escalation procedures.'],
+  ['late-stay-verify','Late-stay waiver and scan','Verify both waivers, active entitlement, photo ID and separate late-stay staff scan.'],
+  ['waiver-archive-restore','Independent retention and restore','Verify retention-locked archive and recovery of a synthetic signed agreement; record evidence, not personal data.'],
   ['offline-fallback', 'Event-day fallback', 'Verify manual token entry and the documented recovery path if camera/network access fails.']
 ]);
 
@@ -141,7 +149,7 @@ async function snapshot(event) {
   ]);
   const appById = new Map(apps.map((app) => [app.applicationId, app]));
   const activeTickets = tickets.filter((ticket) => ACTIVE.has(ticket.status));
-  const signed = activeTickets.filter((ticket) => ticket.waiverSignedAt).length;
+  const signed = (await Promise.all(activeTickets.map(ticket=>waiverGate(ticket)))).filter(state=>state.ready).length;
   const checked = activeTickets.filter((ticket) => ticket.status === 'checked_in' || ticket.checkedInAt).length;
   const admissionRevenue = payments.filter((payment) => payment.status === 'paid' && payment.purchaseType !== 'addon').reduce((total, payment) => total + Number(payment.amountTotal || 0), 0);
   const addonRevenue = payments.filter((payment) => payment.status === 'paid' && payment.purchaseType === 'addon').reduce((total, payment) => total + Number(payment.amountTotal || 0), 0);
@@ -220,7 +228,9 @@ function operationalStatus(ready, live, runbook) {
   const stripeDetail = !config.stripe ? 'Stripe configuration missing' : config.stripeMode === 'live' ? 'Live payments enabled' : `${String(config.stripeMode || 'configured').toUpperCase()} mode — rehearsal only`;
   const fallbackState = itemState(runbook, 'offline-fallback');
   const fallbackLight = light('fallback', 'Fallback drill', fallbackState === 'passed' ? 'green' : fallbackState === 'failed' ? 'red' : 'yellow', fallbackState === 'passed' ? 'Manual recovery path verified' : fallbackState === 'failed' ? 'Fallback drill failed' : 'Manual/offline recovery drill pending');
-  const eventDayGo = ready.coreReady && config.stripeMode === 'live' && unsigned === 0 && fallbackState !== 'failed';
+  const legalSafetyItems=['waiver-legal-approval','insurance-confirmed','site-safety-inspection','safety-briefing','late-stay-verify','waiver-archive-restore'];
+  const legalSafetyReady=legalSafetyItems.every(id=>itemState(runbook,id)==='passed')&&ready.archive?.healthy===true;
+  const eventDayGo = ready.coreReady && config.stripeMode === 'live' && unsigned === 0 && fallbackState === 'passed' && legalSafetyReady;
   const liveGo = ready.coreReady && config.stripeMode === 'live';
   const launchGo = ready.launchReady && runbook.ready;
   const rehearsalGo = runbook.ready;
@@ -236,6 +246,7 @@ function operationalStatus(ready, live, runbook) {
     indicators: {
       eventDay: [
         light('gate', 'Gate readiness', config.gate && config.ticketSigning ? 'green' : 'red', config.gate && config.ticketSigning ? 'Scanner credentials + ticket signatures ready' : 'Gate credentials or ticket signing missing'),
+        light('legal-safety','Legal and safety readiness',legalSafetyReady?'green':'red',legalSafetyReady?'All legal, insurance, safety and archive drills passed':'Legal, insurance, safety or archive verification is outstanding'),
         light('waivers', 'Unsigned waivers', unsigned === 0 ? 'green' : 'yellow', unsigned === 0 ? 'All active tickets cleared' : `${unsigned} active ticket${unsigned === 1 ? '' : 's'} still need signatures`),
         light('bar', 'Bartender console', config.bar ? 'green' : 'red', config.bar ? 'Bar credentials configured' : 'Bar credentials missing'),
         light('stripe', 'Stripe', stripeState, stripeDetail),
@@ -306,6 +317,8 @@ export default async (req) => {
   if (req.method === 'GET') {
     const [live, runbook, inventory] = await Promise.all([snapshot(event), rehearsal(eventId), getAdmissionInventory(eventId)]);
     const ready = readiness(event, runbook, inventory, live);
+    ready.archive=await archiveHealth();
+    if(!ready.archive.healthy){ready.launchReady=false;ready.launchBlockers=[...new Set([...ready.launchBlockers,'Independent archive recovery verification missing or stale'])];}
     return json({ event: toPublicEvent(event), events: listEvents({ includeHidden: true }).map(toPublicEvent), ...ready, live, rehearsal: runbook, ...operationalStatus(ready, live, runbook), generatedAt: new Date().toISOString() });
   }
   if (req.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);

@@ -1,3 +1,4 @@
+import { disclosureInfo } from './_waiver-evidence.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { addonCatalog, publicAddon } from './_addons.mjs';
 import { resolveEvent,toPublicEvent } from './_events.mjs';
@@ -27,6 +28,7 @@ export default async(req)=>{
     commissioningAccess:purchaseAvailable&&!event.ticketSalesOpen,
     priceCents:offer?.priceCents||null,
     currency:'usd',
+    waiverDisclosure:disclosureInfo(event.eventId),
     addons:addonCatalog(event.eventId).filter(item=>item.enabled).map(publicAddon),
     offer:offer?{phase:offer.phase,name:offer.name,priceCents:offer.priceCents,startsAt:offer.startsAt,endsAt:offer.endsAt,next:offer.next||null}:null,
     invitation:{invitationId:invitation.invitationId,status:invitation.status,maxTickets:invitation.maxTickets},

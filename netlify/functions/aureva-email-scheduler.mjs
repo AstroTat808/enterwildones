@@ -1,3 +1,4 @@
+import { waiverGate } from './_waiver-evidence.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { env } from './_env.mjs';
 import { renderBrandedNoticeEmail } from './_mail-templates.mjs';
@@ -94,7 +95,7 @@ async function processReminders() {
       const token = makeTicketToken(ticket);
       if (!token) { skipped++; continue; }
       const url = site + '/ticket?token=' + encodeURIComponent(token);
-      const waiverMissing = !ticket.waiverSignedAt;
+      const waiverMissing = !(await waiverGate(ticket)).ready;
       const mail = renderBrandedNoticeEmail({
         event,
         name: app.preferredName || app.fullName || 'Wild One',

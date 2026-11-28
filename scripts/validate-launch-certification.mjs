@@ -38,9 +38,9 @@ const sourceChecks={
   'create-checkout.mjs':['stripePost','checkout/sessions','sameOrigin'],
   'stripe-webhook.mjs':['verifyStripeSignature','finalizePaidSession','charge.refunded'],
   'ticket-waiver.mjs':['waiverHash','sameOrigin'],
-  'ticket-qr.mjs':['waiverIsCurrent','verifyTicketToken'],
-  'ticket-wallet.mjs':['waiverIsCurrent','appleWalletConfigured'],
-  'check-in.mjs':['waiverIsCurrent','checked_in','sameOrigin'],
+  'ticket-qr.mjs':['waiverGate','verifyTicketToken'],
+  'ticket-wallet.mjs':['waiverGate','appleWalletConfigured'],
+  'check-in.mjs':['waiverGate','checked_in','sameOrigin'],
   'bar.mjs':['redeemDrinkCredit','activateDrinkWristband'],
   'admin-operations.mjs':['stripePost','refund','writeAudit']
 };

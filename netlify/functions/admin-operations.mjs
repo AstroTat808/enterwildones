@@ -1,3 +1,4 @@
+import { waiverGate } from './_waiver-evidence.mjs';
 import { randomUUID } from 'node:crypto';
 import { isAdmin } from './_admin-auth.mjs';
 import { blobStore } from './_blob-store.mjs';
@@ -94,7 +95,7 @@ async function snapshot(eventId) {
   const appById = new Map(applications.map((x) => [x.applicationId, x]));
   const paymentById = new Map(payments.filter((x) => x.paymentId).map((x) => [x.paymentId, x]));
   const hydratedInvitations = invitations.map((x) => { const app = appById.get(x.applicationId); return { invitationId: x.invitationId, applicationId: x.applicationId, userId: x.userId, email: x.email || app?.email || null, label: x.label, createdAt: x.createdAt, expiresAt: x.expiresAt, maxTickets: x.maxTickets, purchaseCount: x.purchaseCount || 0, redeemedAt: x.redeemedAt || null, fulfilledAt: x.fulfilledAt || null, revokedAt: x.revokedAt || null, status: invitationState(x), guestName: app?.fullName || x.label || 'Guest' }; });
-  const hydratedTickets = tickets.map((x) => { const app = appById.get(x.applicationId); const payment = paymentById.get(x.paymentId); return { ticketId: x.ticketId, applicationId: x.applicationId, invitationId: x.invitationId, userId: x.userId, guestName: app?.fullName || 'Guest', email: app?.email || null, phone: app?.phone || null, status: x.status, ticketSource: x.ticketSource || (x.paymentId ? 'stripe' : 'comp'), paymentId: x.paymentId || null, amountTotal: Number(payment?.amountTotal || 0), currency: payment?.currency || 'usd', issuedAt: x.issuedAt || null, checkedInAt: x.checkedInAt || null, waiverSignedAt: x.waiverSignedAt || null, refundedAt: x.refundedAt || null }; });
+  const hydratedTickets = await Promise.all(tickets.map(async (x) => { const waiverState=await waiverGate(x); const app = appById.get(x.applicationId); const payment = paymentById.get(x.paymentId); return { ticketId: x.ticketId, applicationId: x.applicationId, invitationId: x.invitationId, userId: x.userId, guestName: app?.fullName || 'Guest', email: app?.email || null, phone: app?.phone || null, status: x.status, ticketSource: x.ticketSource || (x.paymentId ? 'stripe' : 'comp'), paymentId: x.paymentId || null, amountTotal: Number(payment?.amountTotal || 0), currency: payment?.currency || 'usd', issuedAt: x.issuedAt || null, checkedInAt: x.checkedInAt || null, waiverSignedAt: waiverState.ready ? waiverState.base.signedAt : null, refundedAt: x.refundedAt || null }; }));
   const stats = {
     applications: applications.length,
     pending: applications.filter((x) => x.status === 'pending').length,
