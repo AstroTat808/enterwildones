@@ -1,0 +1,26 @@
+*{box-sizing:border-box}
+:root{color-scheme:dark;--gold:#e5c37f;--muted:#c7bba6;--surface:#12100e}
+body{margin:0;color:#fff8ed;background:radial-gradient(ellipse at 50% 0,#30251a 0,transparent 40rem),#080807;font:16px/1.55 system-ui,sans-serif}
+main{max-width:820px;margin:auto;padding: max(24px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(48px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+header{text-align:center;padding:24px 0 32px}header img{object-fit:contain;width:114px;height:114px;filter:drop-shadow(0 0 18px #b89a5333)}
+header p:first-of-type,.kicker,.member-seal{letter-spacing:.22em;color:var(--gold);font-size:.72rem;font-weight:650}
+header p{color:var(--muted);margin:12px 0}.member-seal{border-top:1px solid #c7a76b33;padding-top:16px;margin:28px auto 0;max-width:340px}
+h1{font:clamp(32px,7vw,55px)/1.12 Georgia,serif;margin:12px 0;letter-spacing:-.025em}
+h2{font:clamp(23px,4vw,30px) Georgia,serif;color:#fff2db;margin:5px 0 18px}
+nav,.actions{display:flex;flex-wrap:wrap;gap:10px}nav{padding-bottom:12px}button,a{color:#ffe7ab}button,nav a,.actions a{border:1px solid #a48248;background:#211a11;padding:12px 16px;border-radius:12px;font:inherit;text-decoration:none;cursor:pointer;min-height:44px;text-align:center}
+.actions button:first-of-type{background:#e5c37f;color:#161007;border-color:#e5c37f;font-weight:650}
+button:disabled{opacity:.55;cursor:default}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #fff;outline-offset:3px}
+section{margin:38px 0}article{--accent:#e5c37f;position:relative;border:1px solid color-mix(in srgb,var(--accent),transparent 50%);border-radius:22px;padding:clamp(16px,4vw,25px);margin:14px 0;background:radial-gradient(ellipse at 100% 0,color-mix(in srgb,var(--accent),transparent 88%),transparent 75%),linear-gradient(145deg,#181510,#0d0d0d);overflow-wrap:anywhere;box-shadow:0 16px 40px #0004}
+article[data-realm=balance]{--accent:#63e5de}article[data-realm=fire]{--accent:#ff9f62}article[data-realm=night]{--accent:#d8b36b}
+article h3{margin:0 0 8px;letter-spacing:.15em;color:var(--accent);font:600 clamp(21px,4vw,29px) Georgia,serif}article p{margin:8px 0}
+article .realm-art{display:block;width:116px;height:116px;object-fit:contain;margin:0 auto 12px;filter:drop-shadow(0 0 12px color-mix(in srgb,var(--accent),transparent 75%))}
+article .qr{display:block;width:min(100%,300px);height:auto;margin:18px auto;background:white;border:8px solid white;border-radius:12px;image-rendering:pixelated}
+.realm-collection{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.realm-collection article{margin:0;text-align:center}.realm-collection article p{font-size:.86rem;color:var(--muted)}.realm-collection article[data-complete=false] .realm-art{opacity:.63}.realm-collection .master{grid-column:1/-1}
+.realm-collection article[data-complete=true] .realm-art{animation:glow 3.5s ease-in-out 2}.realm-collection article[data-complete=true]{border-color:var(--accent)}
+@keyframes glow{50%{filter:drop-shadow(0 0 24px var(--accent));transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.ticket-label{color:var(--muted);font-size:.72rem;letter-spacing:.18em;font-weight:700}.ticket-header{display:flex;align-items:center;gap:14px}.ticket-header .realm-art{width:74px;height:74px;margin:0;flex-shrink:0}.ticket-header div{min-width:0}
+.credit-panel{border:1px solid #ffffff20;background:#0003;border-radius:14px;padding:14px;margin:18px 0}.credit-panel summary{cursor:pointer;color:var(--accent);font-weight:650;min-height:28px}.credit-number{font:36px Georgia,serif;color:#fff5db;margin:6px 0}.credit-meter{display:block;width:100%;height:12px;accent-color:var(--accent)}.credit-panel p{font-size:.85rem;color:var(--muted)}
+#status,#install-help{color:var(--muted);font-size:.9rem}#status{min-height:1.5em}#saved .actions{justify-content:center}
+[hidden]{display:none!important}footer{text-align:center;border-top:1px solid #c7a76b33;padding-top:24px}
+@media(max-width:380px){.realm-collection{grid-template-columns:1fr}.actions>*{flex:1 1 100%}.ticket-header .realm-art{width:56px;height:56px}}

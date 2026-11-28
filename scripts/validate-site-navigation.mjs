@@ -69,7 +69,8 @@ async function checkDestination(page,href,ownIds){
     if(ids&&!ids.has(decodeURIComponent(url.hash.slice(1))))error(page,'Missing fragment target '+href);
   }
   if(!p)return;
-  if(siteFiles.has(p)||siteFiles.has(p+'.html'))return;
+  const directoryIndex=p.replace(/\/+$/,'')+'/index.html';
+  if(siteFiles.has(p)||siteFiles.has(p+'.html')||siteFiles.has(directoryIndex))return;
   const redirect=redirectTarget(pathname);
   if(redirect&&siteFiles.has(redirect))return;
   if(handlers.has(pathname))return;
@@ -139,6 +140,7 @@ const requiredPages = [
   "public-tickets.html",
   "ticket-access.html",
   "ticket-addons.html",
+  "wallet/index.html",
 ];
 const auditedPages = new Set(pages);
 for(const required of requiredPages){

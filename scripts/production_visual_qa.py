@@ -81,7 +81,7 @@ ADDONS={"event":REALMS[0],"ticketId":"WLD-AUR-QA","addons":[
  {"addonType":"vip","name":"VIP Access","priceCents":9000,"description":"Priority entry and VIP areas.","status":"coming_soon","purchased":False},
  {"addonType":"parking","name":"Reserved Parking","priceCents":2500,"description":"Reserved event parking.","status":"sold_out","purchased":False}
 ]}
-ACCESS={"event":REALMS[0],"eligible":True,"purchaseAvailable":True,"priceCents":3500,"currency":"usd","offer":{"phase":2,"name":"SECOND RELEASE","priceCents":3500},"invitation":{"invitationId":"qa-invite","status":"redeemed","maxTickets":1},"existingTicketId":None}
+ACCESS={"event":REALMS[0],"eligible":True,"purchaseAvailable":True,"priceCents":3500,"currency":"usd","offer":{"phase":2,"name":"SECOND RELEASE","priceCents":3500},"invitation":{"invitationId":"qa-invite","status":"redeemed","maxTickets":1},"existingTicketId":None,"waiverDisclosure":{"participant":{"waiverVersion":"qa-participant","waiverTextHash":"a"*64},"late_stay":{"waiverVersion":"qa-late","waiverTextHash":"b"*64}}}
 APP_CONFIG={"event":REALMS[2],"turnstileSiteKey":"qa","applicationsReady":True}
 IND_EVENT=[{"id":"gate","label":"Gate readiness","state":"green","detail":"Scanner ready"},{"id":"waivers","label":"Unsigned waivers","state":"yellow","detail":"4 pending"},{"id":"bar","label":"Bartender console","state":"green","detail":"Ready"},{"id":"wallet","label":"Apple Wallet","state":"yellow","detail":"Physical verification pending"}]
 IND_LAUNCH=[{"id":"core","label":"Core platform","state":"green","detail":"Configured"},{"id":"stripe","label":"Stripe live mode","state":"red","detail":"TEST mode"},{"id":"wallet","label":"Apple Wallet","state":"red","detail":"Signing pending"},{"id":"rehearsal","label":"Full rehearsal","state":"yellow","detail":"6 passed · 4 pending"}]
@@ -540,6 +540,13 @@ def state_checks(page,case,width=None,browser_name="chromium"):
      f.append("desktop Master Cycle credential must use the prestige two-column layout")
  elif case.state=="ticket-access":
   if "$35" not in page.locator("#price").inner_text():f.append("ticket price did not render")
+  if page.locator("#participant-waiver-ack").count():
+   if not page.locator("#waiver-disclosure").is_visible():f.append("Pre-purchase waiver disclosure missing")
+   if not page.locator("#buy").is_disabled():f.append("Checkout enabled before acknowledgement")
+   page.locator("#participant-waiver-ack").check()
+   if page.locator("#buy").is_disabled():f.append("Checkout did not enable after acknowledgement")
+   page.locator("#participant-waiver-ack").uncheck()
+   if not page.locator("#buy").is_disabled():f.append("Checkout enabled after acknowledgement was withdrawn")
  elif case.state=="public-tickets":
   if "SUNVEIL" not in page.locator("[data-name]").inner_text():f.append("SUNVEIL branding missing")
  elif case.state=="ticket-addons":

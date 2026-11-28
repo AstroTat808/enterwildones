@@ -1,3 +1,5 @@
+import { waiverGate } from './_waiver-evidence.mjs';
+import { googleWalletConfig } from './_google-wallet.mjs';
 import { makeTicketToken } from './_ticket-token.mjs';
 import { blobStore } from './_blob-store.mjs';
 import { listEvents,toPublicEvent } from './_events.mjs';
@@ -16,18 +18,18 @@ export default async(req)=>{
   if(!user||user.status!=='active'||user.email!==session.email)return json({authenticated:false},401);
   const realms=[];
   for(const event of listEvents({includeHidden:true})){
-    const [applications,invitations,tickets,entitlements,waivers,checkins]=await Promise.all([
+    const [applications,invitations,tickets,entitlements,checkins]=await Promise.all([
       userRecords(STORES.applications,event.eventId,user.userId),
       userRecords(STORES.invitations,event.eventId,user.userId),
       userRecords(STORES.tickets,event.eventId,user.userId),
       userRecords(STORES.entitlements,event.eventId,user.userId),
-      userRecords(STORES.waivers,event.eventId,user.userId),
       userRecords(STORES.checkins,event.eventId,user.userId)
     ]);
     const ticket=tickets.sort((a,b)=>String(b.issuedAt||'').localeCompare(String(a.issuedAt||'')))[0]||null;
     const invitation=invitations.sort((a,b)=>String(b.redeemedAt||b.createdAt||'').localeCompare(String(a.redeemedAt||a.createdAt||'')))[0]||null;
     const application=applications[0]||null;
     const purchaseAvailable=Boolean(!ticket&&invitation&&invitation.status==='redeemed'&&Number(invitation.maxTickets||1)===1&&checkoutAllowed(event,invitation,user.email,application?.email));
+    const waiverState=ticket&&['paid','checked_in'].includes(ticket.status)?await waiverGate(ticket).catch(()=>null):null;
     realms.push({
       event:toPublicEvent(event),
       application,
@@ -35,8 +37,12 @@ export default async(req)=>{
       purchaseAvailable,
       commissioningAccess:Boolean(purchaseAvailable&&!event.ticketSalesOpen),
       ticket:ticket?{ticketId:ticket.ticketId,ticketUrl:['paid','checked_in'].includes(ticket.status)&&makeTicketToken(ticket)?`/ticket?token=${encodeURIComponent(makeTicketToken(ticket))}`:null,status:ticket.status,issuedAt:ticket.issuedAt,checkedInAt:ticket.checkedInAt,waiverSignedAt:ticket.waiverSignedAt}:null,
-      entitlements:entitlements.map(x=>({addonType:x.addonType,status:x.status,purchasedAt:x.purchasedAt,creditsPurchased:x.creditsPurchased??null,creditsRedeemed:x.creditsRedeemed??null,creditsRemaining:x.creditsRemaining??null,departureTime:x.departureTime??null})),
-      waiverSigned:Boolean(waivers.length),
+      entitlements:entitlements.filter(x=>x.ticketId===ticket?.ticketId).map(x=>({addonType:x.addonType,status:x.status,purchasedAt:x.purchasedAt,creditsPurchased:x.creditsPurchased??null,creditsRedeemed:x.creditsRedeemed??null,creditsRemaining:x.creditsRemaining??null,departureTime:x.departureTime??null})),
+      waiverSigned:Boolean(waiverState?.ready),
+      participantWaiverSigned:Boolean(waiverState?.baseSigned),
+      lateWaiverRequired:Boolean(waiverState?.lateRequired),
+      lateWaiverSigned:Boolean(waiverState?.lateSigned),
+      googleWalletAvailable:Boolean(googleWalletConfig(event.eventId)),
       checkedIn:Boolean(checkins.length)
     });
   }

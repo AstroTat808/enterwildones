@@ -30,7 +30,9 @@ The QR remains locked until the current event waiver is signed. Private venue na
 
 The waiver text is versioned and hashed. The signed record captures the event, ticket, user, signer name, timestamp, user agent and a hash of the client IP. Changing the waiver text/version makes older waiver records non-current and re-locks gate readiness until re-signed.
 
-The included waiver copy is an operational draft and should be finalized before a live event launch.
+The proposed waiver revision names Wild Ones LLC and Koa's Events LLC separately, discloses foreseeable festival and optional late-stay risks, and preserves non-waivable rights, including negligence claims under HRS § 663-1.54 where applicable. The signature POST requires the exact current version and event-specific text hash shown by the ticket form; missing or stale fields return 409 without recording consent. New records capture the complete accepted text and affirmative consent; the dedicated `wildones-waiver-history` store retains prior records and each new acceptance before the current record is overwritten. Historical v1 records contain a hash, not a text snapshot; retain the source revision as evidence. History is access-controlled but is not a WORM or independently timestamped evidence system.
+
+Before production release: review event-specific hazards and entity names, verify a full pre-purchase waiver preview and conspicuous notice, review legal scope and insurer requirements, provide an accessible retained copy, certify stale-form rejection and QR/Wallet/check-in re-locking using isolated fixtures, and document site safety instructions, ability-to-participate measures, and incident procedures. Existing signers of the previous version will need to review and sign the new version; never backdate or migrate signatures. Do not roll this change out during admission without an operational plan.
 
 ## Check-in
 
@@ -63,3 +65,30 @@ and disputed tickets before enabling admission sales.
 **Migration:** `netlify/database/migrations/003_admission-capacity/migration.sql`.
 Testing must include a 1-seat two-buyer race, comp admission races, webhook
 replay, refund/rebuy, Stripe expiry, and reconciliation of any legacy tickets.
+
+## Waiver evidence center and late-stay policy
+
+The authenticated `/admin/waivers` page lists event-specific waiver readiness, outstanding supplemental waivers, historical evidence and hash verification. Its print view is designed for browser Save as PDF; JSON is the original evidence export. No direct PDF generator or certificate-based PDF signature is implied. Legacy signatures without exact text snapshots are explicitly labeled incomplete. Admin evidence access requires a successful conditional create-only audit write; the signed records themselves are archived before unlocking admission.
+
+The independent late-stay waiver is required for every active `late_stay` entitlement, whether bundled or bought later. QR, ticket venue details, Wallet issuance and admission scan share `waiverGate`. A separate check-in mode verifies current entitlement and both agreements after admission; staff must verify matching government-issued photo ID and use this mode before assigning late-stay credentials and during the transition to overnight access. There is no offline bypass. Refunded or disputed add-ons do not confer late access. Current venue and safety rules must be communicated in person.
+
+Archive writes are content-addressed and use Netlify Blobs conditional create-only writes. This is application-level append-only, not provider-enforced WORM. Before claiming immutability, configure independent retention-locked object storage under a separate administrative account, a least-privilege writer with no delete/retention-change permissions, encryption, retention and legal-hold policies approved by counsel, verifiable replication, and a documented restore test. Never expose signature archives or ticket tokens in a public bucket. The archive is not a substitute for legal review or evidence of actual risk instruction.
+
+## Pre-purchase disclosure and event-day operational release
+
+Admission checkout requires affirmative acknowledgement of the exact current participant waiver preview; selecting a bundled late-stay add-on requires a second, independently versioned acknowledgement. Standalone late-stay purchases enforce the same disclosure. The server validates both version and hash before creating Stripe checkout; checkout records retain acknowledgement metadata. These are disclosures, not electronic signatures. The authenticated ticket holder must separately sign after purchase. Previously opened Stripe sessions and existing paid tickets remain subject to actual signature enforcement at the gate.
+
+The release checklist now includes explicit legal approval, insurance, physical inspection, guest safety instructions, overnight verification and independent archive recovery. None may be marked passed without documented evidence. Event-day readiness remains NO-GO until these items pass. A system status is not a guarantee of coverage or legal enforceability.
+
+### On-site operating checklist
+
+- Confirm the exact entities and event-specific hazards with Hawaiʻi counsel and insurers; confirm whether policy endorsements list both LLCs and any other required parties. Record policy/endorsement references securely, not in public source or guest-visible notes.
+- Inspect walking and parking surfaces, lighting, drainage, electrical systems, cables, stage barriers, emergency routes, weather exposure and designated sleeping areas before opening. Log time, inspector, issues, remediation and reinspection. Stop or relocate activities if hazards remain uncontrolled.
+- Post the actual risk disclosures and safety rules; brief staff on assistance, guest ability to participate, signs of medical distress or dangerous intoxication, evacuation, emergency contacts and escalation. Do not treat a self-certification as a medical assessment.
+- At admission, verify the name and age on photo ID and server-validated credential. No screenshot-only, manual override or offline admission when waiver status is unverifiable. Provide an accessible way to review and sign without coercion; arrange an approved refund or other remedy where required for guests who decline new terms. Do not force guests to drive impaired.
+- At overnight transition, use the separate late-stay scan mode; check ID, active entitlement and both current signatures; verify marked sleeping/parking areas and communicate no-idling, fire, exhaust, emergency access, and checkout procedures. Provide safe transportation options and emergency assistance.
+- Preserve incident reports, inspection records, staff briefings and evidence exports under a restricted access and counsel-approved retention/hold plan. Treat them as sensitive personal records. Never store actual guest evidence in GitHub.
+
+## Independent legal archive and evidence exports
+
+See `docs/legal-evidence-operations.md` for deployment prerequisites, legal holds, restore verification, existing-record reconciliation, PDF limitations, incident reporting and the re-sign campaign. Production acceptance now requires independently verified dual-account WORM receipts. No secrets or retention defaults are committed. Never deploy until the retention and privacy policy is approved and both accounts have passed a real restore drill.
