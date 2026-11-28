@@ -10,6 +10,7 @@ import { waiverGate } from './_waiver-evidence.mjs';
 import { makeScanToken,scanCredentialExpiresAt } from './_ticket-token.mjs';
 import { googleWalletConfig,issueGoogleWallet } from './_google-wallet.mjs';
 import { env } from './_env.mjs';
+import { recordWalletActivity } from './_wallet-activity.mjs';
 
 export default async(req)=>{
   if(req.method!=='POST')return json({error:'Method not allowed.'},405);
@@ -34,9 +35,11 @@ export default async(req)=>{
       const config=googleWalletConfig(event.eventId);
       if(!config)return json({error:'Google Wallet is not available for this event yet.'},503);
       const url=await issueGoogleWallet(config,{event,ticket,scanToken,expiresAt},{origin:env('WILDONES_SITE_URL','https://enterwildones.com')});
+      await recordWalletActivity({kind:'google_issued',eventId:event.eventId,ticketId});
       return json({url});
     }
     const qr=await QRCode.toDataURL(scanToken,{width:520,margin:4,errorCorrectionLevel:'M'});
+    await recordWalletActivity({kind:'offline_issued',eventId:event.eventId,ticketId});
     // No venue, full ticket URL, email, waiver text, or payment details in offline payload.
     return json({ticketId,eventId:event.eventId,eventName:event.name,realm:event.realm,startsAt:event.startsAt,timezone:event.timezone,expiresAt,qr,savedAt:new Date().toISOString()});
   }catch{return json({error:'Wallet credential could not be generated. Try again online.'},503);}
